@@ -1,27 +1,26 @@
 {
-  "code": "test.objects",
-  "name": "Test Objects",
-  "description": "Simple test objects for development",
-  "version": "1.0.0",
-  "author": "Fedor Vyshkov",
-  "dependencies": [],
-  "files": [
-    {
-      "type": "ao",
-      "path": "ao/simpleList.json"
-    },
-    {
-      "type": "workplace",
-      "path": "workplace/test.manager.xml"
-    },
-    {
-      "type": "config",
-      "path": ".configs/aoa.Object.xml"
-    },
-    {
-      "type": "config",
-      "path": ".configs/workplace.Workplace.xml"
-    }
-  ]
+    "packageId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "packageName": "test.objects",
+    "configs": [],
+    "content": [
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "33333333-3333-3333-3333-333333333333",
+            "object_name": "Simple List",
+            "object_attrs": {
+                "code": "simpleList",
+                "name": "Simple List"
+            },
+            "file_name": "ao/simpleList.json"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Workplace",
+            "object_id": "44444444-4444-4444-4444-444444444444",
+            "object_name": "Test Manager",
+            "object_attrs": null,
+            "file_name": "workplace/test.manager.xml"
+        }
+    ]
 }
-

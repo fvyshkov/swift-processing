@@ -25,6 +25,103 @@ packages/
 
 **CRITICAL**: `current` and `new` are separate instances with NO cross-references.
 
+### 1.1 Package Creation and Packaging
+
+#### Directory Structure
+```
+package_name/
+├── .package.info        # Package metadata (REQUIRED)
+├── ao/                  # Application Objects
+│   └── object.json
+├── workplace/           # Workplace menus
+│   └── menu.xml
+├── template/            # Templates (optional)
+├── workflow/            # Workflows (optional)
+├── rule/                # Rules (optional)
+└── README.md           # Documentation (optional)
+```
+
+#### .package.info Structure
+
+**REQUIRED fields:**
+```json
+{
+  "packageId": "uuid-v4-here",
+  "packageName": "package.code",
+  "configs": [],  // REQUIRED even if empty
+  "content": [
+    {
+      "model_name": "aoa.Object",
+      "model_title": "Application object",
+      "object_id": "uuid-v4-here",
+      "object_name": "Display Name",
+      "object_attrs": {
+        "code": "objectCode",
+        "name": "Object Name"
+      },
+      "file_name": "ao/object.json"
+    },
+    {
+      "model_name": "workplace.Workplace",
+      "model_title": "Workplace",
+      "object_id": "uuid-v4-here",
+      "object_name": "Menu Name",
+      "object_attrs": null,
+      "file_name": "workplace/menu.xml"
+    }
+  ]
+}
+```
+
+**UUID Generation:**
+- Each object needs unique UUID
+- For testing: use simple patterns like `11111111-1111-1111-1111-111111111111`
+- For production: use real UUID v4
+
+**Model Names:**
+- `aoa.Object` - Application Objects (JSON files in ao/)
+- `workplace.Workplace` - Workplace menus (XML files in workplace/)
+- `template.Template` - Templates (HTML files in template/)
+- `easyflow.Deployment` - Workflows (XML files in workflow/)
+- `rule.Rule` - Rules (JSON files in rule/)
+
+#### Creating ZIP Archive
+
+**CRITICAL**: Files must be in archive root, NOT in subdirectory!
+
+**Correct command:**
+```bash
+cd package_name
+zip -r ../package_name.zip ao/ workplace/ .package.info README.md
+```
+
+**Do NOT include:**
+- `.DS_Store` files
+- `__MACOSX/` folders
+- `.configs/` folder (unless adding custom model configs)
+- Parent directory name in archive
+
+**Verify archive:**
+```bash
+unzip -l package_name.zip
+# Should show: ao/, workplace/, .package.info
+# NOT: package_name/ao/, package_name/workplace/
+```
+
+#### Common Errors
+
+**Error: "There is no item named '.package.info'"**
+- Fix: Files must be in archive root, not in subdirectory
+
+**Error: "'packageId'"**
+- Fix: Add `packageId` field to .package.info
+
+**Error: "'configs'"**
+- Fix: Add `configs: []` field (even if empty)
+
+**Error: "ObjectConfig.DoesNotExist"**
+- Fix: Remove `.configs/` folder or use empty `configs: []`
+
 ---
 
 ## 2. APPLICATION OBJECT STRUCTURE (AO)
@@ -703,9 +800,19 @@ frontend.displayInfo(JSON.stringify(data, null, 4));
 
 ## 15. GENERATION CHECKLIST
 
-When creating new object:
+When creating new object/package:
 
+### Package Setup
 - [ ] Define package location (new/ only)
+- [ ] Create package directory structure (ao/, workplace/, etc.)
+- [ ] Create `.package.info` with:
+  - [ ] `packageId` (UUID v4)
+  - [ ] `packageName`
+  - [ ] `configs: []` (empty array)
+  - [ ] `content` array with all objects
+- [ ] Add README.md with documentation
+
+### Object Definition
 - [ ] Create AO JSON with: filter, forms, methods, lists, actions
 - [ ] Define workplace XML with menu structure
 - [ ] Implement backend methods (Python)
@@ -716,6 +823,14 @@ When creating new object:
 - [ ] Add validation logic
 - [ ] Implement error handling
 - [ ] Add internationalization strings
+
+### Packaging
+- [ ] Navigate to package directory: `cd package_name`
+- [ ] Create ZIP: `zip -r ../package_name.zip ao/ workplace/ .package.info README.md`
+- [ ] Verify archive: `unzip -l ../package_name.zip`
+- [ ] Check: files in root (NOT in subdirectory)
+- [ ] Check: no `.DS_Store` or `__MACOSX/`
+- [ ] Check: `.package.info` is present and valid
 
 ---
 
@@ -740,6 +855,120 @@ When creating new object:
 - Use `mem` for form state
 - Use `context` for cross-component state
 - Use `params` for immutable inputs
+
+---
+
+## 17. QUICK REFERENCE TEMPLATES
+
+### .package.info Template
+
+```json
+{
+  "packageId": "GENERATE-NEW-UUID-HERE",
+  "packageName": "my.package",
+  "configs": [],
+  "content": [
+    {
+      "model_name": "aoa.Object",
+      "model_title": "Application object",
+      "object_id": "GENERATE-NEW-UUID-HERE",
+      "object_name": "My Object",
+      "object_attrs": {
+        "code": "myObject",
+        "name": "My Object"
+      },
+      "file_name": "ao/myObject.json"
+    },
+    {
+      "model_name": "workplace.Workplace",
+      "model_title": "Workplace",
+      "object_id": "GENERATE-NEW-UUID-HERE",
+      "object_name": "My Workplace",
+      "object_attrs": null,
+      "file_name": "workplace/my.workplace.xml"
+    }
+  ]
+}
+```
+
+### Minimal AO Template
+
+```json
+{
+  "lists": {
+    "default": {
+      "id": "id",
+      "columns": {
+        "id": {"title": "ID", "width": 80},
+        "name": {"title": "Name", "flex": 1}
+      },
+      "actions": [
+        {"title": "Refresh", "icon": "refresh", "mini": true, "command": {"type": "standard", "call": "refresh"}},
+        {"title": "Add", "icon": "add", "command": {"type": "task", "call": "/aoa/ObjectTask", "title": "New", "params": {"object": "objectCode", "form": "editForm", "isNew": true}}}
+      ]
+    }
+  },
+  "forms": {
+    "editForm": {
+      "title": "Edit",
+      "className": "vertical task task-panel panel",
+      "$": {
+        "@form": {
+          "className": "vertical",
+          "$": {"name": {"label": "Name", "control": "TextEdit"}}
+        },
+        "@buttons": {
+          "className": "horizontal",
+          "$": {
+            ".btnSave": {"label": "Save", "control": "Button", "controlProps": {"variant": "contained", "color": "primary"}, "action": {"js": "frontend.closeTask();"}}
+          }
+        }
+      }
+    }
+  },
+  "methods": {
+    "getList": {"script": {"py": "data = []"}},
+    "save": {"script": {"py": "data = {'success': True}"}}
+  },
+  "actions": [],
+  "filter": {},
+  "references": {}
+}
+```
+
+### Minimal Workplace XML Template
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<workplace code="my.workplace" name="My Workplace">
+  <menu name="My Menu">
+    <menu name="Object List" call="/aoa/ObjectListTask">
+      <p name="object" value="myObject" />
+      <p name="list" value="default" />
+    </menu>
+  </menu>
+</workplace>
+```
+
+### Package Creation Commands
+
+```bash
+# 1. Create structure
+mkdir -p my.package/{ao,workplace}
+
+# 2. Create files (see templates above)
+# - my.package/.package.info
+# - my.package/ao/myObject.json
+# - my.package/workplace/my.workplace.xml
+
+# 3. Create archive
+cd my.package
+zip -r ../my.package.zip ao/ workplace/ .package.info
+
+# 4. Verify
+cd ..
+unzip -l my.package.zip
+```
 
 ---
 
