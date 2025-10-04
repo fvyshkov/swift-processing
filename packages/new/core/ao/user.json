@@ -1,0 +1,848 @@
+{
+    "forms": {
+        "editUserTask": {
+            "title": "View user",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlProps": {
+                                "actions": [
+                                    {
+                                        "title": "Save",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveUser"
+                                        },
+                                        "disabled$": "!context.modified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "auto"
+                    },
+                    "form": "editUserForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "(task.params.userId || task.params.userCode) && backend.post('/aoa/execObjectMethod', {object: 'user', method: 'get', params: {id: task.params.userId, code: task.params.userCode}}).then((r)=>{mem.user=r; tm.setTaskTitle(task.key, `Пользователь ${r.code}`); forceUpdate()})"
+                },
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "saveUser": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'user', method: 'save', params: mem.user}).then(()=>{context.modified = false; forceUpdate();})"
+                }
+            }
+        },
+        "editUserForm": {
+            "comment": "Edit user form",
+            "className": "vertical",
+            "$": {
+                "user": {
+                    "className": "vertical",
+                    "$": {
+                        "code": {
+                            "label": "User code",
+                            "style": {
+                                "width": "200px"
+                            },
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "name": {
+                            "label": "User name",
+                            "style": {
+                                "width": "450px"
+                            },
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "fixedPosition": {
+                            "label": "Position",
+                            "style": {
+                                "width": "200px"
+                            },
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "keepSession": {
+                            "label": "Keep session",
+                            "control": "Checkbox",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "@workplaces": {
+                            "title": "Work places",
+                            "className": "vertical",
+                            "$": {
+                                ".ap": {
+                                    "control": "ActionPanel",
+                                    "controlOpts": {
+                                        "actions": [
+                                            {
+                                                "title": "Add",
+                                                "icon": "add",
+                                                "mini": true,
+                                                "action": {
+                                                    "js": "context.selectedWorkplace = null; frontend.dialog({object: 'workplace', form: 'selectWorkplaceDialog'});"
+                                                }
+                                            },
+                                            {
+                                                "title": "Delete",
+                                                "icon": "delete",
+                                                "mini": true,
+                                                "action": {
+                                                    "name": "deleteWorkplace",
+                                                    "confirm": {
+                                                        "title": "Delete",
+                                                        "message$": "`Delete work place ${context.selectedWorkplace.code}?`",
+                                                        "yes": "Да",
+                                                        "no": "Нет"
+                                                    }
+                                                },
+                                                "disabled$": "!context.selectedWorkplace"
+                                            }
+                                        ]
+                                    },
+                                    "actions": {
+                                        "selectWorkplace": {
+                                            "name": "addWorkplace"
+                                        }
+                                    }
+                                },
+                                "|workplaces": {
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "rowDrag": true,
+                                        "columns!": {
+                                            "code": {
+                                                "label": "Code",
+                                                "width": 200
+                                            },
+                                            "name": {
+                                                "label": "Name",
+                                                "flex": 1
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": {
+                                    "js": "context.selectedWorkplace = selectedRow;"
+                                },
+                                "addWorkplace": [
+                                    {
+                                        "js": "mem.workplaces = [...mem.workplaces, {id: params.workplace.id, code: params.workplace.code, name: params.workplace.name}]"
+                                    },
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ],
+                                "deleteWorkplace": [
+                                    {
+                                        "js": "mem.workplaces.splice(mem.workplaces.indexOf(context.selectedWorkplace), 1); mem.workplaces = [...mem.workplaces];"
+                                    },
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        },
+                        "settings": {
+                            "className": "vertical",
+                            "$": {
+                                "language": {
+                                    "label": "UI Language",
+                                    "style": {
+                                        "width": "200px"
+                                    },
+                                    "control": "ObjectReference",
+                                    "controlProps": {
+                                        "object": "intl",
+                                        "reference": "languages",
+                                        "valueField": "code",
+                                        "textReadOnly": true
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "isAdmin": {
+                                    "label": "Is admin",
+                                    "control": "Checkbox",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "@groups": {
+                                    "className": "vertical",
+                                    "title": "Groups",
+                                    "$": {
+                                        ".ap": {
+                                            "control": "ActionPanel",
+                                            "controlOpts": {
+                                                "actions": [
+                                                    {
+                                                        "title": "Add",
+                                                        "icon": "add",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "name": "addGroup"
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Delete",
+                                                        "icon": "delete",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "name": "deleteGroup",
+                                                            "confirm": {
+                                                                "title": "Delete",
+                                                                "message$": "`Delete group ${context.groups.selectedRow.code}?`",
+                                                                "yes": "Yes",
+                                                                "no": "No"
+                                                            }
+                                                        },
+                                                        "disabled$": "!context.groups?.selectedRow"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "|groups": {
+                                            "control": "ListTable",
+                                            "controlProps": {
+                                                "listContext$": "(()=>{context.groups=context.groups||{}; return context.groups;})()"
+                                            },
+                                            "controlOpts": {
+                                                "gridApi": "groupsGridApi",
+                                                "columns!": {
+                                                    "code": {
+                                                        "label": "Code",
+                                                        "width": 400,
+                                                        "editable": true
+                                                    }
+                                                }
+                                            },
+                                            "actions": {
+                                                "onCellValueChanged": {
+                                                    "name": "onModified"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "onSelectionChanged": {
+                                            "js": ";"
+                                        },
+                                        "addGroup": [
+                                            {
+                                                "js": "mem.groups.push({name: `group_${mem.groups.length+1}`}); mem.groups=[...mem.groups]; "
+                                            },
+                                            {
+                                                "js": "setTimeout(()=>{task.events.fire('groupsGridApi', {call: 'startEditingCell', params: [{rowIndex: mem.groups.length-1, colKey: 'code'}]})}, 200)"
+                                            },
+                                            {
+                                                "name": "onModified"
+                                            }
+                                        ],
+                                        "deleteGroup": [
+                                            {
+                                                "js": "mem.groups.splice(mem.groups.indexOf(context.groups.selectedRow), 1); mem.groups = [...mem.groups]; context.groups.selectedRow=null;"
+                                            },
+                                            {
+                                                "name": "onModified"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "@tasksPriles": {
+                                    "title": "Monitoring profiles",
+                                    "form": "taskProfilesForm"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "taskProfilesForm": {
+            "title": "Monitoring profiles",
+            "className": "vertical",
+            "$": {
+                ".ap": {
+                    "control": "ActionPanel",
+                    "controlProps": {
+                        "actions": [
+                            {
+                                "title": "Add",
+                                "icon": "add",
+                                "mini": true,
+                                "action": {
+                                    "js": "frontend.dialog({object: 'easyflow.taskmanage', form: 'selectProfileDialog'})"
+                                }
+                            },
+                            {
+                                "title": "Delete",
+                                "icon": "delete",
+                                "mini": true,
+                                "action": {
+                                    "name": "deleteProfile",
+                                    "confirm": {
+                                        "title": "Delete",
+                                        "message$": "`Delete profile?`",
+                                        "yes": "Yes",
+                                        "no": "No"
+                                    }
+                                },
+                                "disabled$": "!context.selectedTaskProfile"
+                            }
+                        ]
+                    },
+                    "actions": {
+                        "onProfileSelected": {
+                            "name": "addProfile"
+                        }
+                    }
+                },
+                "|taskProfiles": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "columns!": {
+                            "code": {
+                                "label": "Code",
+                                "width": 100,
+                                "compact": true
+                            },
+                            "name": {
+                                "label": "Name",
+                                "flex": 1
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "addProfile": [
+                    {
+                        "js": "mem.taskProfiles.push({code: params.profile.code, name: params.profile.name}); mem.taskProfiles = [...mem.taskProfiles]; context.selectedTaskProfile=null;"
+                    },
+                    {
+                        "name": "onModified"
+                    }
+                ],
+                "deleteProfile": [
+                    {
+                        "js": "mem.taskProfiles.splice(mem.taskProfiles.indexOf(context.selectedTaskProfile, 1)); mem.taskProfiles = [...mem.taskProfiles];"
+                    },
+                    {
+                        "name": "onModified"
+                    }
+                ],
+                "onSelectionChanged": {
+                    "js": "console.log('onSelectionChanged', arguments['0']); context.selectedTaskProfile = selectedRow;"
+                }
+            }
+        },
+        "languageChangedDialog": {
+            "title": "Language changed",
+            "className": "vertical",
+            "style": {
+                "width": "500px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "flexGrow": 1,
+                        "paddingTop": "8px"
+                    },
+                    "$": {
+                        ".message": {
+                            "control": "Text",
+                            "getter": "_('User\\'s langauge changed')"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnOk": {
+                            "label": "OK",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "selectUserDialog": {
+            "title": "Select user dialog",
+            "style": {
+                "height": "500px",
+                "width": "800px",
+                "overflow": "hidden"
+            },
+            "className": "vertical",
+            "$": {
+                "@form": {
+                    "style": {
+                        "flexGrow": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@form": {
+                            "object": "user",
+                            "form": "selectUserForm",
+                            "style": {
+                                "height": "100%"
+                            },
+                            "actions": {
+                                "onSelectUser": [
+                                    {
+                                        "js": "context.selectedUser = {code: params.userCode, name: params.userName, type: params.userType}"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "text"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnSelect": {
+                            "label": "Select",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "readOnly$": "!context.selectedUser",
+                            "action": [
+                                {
+                                    "name": "onUserSelected",
+                                    "params": {
+                                        "user$": "context.selectedUser"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "selectUserForm": {
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                ".list": {
+                    "style": {
+                        "height": "100%",
+                        "overflow": "hidden"
+                    },
+                    "control": "ListTable",
+                    "controlProps": {
+                        "style": {
+                            "height": "100%"
+                        },
+                        "gridOptions": {
+                            "domLayout": "normal"
+                        },
+                        "params$": "params"
+                    },
+                    "controlOpts": {
+                        "rowModelType": "serverSide",
+                        "id": "code",
+                        "columns!": {
+                            "code": {
+                                "label": "Login",
+                                "flex": 1,
+                                "fastFilter": true
+                            },
+                            "name": {
+                                "label": "Name",
+                                "flex": 1,
+                                "fastFilter": true
+                            }
+                        },
+                        "refreshEvent": "onRefreshUsers"
+                    },
+                    "actions": {
+                        "onGetRows": {
+                            "js": "return backend.post('/aoa/execObjectMethod',{object: 'user', method: 'getList', params: {request: {...params.request}}}).then((r)=>{onSuccess(r)})"
+                        },
+                        "onSelectionChanged": {
+                            "name": "onSelectUser",
+                            "params": {
+                                "userCode$": "selectedRow.code",
+                                "userName$": "selectedRow.name",
+                                "userType$": "'user'"
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        "substituteUserDialog": {
+            "title": "Substitute user",
+            "className": "vertical",
+            "style": {
+                "width": "500px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "flexGrow": 1,
+                        "paddingTop": "8px"
+                    },
+                    "$": {
+                        "suUser": {
+                            "label": "User Code",
+                            "style": {
+                                "width": "280px"
+                            },
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnApply": {
+                            "label": "OK",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "onApply",
+                                    "params": {
+                                        "suUser$": "mem.suUser"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.workplace.models import User, UserWorkplace\nfrom beflex.aoa.services import applyFilterModel, applyFilterModel2\n\nquery = User.objects\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    request = parameters.get('request')\n    filterModel = request.get('filterModel') if request else None\n    filterModel2 = request.get('filterModel2') if request else None\n        \n    if filterModel or filterModel2:\n        if filterModel:\n            query = applyFilterModel(query, filterModel)\n        if filterModel2:\n            query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    query = query.order_by('code')\n    \n    if request and request.get('startRow'):\n        query = query[request['startRow']:request['endRow']]\n        \nfrom django.db.models import prefetch_related_objects\nprefetch_related_objects(query, 'workplaces')\n        \ndata = []\nfor u in query:\n    d = {\n        'id': u.id.__str__(),\n        'code': u.code,\n        'name': u.name,\n    }\n    \n    workplaces = UserWorkplace.objects.filter(username=u.code)\n    \n    d['workplaces'] = ', '.join([x.workplace.name for x in workplaces])\n    \n    data.append(d)\n\n\n"
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from django.db import transaction\nfrom django.conf import settings\nfrom beflex.workplace.models import User, UserWorkplace\n\nwith transaction.atomic(using=settings.APPS_DB[User._meta.app_label]):\n    user = User.objects.get(id=parameters.get('id')) \n    UserWorkplace.objects.filter(username=user.code).delete()\n    user.delete()\n\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.workplace.models import User, UserWorkplace\n\nif parameters.get('id'):\n    flt = {'id': parameters['id']}\nelif parameters.get('code'):\n    flt = {'code': parameters['code']}\nelse:\n    raise UserException('Для получения пользователя нужно передеать id или code')\n    \nu = User.objects.get(**flt)\n\n\ndata = {\n    'id': u.id.__str__(),\n    'code': u.code,\n    'name': u.name,\n    'settings': u.data if u.data is not None else {},\n    'fixedPosition': u.fixedPosition,\n    'keepSession': u.keepSession,\n    'workplaces': [{\n        'id': x.id.__str__(),\n        'workplace_id': x.workplace.id.__str__(),\n        'code': x.workplace.code,\n        'name': x.workplace.name,\n    } for x in UserWorkplace.objects.filter(username=u.code)]\n}\n"
+            }
+        },
+        "save": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.workplace.models import User, Workplace, UserWorkplace\nfrom django.db import transaction\nfrom django.conf import settings\n\nwith transaction.atomic(using=settings.APPS_DB['workplace']):\n    try:\n        user_id = parameters.get('id')\n        if user_id:\n            user = User.objects.get(id=user_id)\n        else:\n            user = User();\n            \n        user.code = parameters.get('code')\n        user.name = parameters.get('name')\n        user.data = parameters.get('settings')\n        \n        user.fixedPosition = parameters.get('fixedPosition')\n        user.keepSession = parameters.get('keepSession')\n    \n        user.save()\n        \n        UserWorkplace.objects.filter(username=user.code).delete()\n        for wp in parameters.get('workplaces'):\n            userWorkplace = UserWorkplace()\n            userWorkplace.user = user\n            userWorkplace.username = user.code\n            \n            if wp.get('workplace_id'):\n                userWorkplace.workplace_id = wp['workplace_id']\n            else:\n                wkp = Workplace.objects.get(code=wp['code'])\n                userWorkplace.workplace_id = wkp.id\n            \n            userWorkplace.save()\n            \n        data = {\n            'id': user.id.__str__()\n        }\n    except Exception as e:\n        raise UserException({\n            'message': 'Ошибка сохранения пользователя\\n%s' % e,\n            'trace': traceback.format_exc(),\n        })\n\n"
+            }
+        },
+        "changeLanguage": {
+            "sql": {},
+            "script": {
+                "py": "from beflex.workplace.models import User\r\n\r\nif parameters.get('code') is None:\r\n    raise UserException('Argument error: code')\r\n\r\nif parameters.get('language') is None:\r\n    raise UserException('Argument error: language')\r\n\r\nu = User.objects.get(code=parameters['code'])\r\n\r\nif u.data is None:\r\n    u.data = {}\r\n    \r\nu.data['language'] = parameters['language']\r\n\r\nu.save()\r\n"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "code": {
+                    "title": "Code",
+                    "width": 200
+                },
+                "name": {
+                    "title": "Name",
+                    "width": 300
+                },
+                "workplaces": {
+                    "title": "Workplaces",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Create",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "New user",
+                        "params": {
+                            "object": "user",
+                            "form": "editUserTask"
+                        }
+                    }
+                },
+                {
+                    "title": "View",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`User ${$listRow.code}`",
+                        "params": {
+                            "object": "user",
+                            "form": "editUserTask",
+                            "userId$": "$listRow.id"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "mini": "true",
+                    "confirm": {
+                        "message$": "`Delete user ${$listRow.code}, ${$listRow.name} ?`",
+                        "yes": "Yes",
+                        "no": "No"
+                    },
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Tools",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Packages",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.code, model: 'workplace.User'}, context: {}})"
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "History",
+                            "command": {
+                                "type": "task",
+                                "title$": "`Object history: ${$listRow.code}`",
+                                "call": "/aoa/ObjectTask",
+                                "params": {
+                                    "object": "aos.ModifiedObjects",
+                                    "form": "historyTask",
+                                    "model": "workplace.User",
+                                    "objectId$": "$listRow.code"
+                                }
+                            },
+                            "disabled$": "!$listRow"
+                        }
+                    ]
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Filter",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Code",
+                                    "control": "TextEdit"
+                                },
+                                "name": {
+                                    "label": "Name",
+                                    "control": "TextEdit"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Clear",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Apply",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "references": {},
+    "js": {}
+}

@@ -1,0 +1,224 @@
+{
+    "forms": {
+        "lookupLoanDialog": {
+            "title": "Подбор кредитного договора",
+            "style": {
+                "width": "900px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "padding": "4px"
+                    },
+                    "className": "vertical",
+                    "$": {
+                        "lookup": {
+                            "$": {
+                                "clientCode": {
+                                    "label": "Код клиента",
+                                    "style": {
+                                        "width": "200px"
+                                    },
+                                    "control": "TextEdit"
+                                }
+                            }
+                        },
+                        ".btnLookup": {
+                            "label": "Найти",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'loan', method: 'lookupLoan', params: mem.lookup}).then((r)=>{mem.list.splice(0, mem.list.length, ...r);})"
+                                },
+                                {
+                                    "name": "onLookupResults"
+                                }
+                            ]
+                        },
+                        "@lookupResults": {
+                            "$": {
+                                "|list": {
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "columns!": {
+                                            "date": {
+                                                "label": "Дата",
+                                                "format": "date",
+                                                "width": 85,
+                                                "compact": true
+                                            },
+                                            "number": {
+                                                "label": "Номер",
+                                                "width": 150,
+                                                "compact": true
+                                            },
+                                            "productName": {
+                                                "label": "Продукт",
+                                                "flex": 1,
+                                                "compact": true
+                                            },
+                                            "amount": {
+                                                "label": "Сумма",
+                                                "format": "currency",
+                                                "cellStyle": {
+                                                    "textAlign": "right"
+                                                },
+                                                "compact": true
+                                            },
+                                            "currency": {
+                                                "label": "Валюта",
+                                                "width": 60,
+                                                "compact": true
+                                            },
+                                            "fromDate": {
+                                                "label": "Дата начала",
+                                                "width": 85,
+                                                "format": "date",
+                                                "compact": true
+                                            },
+                                            "toDate": {
+                                                "label": "Дата окончания",
+                                                "width": 85,
+                                                "format": "date",
+                                                "compact": true
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "onRowDoubleClicked": [
+                                            {
+                                                "name": "onSelectLoan",
+                                                "params": {
+                                                    "row$": "selectedRow"
+                                                }
+                                            },
+                                            {
+                                                "js": "actions.close()",
+                                                "disableUpdate": true
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onLookupResults": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "onSelectLoan",
+                                    "params": {
+                                        "row$": "context.selected"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ],
+                            "readOnly$": "!context.selected"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSelectionChanged": {
+                    "js": "context.selected=selectedRow;"
+                }
+            }
+        }
+    },
+    "methods": {
+        "actualizeLoan": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "SQL=\"\"\"\ndeclare\n    tdea T_DEA%%rowtype;\n    accbln G_ACCBLN%%rowtype;\n    line_state varchar2(30);\nbegin\n    t_log.penable; t_log.clean;\n    \n    -- Регистрация договора\n    if T_PkgRunOprUtl.fOprAvailable(:dep_id, :id, 'REG') = 2 then\n        T_PkgRunOprUtl.pRunOprByMainOrd(:dep_id, :id, 'REG', '');\n    end if;\n\n    -- Расчет эффективной ставки                                \n    if T_PkgRunOprUtl.fOprAvailable(:dep_id, :id, 'CREDITRATE') = 2 then\n        if T_PkgRunOprUtl.fOprExist(T_PkgProcess.fGetIdByMainOrd(:dep_id, :id), 'CREDITRATE') = 0 then\n            T_PkgRunOprUtl.pRunOprByMainOrd(:dep_id, :id, 'CREDITRATE', '');\n        end if;\n    end if;\n    \n    -- Актуализация\n    if T_PkgRunOprUtl.fOprAvailable(:dep_id, :id, 'RUN') = 2 then\n        T_PkgRunOprUtl.pRunOprByMainOrd(:dep_id, :id, 'RUN', '');\n    end if;\n\n    -- Получаем состояние договора чтобы решить что делать дальше\n    :state := T_PkgProcess.fGetStatCodeByMainOrd(:dep_id, :id);\nend;\n\n\"\"\"\n\nwith initDbSession(application='colvir_cbs').cursor() as cursor:\n    p = {\n        'dep_id': parameters['dep_id'],\n        'id': parameters['id'],\n        'state': cursor.var(str)\n    }\n    \n    try:\n        cursor.execute(SQL, p)\n    except Exception as e:\n        from colvir_cbs.services import log\n        raise UserException({\n            'message': 'Ошибка актуализации договора\\n%s' % e,\n            'trace': log.readLog()\n        })\n    \n    data = {\n        'state': p['state'].getvalue()\n    }\n\n"
+            }
+        },
+        "issueLoan": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "SQL = \"\"\"\ndeclare\n    cIssueParams varchar2(4000);\nbegin\n    t_log.penable; t_log.clean;\n\n    -- Регистрация\n    if T_PkgRunOprUtl.fOprAvailable(:dep_id, :id, 'REG_SHD') = 2 then\n        T_PkgRunOprUtl.pRunOprByMainOrd(:dep_id, :id, 'REG_SHD', '');\n    end if;\n        \n    -- Предоставление\n    if T_PkgRunOprUtl.fOprAvailable(:dep_id, :id, 'LOAN_OUT') = 2 then\n        if :issueAccountNo is not null then\n            cIssueParams := 'ACC_CODE=>' || :issueAccountNo;\n        end if;\n        T_PkgRunOprUtl.pRunOprByMainOrd(:dep_id, :id, 'LOAN_OUT', cIssueParams);\n    end if;\n\n\n    :bopCode := T_PkgProcess.fGetBopIdByMainOrd(:dep_id, :id);\n    :state := T_PkgProcess.fGetStatCodeByMainOrd(:dep_id, :id);\n    :stateName := T_PkgProcess.fGetStatNameByMainOrd(:dep_id, :id);\nend;\n\"\"\"\n\nfrom colvir_cbs.services import log\n\n#\n# Выдача кредита\n#\n\nwith initDbSession(application='colvir_cbs').cursor() as cursor:\n    p = {\n        'dep_id': parameters['dep_id'],\n        'id': parameters['id'],\n        'issueAccountNo': parameters.get('issueAccountNo'),\n        'state': cursor.var(str),\n        'stateName': cursor.var(str),\n        'bopCode': cursor.var(str),\n    }\n    \n    try:\n        cursor.execute(SQL, p)\n    except Exception as e:\n        raise UserException({\n            'message': 'Ошибка актуализации договора\\n%s' % e,\n            'trace': log.readLog()\n        })\n    \n    data = {\n        'state': p['state'].getvalue(),\n        'stateName': p['stateName'].getvalue(),\n        'log': log.readLog(),\n    }\n\n"
+            }
+        },
+        "getState": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "SQL = \"\"\"\ndeclare\nbegin\n    :bopCode := T_PkgProcess.fGetBopIdByMainOrd(:dep_id, :id);\n    :state := T_PkgProcess.fGetStatCodeByMainOrd(:dep_id, :id);\n    :stateName := T_PkgProcess.fGetStatNameByMainOrd(:dep_id, :id);\nend;\n\"\"\"\n\n#\n# Получение остояния договора\n#\n\nwith initDbSession(application='bank').cursor() as cursor:\n    p = {\n        'dep_id': parameters['dep_id'],\n        'id': parameters['id'],\n        'state': cursor.var(str),\n        'stateName': cursor.var(str),\n        'bopCode': cursor.var(str),\n    }\n    \n    try:\n        cursor.execute(SQL, p)\n    except Exception as e:\n        raise UserException({\n            'message': 'Ошибка определения состояния договора\\n%s' % e,\n            'trace': AO.bank_log.readLog()\n        })\n    \n    data = {\n        'state': p['state'].getvalue(),\n        'stateName': p['stateName'].getvalue(),\n    }\n\n"
+            }
+        },
+        "lookupLoan": {
+            "sql": {
+                "params": [
+                    "clientCode"
+                ],
+                "sqlType": "query",
+                "database": "colvir_cbs",
+                "sql": "select\n    d.refer \"refer\",\n    T_PkgDea.fDclCode(d.dcl_id) \"product\",\n    T_PkgDea.fDclName(d.dcl_id) \"productName\",\n    o.dord \"date\",\n    o.code \"number\",\n    case l.typ\n        when 'loan' then d.sdok\n        when 'line' then l.limpay\n    end \"amount\",\n    T_PkgVal.fGetCode(o.val_id) \"currency\",\n    d.fromdate \"fromDate\",\n    d.todate \"toDate\",\n\n    (\n        select T_PkgArl.fPcnVal(ao.DEP_ID, ao.ORD_ID, c.PCN_ID, P_MAXDATE, 1, 0) \n        from T_ARLDEA ao, T_ARLCLC c, T_ARLDSC_STD a, T_PCN s\n        where ao.CLC_ID = c.ID and c.ARL_ID = a.ID \n            and ao.DEP_ID = d.DEP_ID and ao.ORD_ID = d.ID \n            and s.ID(+) = c.PCN_ID and a.code='CR_INTER'\n    ) \"interest\",\n    \n    \n    d.*\nfrom\n    t_ord o,\n    t_dea d,\n    (\n        select 'loan' typ, dep_id, id, null limpay from l_dea\n        union all\n        select 'line', dep_id, id, sumlimpay from l_ldea\n    ) l\nwhere d.dep_id=l.dep_id and d.id=l.id\n    and o.dep_id=d.dep_id and o.id=d.id\n    and (:clientCode is null or :clientCode is not null and\n        (d.cli_dep_id, d.cli_id)=(select dep_id, id from g_cli where code=:clientCode)\n    )\n"
+            },
+            "script": {
+                "params": []
+            }
+        },
+        "saveCoborrowers": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "SQL=\"\"\"\ndeclare\n    idCliDep G_CLI.DEP_ID%%type;\n    idCli G_CLI.ID%%type;\n    iExists integer;\nbegin\n    t_log.penable; t_log.clean;\n\n    -- Карточка клиента\n    g_pkgcli.pGetCliId(:coborrowerCode, idCliDep, idCli);\n    \n    select count(*) into iExists from M_DEAPRS\n    where DEP_ID = :dep_id and ID = :id and PRSDEP_ID = idCliDep and PRS_ID = idCli;\n    \n    if iExists = 0 then\n        L_pkgLoans.pAddDeaPrs(:dep_id, :id, idCliDep, idCli);\n    end if;\nend;\n\n\"\"\"\n\nwith initDbSession(application='colvir_cbs').cursor() as cursor:\n    p = []\n    \n    for cb in parameters['coborrowers']:\n        p.append({\n            'dep_id': parameters['dep_id'],\n            'id': parameters['id'],\n            'coborrowerCode': cb['code']\n        })\n    \n    try:\n        cursor.executemany(SQL, p)\n    except Exception as e:\n        from colvir_cbs.services import log\n        raise UserException({\n            'message': 'Ошибка сохранения созаёмщиков\\n%s' % e,\n            'trace': log.readLog()\n        })\n    \n    data = {}\n\n"
+            }
+        },
+        "getClientLines": {
+            "sql": {},
+            "script": {
+                "py": "SQL = \"\"\"\nselect\n    d.DEP_ID, -- ключ договора линии\n    d.ID, -- ключ договора линии\n    c.CODE as DCL_CODE, -- код продукта\n    c.LONGNAME as DCL_NAME, -- наииенование продукта\n    o.CODE, -- ноиер договора линии\n    d.FROMDATE, --дата начала\n    d.TODATE,  -- дата окончания\n    \n    -- лимит задолженности\n    nvl(L_PkgDeaLim.fGetLim(l.DEP_ID,l.ID,'0',dOp=>p_operday,iIgnoresc=>1), d.SDOK)/power(10, t_PkgVal.fGetFac(o.VAL_ID)) AMOUNT,\n    \n    -- лимит выдачи\n    nvl(L_PkgDeaLim.fGetLim(l.DEP_ID,l.ID,'1',dOp=>p_operday,iIgnoresc=>1),l.SUMLIMPAY)/power(10, t_PkgVal.fGetFac(o.VAL_ID)) as SUMLIMPAY,\n    \n    -- код валюты линии\n    substr(T_PkgVal.fGetCode(o.VAL_ID),1,3) as VAL_CODE,\n    \n    -- Процентная ставка по линии\n    -- Процентную ставку берем именно последнюю, на P_MAXDATE чтобы исключить ньюансы с оперднём \n    (\n        select T_PkgArl.fPcnVal(ao.DEP_ID, ao.ORD_ID, c.PCN_ID, P_MAXDATE, 1, 0) \n        from T_ARLDEA ao, T_ARLCLC c, T_ARLDSC_STD a, T_PCN s\n        where ao.CLC_ID = c.ID and c.ARL_ID = a.ID \n            and ao.DEP_ID = o.DEP_ID and ao.ORD_ID = o.ID \n            and s.ID(+) = c.PCN_ID and a.code='CR_INTER'\n    ) RATE,\n            \n    lp.CODE as PUR_CODE,  -- цель\n    lp.LONGNAME as PUR_NAME,\n        \n    L_pkgDeaUniRef.fGetRefValCode(l.DEP_ID, l.ID,'UZ_TZ') as Type_Cli,\n    L_pkgDeaUniRef.fGetRefValLongname(l.DEP_ID, l.ID,u_pkguniref.fRefCode2Id('UZ_TZ')) as Type_Cli_NAME,\n           \n    d.REFER, -- референс договора (не показывать)\n    \n    --Доступный остаток\n    decode(\n        L_BSLOANLINE.fGetRestLim(l.dep_id, l.id, 1, d.cli_dep_id, d.cli_id, null),\n        0, L_BSLOANLINE.fGetRestLim(l.dep_id, l.id, 0, d.cli_dep_id, d.cli_id, null),\n        L_BSLOANLINE.fGetRestLim(l.dep_id, l.id, 1, d.cli_dep_id, d.cli_id, null)\n    ) as ost,\n    \n    -- Заявка на линию\n    (\n        select\n            m3.json\n        from T_PROCMEM m1, T_PROCINH ph, T_PROCMEM m2, L_REQDEA m3 \n        where PH.Child_Id=M1.ID and m1.mainfl='1' and M2.ID = ph.parent_id and m2.mainfl='1'\n            and M1.DEP_ID = l.dep_id and M1.ORD_ID = l.ID and M3.ID=m2.ORD_ID and M3.DEP_ID=m2.DEP_ID\n            and rownum=1\n    ) reqjson\n      \nfrom\n    T_ORD o, G_CLI g, T_DEA d, T_PROCESS p, T_BOP_STAT s, T_PROCMEM m, T_DEACLS c, L_PURDSC lp,\n    L_LDEA l\nwhere o.DEP_ID = d.DEP_ID and o.ID = d.ID\n    and l.DEP_ID = d.DEP_ID and l.ID = d.ID\n    and d.DEP_ID = m.DEP_ID and d.ID = m.ORD_ID and m.MAINFL = '1'\n    and p.ID = m.ID and s.ID = p.BOP_ID and s.NORD = p.NSTAT\n    and c.ID = d.DCL_ID\n    and s.CODE = 'ACTUAL'  -- Берем только актуальные линии \n    and BS_OPERATION.fIsParentWait(p.ID)=0\n    and l.pur_id = lp.ID(+)\n    and exists (select 1 from dual where C_PkgGrant.FChkCliDet(d.CLI_DEP_ID, d.CLI_ID)=1) -- доступ пользователя к клиенту\n    and d.CLI_ID = g.ID  and d.CLI_DEP_ID = g.DEP_ID\n    and d.FROMDATE <= P_OPERDAY  -- Линии актуальные на текущую дату, не будущую. Пользователи на тестах часто путаются\n    and g.CODE = :clientCode \norder by d.fromdate desc\n\"\"\"\nfrom apng_core.db import fetchall\ndef getClientLines(params):\n    with initDbSession(application='colvir_cbs').cursor() as cursor:\n        p = {\n            'clientCode': params.get('clientCode')\n        }\n        \n        cursor.execute(SQL, p)\n        \n        d = fetchall(cursor)\n        \n        for row in d:\n            if row['REQJSON'] is not None:\n                j = json.loads(row['REQJSON'].read())\n                row['app'] = j\n                del row['REQJSON']\n        \n        return d\n\ndata = getClientLines(parameters)\n"
+            }
+        }
+    },
+    "lists": {},
+    "references": {},
+    "js": {}
+}

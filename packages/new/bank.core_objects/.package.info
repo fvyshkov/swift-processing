@@ -1,0 +1,277 @@
+{
+    "packageId": "d93d179f-8bc0-4d55-8e3d-2402069494f1",
+    "packageName": "bank.core_objects",
+    "configs": [
+        {
+            "id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "name": "Application object",
+            "model_name": "aoa.Object"
+        }
+    ],
+    "content": [
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "4b7ae702-3687-42f3-8207-65aeee0eecdf",
+            "object_name": "Bank users",
+            "object_attrs": {
+                "code": "bank_user",
+                "name": "Bank users"
+            },
+            "file_name": "ao/bank_user.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "f39435e5-efdd-41f5-9855-4a563472144e",
+            "object_name": "Currency",
+            "object_attrs": {
+                "code": "bank_currency",
+                "name": "Currency"
+            },
+            "file_name": "ao/bank_currency.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "6e9ae724-b57b-4617-a757-e0577cb7a0d6",
+            "object_name": "Database log records",
+            "object_attrs": {
+                "code": "bank_log",
+                "name": "Database log records"
+            },
+            "file_name": "ao/bank_log.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "1d90ca21-9a93-4801-88e8-f29c6a35f3ce",
+            "object_name": "Виды обеспечения",
+            "object_attrs": {
+                "code": "pledgeType",
+                "name": "Виды обеспечения"
+            },
+            "file_name": "ao/pledgeType.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "0c5dcdbb-d114-454d-b207-d1e1020b9e47",
+            "object_name": "Домен",
+            "object_attrs": {
+                "code": "bank_domain",
+                "name": "Домен"
+            },
+            "file_name": "ao/bank_domain.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "55c22796-0978-421c-ac5d-8562e814fd7d",
+            "object_name": "Досье CBS",
+            "object_attrs": {
+                "code": "bank_dossier",
+                "name": "Досье CBS"
+            },
+            "file_name": "ao/bank_dossier.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "3381f81e-4b98-4f06-a82e-5a99fb744ae1",
+            "object_name": "Карточка клиента",
+            "object_attrs": {
+                "code": "client",
+                "name": "Карточка клиента"
+            },
+            "file_name": "ao/client.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "005de5a6-88a8-45f0-a77d-cc7094e3bc26",
+            "object_name": "Контроли по документам",
+            "object_attrs": {
+                "code": "bank_ordcheck",
+                "name": "Контроли по документам"
+            },
+            "file_name": "ao/bank_ordcheck.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "fe4fd498-15f9-46b4-a43c-5e92fd697100",
+            "object_name": "Кредит",
+            "object_attrs": {
+                "code": "loan",
+                "name": "Кредит"
+            },
+            "file_name": "ao/loan.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "24f62b73-6fda-4daa-81ad-61c52ac551d5",
+            "object_name": "Модель транспортного средства",
+            "object_attrs": {
+                "code": "vehicleModel",
+                "name": "Модель транспортного средства"
+            },
+            "file_name": "ao/vehicleModel.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "9fada5da-6f04-4397-88ac-0639e88d4d72",
+            "object_name": "Нормативно правовой акт",
+            "object_attrs": {
+                "code": "legalAct",
+                "name": "Нормативно правовой акт"
+            },
+            "file_name": "ao/legalAct.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "567d3da1-d78a-42fb-8045-73e7bafbb539",
+            "object_name": "Общие сервисы по структуре банка",
+            "object_attrs": {
+                "code": "cbs.bank",
+                "name": "Общие сервисы по структуре банка"
+            },
+            "file_name": "ao/cbs.bank.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "6dc0bf7e-b46f-4766-8ea5-c2c04dec7c93",
+            "object_name": "Объекты залога",
+            "object_attrs": {
+                "code": "bank_pledge",
+                "name": "Объекты залога"
+            },
+            "file_name": "ao/bank_pledge.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "13589894-8524-47ef-adb1-d1cf8353e4a8",
+            "object_name": "Правила кодирования",
+            "object_attrs": {
+                "code": "bank_coderule",
+                "name": "Правила кодирования"
+            },
+            "file_name": "ao/bank_coderule.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "ddd2567d-c9bd-4d2b-acdd-59517b09c402",
+            "object_name": "Продукт",
+            "object_attrs": {
+                "code": "product",
+                "name": "Продукт"
+            },
+            "file_name": "ao/product.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "e3a7570c-5b6d-46a3-922b-64a78b112787",
+            "object_name": "Таблицы решений",
+            "object_attrs": {
+                "code": "cbs.dectbl",
+                "name": "Таблицы решений"
+            },
+            "file_name": "ao/cbs.dectbl.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "404efd51-eb92-4fd2-bb1a-6c5ceff47a72",
+            "object_name": "Типы лимитов по продукту",
+            "object_attrs": {
+                "code": "productLimitType",
+                "name": "Типы лимитов по продукту"
+            },
+            "file_name": "ao/productLimitType.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "7265aa8c-22df-4473-be3c-603ff59e5213",
+            "object_name": "Универсальные справочники CBS",
+            "object_attrs": {
+                "code": "bank_uniref",
+                "name": "Универсальные справочники CBS"
+            },
+            "file_name": "ao/bank_uniref.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "6c395bf6-554d-45d7-a509-bb6357a3904f",
+            "object_name": "Цель кредита",
+            "object_attrs": {
+                "code": "purposeOfLoan",
+                "name": "Цель кредита"
+            },
+            "file_name": "ao/purposeOfLoan.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "22e986f4-3790-4a73-90b5-99d7d41fcc31",
+            "object_name": "Гарантии",
+            "object_attrs": {
+                "code": "cbs.guarantee",
+                "name": "Гарантии"
+            },
+            "file_name": "ao/cbs.guarantee.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "9b76fcd6-f8ae-4a24-937a-08af2653cc66",
+            "object_name": "Генератор отчетов cbs",
+            "object_attrs": {
+                "code": "cbs.report",
+                "name": "Генератор отчетов cbs"
+            },
+            "file_name": "ao/cbs.report.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "d0eca55f-a8ed-4ca5-9488-c7fdd9f20be7",
+            "object_name": "Операции CBS3",
+            "object_attrs": {
+                "code": "cbs.oper",
+                "name": "Операции CBS3"
+            },
+            "file_name": "ao/cbs.oper.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "f971653a-8541-4da1-a667-f12b649bfeb8",
+            "object_name": "Пластиковые карты",
+            "object_attrs": {
+                "code": "card",
+                "name": "Пластиковые карты"
+            },
+            "file_name": "ao/card.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "80fce8bd-d8a1-4f85-a606-f9ae952532a2",
+            "object_name": "Подразделение",
+            "object_attrs": {
+                "code": "department",
+                "name": "Подразделение"
+            },
+            "file_name": "ao/department.json"
+        }
+    ]
+}

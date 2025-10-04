@@ -1,0 +1,268 @@
+<workflow id="APP_STOP_FACTORS_JUR" name="Расчет стоп факторов юрлиц">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <timer id="cd4d467c-1735-4546-ad48-7c3376a807ff" name="Расчет стопфакторов юрлиц" description="Расчет стопфакторов юрлиц, {{po.app.code}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <script id="init" name="Инициализация">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+
+#
+# Формируем ключ объекта для обращения к аналитической платформе
+#
+process_vars['MIS_OBJ'] = po['client']['code']
+process_vars['MIS_OBJ_URI'] = po['client']['code']
+
+    
+
+from apng_core.aoa.services import execObjectMethod
+pv['appSettings'] = execObjectMethod({
+    'object': 'settings',
+    'method': 'get'
+})['loanapp']
+]]>
+    </script>
+    <script id="7dbdc465-26d0-4f01-b8f1-6db9d836af48" name="Стадия рассмотрения">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser() as au:
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'stage': 'STOPFACTORS',
+        }
+    })
+
+]]>
+    </script>
+    <call id="ac2f6aba-2850-4291-b04a-5444389eed4e" name="Запрос отчетов в АСОКИ" call="lv[&apos;SCORING_WORKFLOW&apos;]" condition="pv[&apos;appSettings&apos;][&apos;katm&apos;].get(&apos;emulator&apos;, False) == False" result_from="last_error" result_to="last_error">
+        <event name="beforeExecute">
+            <![CDATA[lv['SCORING_WORKFLOW'] = next(filter(lambda x: x['code']=='AsokiScoringWorkflow', pv['appSettings'].get('parameters', [])), {'value': 'APP_ASOKI_REPORT'})['value']]]>
+        </event>
+    </call>
+    <split id="c40e1cd7-7813-4ba7-9e95-d2805ccd6eb9" name="Ошибки получения отчетов АСОКИ">
+        <condition id="84a54a84-c73b-4a25-aa1b-bc708b7a9aa9" name="Отказать в выдаче" expression=" pv.get(&apos;last_error&apos;) is not None">
+            <script id="3f7ef743-cabb-48b7-9c05-d4cf41c9571f" name="Установка результата">
+                <![CDATA[pv['STOP_FACTORS'] = {
+    'status': 'decline',
+    'statusName': 'Отказано банком'
+}
+]]>
+            </script>
+            <terminate id="4b8c22de-40c3-471e-8e02-fad9386bf55d" name="Конец"/>
+        </condition>
+        <condition id="f23ee10d-778c-442d-b5ea-158f89effb7d" name="Нет"/>
+    </split>
+    <timer id="92ae4c6d-d57c-4332-a7c9-953e0eb89213" name="Анализ стоп факторов" description="Анализ стоп факторов, заявка {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="afs_stop_factors" name="Стоп факторы">
+        <![CDATA[import json
+import traceback
+from apng_core.csl import Csl
+
+def ensureDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return '%02d.%02d.%04d' % (d.day, d.month, d.year)
+    return val
+    
+def ensureIsoDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return d
+    return val
+    
+
+pv['last_error'] = None
+
+
+try:
+    with Csl('CSL_APP_URL') as csl:
+        if po['afs'].get('monitoringId'):
+            response = csl.request(
+                '/FSAProcessor/GetResults',
+                {
+                    'id': po['afs']['monitoringId'],
+                    'path': 'MTH=>%s,SHT=>SF' % po['afs']['method'],
+                    'periods': pv['tax_periods']
+                }
+            )
+        else:
+            response = csl.request(
+                '/ESProcessor/GetResults',
+                {
+                    'path': 'MTH=>{},SHT=>SF'.format(po['afs']['method']),
+                    'key': {
+                        'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                        'DOP': ensureIsoDate(po['app']['registrationDate'])
+                    }
+                }
+            )
+            
+        
+
+    if response.status_code != 200:
+        pv['last_error'] = csl.extractLastError()
+        
+        if 'ORA-20000: CBS-01210' in pv['last_error']['message']:
+            # Обрабатываем кривую сессию автоматически
+            raise UserException(pv['last_error'])
+    else:
+        r = json.loads(response.content)
+        pv['service_result'] = r
+    
+        if r['RESULT'].get('error'):
+            msg = r['RESULT'].get('error')
+            del r['RESULT']
+            raise UserException({
+                'message': 'Ошибка расчета стопфакторов\n%s' % msg,
+                'trace': json.dumps(r, indent=4, ensure_ascii=False)
+            })
+
+    
+        pv['STOP_FACTORS'] = {
+            'status': r['RESULT_CODE']['sql_value'],
+            'text': r['RESULT']['hint'] + ': ' + r['RESULT']['sql_value'],
+        }
+        
+
+except UserException:
+    raise
+
+except Exception as e:
+    raise UserException({
+        'message': 'Ошибка расчета стопфакторов, заявка %s, %s\n%s' % (
+            po['app']['code'],
+            po['client']['name'],
+            e
+        ),
+        'trace': traceback.format_exc(),
+    })
+
+    
+if False:
+    pv['last_error'] = {
+        'message': 'Тест ошибки сервиса расчета стоп факторов'
+    }
+    ]]>
+    </script>
+    <split id="test_sf" name="Результат сервиса">
+        <condition id="test_sf_fail" name="Ошибка сервиса" expression=" pv.get(&apos;last_error&apos;) is not None">
+            <task id="display_sf_error" name="Показ ошибки сервиса расчета стоп факторов" autoStart="true" description="Ошибка расчета стоп факторов, {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/easyflow/error-dialog" taskName="{{task.description}}">
+                    <p name="caption" expression="&apos;Ошибка сервиса расчета стоп факторов, заявка %s&apos; % (po[&apos;app&apos;][&apos;code&apos;])"/>
+                    <p name="error" expression="pv[&apos;last_error&apos;]"/>
+                    <p name="actionVar" expression="&apos;action&apos;"/>
+                    <p name="actions" expression="[{ &apos;name&apos;: &apos;Повторить запрос&apos;, &apos;value&apos;: &apos;repeat&apos;}, { &apos;name&apos;: &apos;Отказ клиента&apos;, &apos;value&apos;: &apos;declineClient&apos;}, ]"/>
+                    <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+                </clientTask>
+            </task>
+            <split id="user_decision" name="Решение пользователя">
+                <condition id="user_decision_repeat" name="Повторить" expression=" pv.get(&apos;action&apos;) == &apos;repeat&apos; ">
+                    <jump id="repeat_sf" name="Переход к Анализ стоп факторов" target_id="92ae4c6d-d57c-4332-a7c9-953e0eb89213"/>
+                </condition>
+                <condition id="user_decision_reject" name="Отказ клиента" expression=" pv.get(&apos;action&apos;) == &apos;declineClient&apos; ">
+                    <script id="set_result_reject" name="Установка отказа">
+                        <journal time="leave">
+                            <![CDATA[Выполнен отказ клиента по результатам ошибок при расчете стоп факторов. {{pv.last_error.message}}]]>
+                        </journal>
+                        <![CDATA[
+pv['STOP_FACTORS'] = {
+    'status': 'declineClient',
+    'text': 'Отказано пользователем',
+}
+                    ]]>
+                    </script>
+                    <terminate id="6435b706-29a3-4383-8e19-16e8b0a77255" name="Завершение"/>
+                </condition>
+            </split>
+        </condition>
+        <condition id="test_service_success" name="Обработка результата сервиса">
+            <timer id="6d13e329-32bb-4428-a18c-9917c38bbef4" name="Получение отчета по стоп факторам" description="" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+            <script id="7ee82887-5a30-4a5b-a7d7-f63fa4fe91d2" name="Получение отчета по стоп факторам">
+                <![CDATA[from apng_core.csl import Csl
+import base64
+
+with Csl('CSL_APP_URL') as csl:
+
+    mis_mth = po['afs']['method']
+    mis_rpt = 'SCRG_SF'
+
+    if po['afs'].get('monitoringId') is None:
+        pv['reportRequest'] = {
+            'path': 'MTH=>%s,RPT=>%s' % (mis_mth, mis_rpt),
+            'parameters': {
+                'OBJ': '%s,%s' % (pv['dep_id'], pv['id']),
+                'DOP': po['app']['registrationDate']
+            } 
+        }
+    else:
+        pv['reportRequest'] = {
+            'path': 'MTH=>%s,RPT=>%s' % (mis_mth, mis_rpt),
+            'parameters': {
+                'id': po['afs']['monitoringId'],
+                'crereq': '%s,%s' % (pv['dep_id'], pv['id']),
+                'periods': pv.get('tax_periods'),
+            }
+        }
+        
+    response = csl.request('/ESProcessor/GetReport', pv['reportRequest'])
+
+    if response.status_code != 200:
+        raise UserException({
+            'description': json.dumps(pv['reportRequest'], indent=4),
+        }).withError(csl.extractLastError())
+        
+
+    pv['reportData'] = base64.b64encode(response.content).decode('ascii')
+    
+import urllib
+pv['reportUrl'] = '/aoa/execObjectMethod?'+urllib.parse.urlencode({
+    'object': 'easyflow',
+    'method': 'downloadAttribute',
+    'params': json.dumps({
+        'tokenId': token.process.id.__str__(),
+        'attribute': 'reportData',
+        'content-type': 'application/pdf',
+        'filename': 'app-%s-stopfactors.pdf' % po['app']['code']
+    })
+})
+]]>
+            </script>
+        </condition>
+    </split>
+    <script id="sf_result" name="Журнализация результата">
+        <journal time="leave">
+            <![CDATA[Стоп факторы: {{pv.STOP_FACTORS.text}}/// {{pv.reportUrl}}]]>
+        </journal>
+    </script>
+</workflow>

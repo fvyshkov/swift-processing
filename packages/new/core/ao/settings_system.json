@@ -1,0 +1,196 @@
+{
+    "lists": {},
+    "forms": {
+        "settingsForm": {
+            "title": "System settings",
+            "className": "vertical",
+            "$": {
+                "@languages": {
+                    "className": "vertical",
+                    "title": "Languages",
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Add",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "js": "context.ctxLng.selectedRow=null;"
+                                            },
+                                            {
+                                                "name": "viewLanguage",
+                                                "params": {
+                                                    "language": {}
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "View",
+                                        "icon": "view",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "viewLanguage",
+                                            "params": {
+                                                "language$": "context.ctxLng.selectedRow"
+                                            }
+                                        },
+                                        "disabled$": "!context.ctxLng?.selectedRow"
+                                    },
+                                    {
+                                        "title": "Delete",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "disabled$": "!context.ctxLng?.selectedRow",
+                                        "action": {
+                                            "name": "deleteLanguage",
+                                            "confirm": {
+                                                "title": "Удаление",
+                                                "message$": "`Delete language ${context.ctxLng.selectedRow.code}?`",
+                                                "yes": "Да",
+                                                "no": "Нет"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "|languages": {
+                            "control": "ListTable",
+                            "controlProps": {
+                                "listContext$": "(()=>{context.ctxLng = context.ctxLng||{}; return context.ctxLng;})()"
+                            },
+                            "controlOpts": {
+                                "id": "code",
+                                "compact": true,
+                                "columns!": {
+                                    "code": {
+                                        "label": "Code",
+                                        "width": 60
+                                    },
+                                    "name": {
+                                        "label": "Name",
+                                        "flex": 1
+                                    },
+                                    "available": {
+                                        "label": "Available",
+                                        "width": 60,
+                                        "control": "checkbox"
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onRowDoubleClicked": {
+                                    "name": "viewLanguage",
+                                    "params": {
+                                        "language": "context.ctxLng.selectedRow"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "viewLanguage": {
+                            "js": "frontend.dialog({object: 'settings_system', form: 'editLanguageDialog', mem: {...params.language}});"
+                        },
+                        "onSaveLanguage": {
+                            "js": "if(context.ctxLng.selectedRow){mem.languages.splice(mem.languages.indexOf(context.ctxLng.selectedRow), 1, params.language)}else{mem.languages.push(params.language);} mem.languages = [...mem.languages];"
+                        },
+                        "deleteLanguage": {
+                            "js": "mem.languages.splice(mem.languages.indexOf(context.ctxLng.selectedRow), 1); mem.languages=[...mem.languages]; context.ctxLng.selectedRow=null;"
+                        },
+                        "onSelectionChanged": {
+                            "js": ";"
+                        }
+                    }
+                }
+            }
+        },
+        "editLanguageDialog": {
+            "title": "Редактирование языка",
+            "className": "vertical",
+            "dialogStyle": {
+                "width": "400px"
+            },
+            "style": {
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "4px",
+                        "flexGrow": 1,
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "code": {
+                            "label": "Code",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name": {
+                            "label": "Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "available": {
+                            "label": "Available",
+                            "control": "Checkbox",
+                            "default": false
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Abort';"
+                                },
+                                {
+                                    "name": "onSaveLanguage",
+                                    "params": {
+                                        "language$": "mem"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "js": {},
+    "methods": {},
+    "references": {}
+}

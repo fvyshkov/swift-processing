@@ -1,0 +1,167 @@
+[
+    {
+        "msgctxt": null,
+        "msgid": "Code",
+        "msgstr": "Код"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Name",
+        "msgstr": "Наименование"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Workplaces",
+        "msgstr": "Рабочие места"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Refresh",
+        "msgstr": "Обновить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Create",
+        "msgstr": "Создать"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "View",
+        "msgstr": "Открыть"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Delete",
+        "msgstr": "Удалить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Tools",
+        "msgstr": "Инструменты"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Packages",
+        "msgstr": "Пакеты"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "History",
+        "msgstr": "История"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Filter",
+        "msgstr": "Фильтр"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Clear",
+        "msgstr": "Очистить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Apply",
+        "msgstr": "Применить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "View user",
+        "msgstr": "Просмотр пользователя"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Save",
+        "msgstr": "Сохранить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "User code",
+        "msgstr": "Код пользователя"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "User name",
+        "msgstr": "Наименование пользователя"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Position",
+        "msgstr": "Позиция"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Keep session",
+        "msgstr": "Удерживать сессию"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Work places",
+        "msgstr": "Рабочие места"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Add",
+        "msgstr": "Добавить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "UI Language",
+        "msgstr": "Язык интерфейса"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Is admin",
+        "msgstr": "Администратор"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Groups",
+        "msgstr": "Группы"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Monitoring profiles",
+        "msgstr": "Профили мониторинга"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Language changed",
+        "msgstr": "Язык интерфейса изменен"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "OK",
+        "msgstr": null
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Select user dialog",
+        "msgstr": null
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Cancel",
+        "msgstr": "Отменить"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Select",
+        "msgstr": "Выбрать"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Login",
+        "msgstr": null
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Substitute user",
+        "msgstr": "Подменить пользователя"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "User Code",
+        "msgstr": "Код пользователя"
+    }
+]

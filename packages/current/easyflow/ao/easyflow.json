@@ -1,0 +1,1928 @@
+{
+    "forms": {
+        "activeTimersTask": {
+            "title": "Астивные таймеры",
+            "className": "task task-panel",
+            "$": {
+                "@taskBar": {
+                    "className": "horizontal",
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "style": {
+                                "padding": "8px"
+                            },
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Обновить",
+                                        "icon": "refresh",
+                                        "mini": true,
+                                        "action": {
+                                            "js": "task.events.fireEvent('onRefreshTimers');"
+                                        }
+                                    },
+                                    {
+                                        "title": "Просмотреть",
+                                        "icon": "view",
+                                        "mini": true,
+                                        "action": {
+                                            "js": "frontend.dialog({object: 'easyflow', form: 'tokenInfoDialog', params: {id: context.selectedToken.id}})"
+                                        },
+                                        "disabled$": "!context.selectedToken"
+                                    }
+                                ]
+                            }
+                        },
+                        ".spacer": {
+                            "style": {
+                                "flexGrow": 1
+                            }
+                        },
+                        ".btnFilter": {
+                            "label": "Фильтр",
+                            "style": {
+                                "padding": "8px"
+                            },
+                            "control": "Button",
+                            "controlOpts": {
+                                "startIcon": "tune",
+                                "badge": {
+                                    "content$": "Object.keys(mem.filter||{}).length"
+                                }
+                            },
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "context.filterVisible =  !context.filterVisible;"
+                                },
+                                {
+                                    "name": "refresh"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "@filterPortal": {
+                    "style": {
+                        "position": "relative"
+                    },
+                    "visible$": "context.filterVisible || false",
+                    "$": {
+                        "@filterForm": {
+                            "className": "vertical",
+                            "style": {
+                                "position": "absolute",
+                                "minHeight": "100px",
+                                "width": "320px",
+                                "top": 0,
+                                "right": 0,
+                                "zIndex": 1,
+                                "backgroundColor": "rgb(255, 255, 255)",
+                                "borderRadius": "4px",
+                                "boxShadow": "rgba(0, 0, 0, 0.32) 0px 3px 6px 0px",
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "@form": {
+                                    "$": {
+                                        "filter": {
+                                            "className": "vertical",
+                                            "$": {
+                                                "id": {
+                                                    "label": "id",
+                                                    "control": "TextEdit"
+                                                },
+                                                "process_id": {
+                                                    "label": "process Id",
+                                                    "control": "TextEdit"
+                                                },
+                                                "flow_id": {
+                                                    "label": "flow Id",
+                                                    "control": "TextEdit"
+                                                },
+                                                "description__icontains": {
+                                                    "label": "Содержит",
+                                                    "control": "TextEdit"
+                                                },
+                                                "errorsOnly": {
+                                                    "label": "Только ошибки",
+                                                    "control": "Checkbox"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "@buttons": {
+                                    "className": "horizontal",
+                                    "style": {
+                                        "justifyContent": "start"
+                                    },
+                                    "$": {
+                                        "btnClean": {
+                                            "label": "Очистить",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "outlined",
+                                                "color": "primary"
+                                            },
+                                            "action": [
+                                                {
+                                                    "js": "mem.filter = {}"
+                                                },
+                                                {
+                                                    "name": "refreshFilter"
+                                                }
+                                            ]
+                                        },
+                                        "btnApply": {
+                                            "label": "Применить",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "contained",
+                                                "color": "primary"
+                                            },
+                                            "action": [
+                                                {
+                                                    "name": "onApplyFilter"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refreshFilter": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "|timers": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "control": "ListTable",
+                    "controlProps": {
+                        "style": {
+                            "height": "100%"
+                        },
+                        "context$": "context.listContext",
+                        "gridOptions": {
+                            "domLayout": "normal",
+                            "getRowStyle$": "(function(p){return p?.data?.task_state=='error' && {color: '#f44336'}})"
+                        }
+                    },
+                    "controlOpts": {
+                        "rowModelType": "infinite",
+                        "id": "id",
+                        "compact": true,
+                        "columns!": {
+                            "id": {
+                                "label": "id",
+                                "compact": true,
+                                "width": 277,
+                                "fields": {
+                                    "workflow_id": {},
+                                    "id": {}
+                                }
+                            },
+                            "created": {
+                                "label": "Создан",
+                                "width": 150,
+                                "format": "datetimesec"
+                            },
+                            "started": {
+                                "label": "Запуск",
+                                "width": 150,
+                                "fields": {
+                                    "started": {
+                                        "format": "datetimesec"
+                                    },
+                                    "scheduled": {
+                                        "format": "datetimesec"
+                                    }
+                                }
+                            },
+                            "wait_time": {
+                                "label": "Ожидание",
+                                "width": 150,
+                                "format": "duration"
+                            },
+                            "initiator": {
+                                "label": "Инициатор",
+                                "width": 140
+                            },
+                            "description": {
+                                "label": "Описание",
+                                "flex": 1,
+                                "cellStyle": {
+                                    "whiteSpace": "normal !important",
+                                    "lineHeight": 1.4,
+                                    "display": "flex",
+                                    "alignItems": "center"
+                                }
+                            }
+                        },
+                        "refreshEvent": "onRefreshTimers"
+                    },
+                    "actions": {
+                        "onGetRows": {
+                            "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'getActiveTimerList', params: {request: {...params.request, filterModel2: mem.filter}}}).then(r=>onSuccess(r))"
+                        },
+                        "onSelectionChanged": [
+                            {
+                                "js": "context.selectedToken = selectedRow;"
+                            },
+                            {
+                                "name": "refresh"
+                            }
+                        ]
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "context.listContext = {listRequestCache: []};"
+                },
+                "onApplyFilter": [
+                    {
+                        "js": "task.events.fireEvent('onRefreshTimers')"
+                    },
+                    {
+                        "js": "context.filterVisible=false;"
+                    }
+                ],
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "journalTask": {
+            "title": "Журнал процесса",
+            "className": "task task-panel",
+            "$": {
+                "@processFilter": {
+                    "$": {
+                        "objectKey": {
+                            "label": "Ключ объекта",
+                            "control": "TextEdit"
+                        },
+                        ".btnApply": {
+                            "label": "Применить",
+                            "control": "Button",
+                            "action": {
+                                "name": "refresh"
+                            }
+                        }
+                    }
+                },
+                "@journal": {
+                    "style": {
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        ".state": {
+                            "control": "ModuleComponent",
+                            "controlProps": {
+                                "componentPath": "/easyflow/state",
+                                "objectKey$": "mem.objectKey",
+                                "lastUpdate$": "context.lastUpdate"
+                            }
+                        }
+                    },
+                    "params": {
+                        "objectKey$": "mem.objectKey"
+                    }
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": "context.lastUpdate = +new Date(); forceUpdate();"
+                }
+            }
+        },
+        "createDiagramCopyDialog": {
+            "title": "Создание копии сценария",
+            "style": {
+                "width": "600px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "padding": "4px 0px 8px 0px"
+                    },
+                    "$": {
+                        "code": {
+                            "label": "Код",
+                            "control": "TextEdit"
+                        },
+                        "name": {
+                            "label": "Наименование",
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Создать",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "js": "console.log('eval context', arguments);"
+                                },
+                                {
+                                    "js": "return backend.post('/easyflow/deployment/getDeploymentById', {deploymentId: params.id}).then((r)=>{context.xmlText = r.data})"
+                                },
+                                {
+                                    "js": "context.xmlDoc = (new DOMParser()).parseFromString(context.xmlText, 'application/xml');"
+                                },
+                                {
+                                    "js": "context.xmlDoc.documentElement.setAttribute('id', mem.code); context.xmlDoc.documentElement.setAttribute('name', mem.name);"
+                                },
+                                {
+                                    "js": "context.walker = context.xmlDoc.createTreeWalker(context.xmlDoc.documentElement, NodeFilter.SHOW_ELEMENT, {acceptNode: node => !!node.id,});"
+                                },
+                                {
+                                    "js": "while (context.walker.nextNode()) {context.walker.currentNode.setAttribute('id', uuidv4());}"
+                                },
+                                {
+                                    "js": "context.targetXmlText = (new XMLSerializer()).serializeToString(context.xmlDoc);"
+                                },
+                                {
+                                    "js": "tm.newTask({path: '/easyflow/diagram-graphics-edit', title: mem.name, data: {deployment: {data: context.targetXmlText}, isModified: true, loaded: true,}})"
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onDialogCreated": {
+                    "js": "mem.code = 'copy_'+params.code; mem.name = 'Копия '+params.name"
+                }
+            }
+        },
+        "tokenInfoDialog": {
+            "title": "Детали токена",
+            "className": "vertical",
+            "style": {
+                "width": "900px",
+                "height": "800px",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "object": "easyflow",
+                    "form": "tokenInfoForm",
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnClose": {
+                            "label": "Закрыть",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "text",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onFormCreated": [
+                    {
+                        "js": "delete task.data.objectKey; delete task.data.$easyflowstate;"
+                    },
+                    {
+                        "name": "onLoadToken"
+                    }
+                ],
+                "onLoadToken": {
+                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'getTokenInfo', params: {id: params.id}}).then(r=>mem.token=r)"
+                }
+            }
+        },
+        "tokenInfoForm": {
+            "title": "Токен",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "token": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        ".tabs": {
+                            "control": "Tabs",
+                            "style": {
+                                "height": "100%",
+                                "display": "flex",
+                                "flexDirection": "column"
+                            },
+                            "controlProps": {
+                                "pages": {
+                                    "tokenDetailInfo": {
+                                        "title": "Токен",
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "auto"
+                                        },
+                                        "$": {
+                                            "@form": {
+                                                "object": "easyflow",
+                                                "form": "tokenCommonInfoForm"
+                                            }
+                                        }
+                                    },
+                                    "tokenVars": {
+                                        "title": "Атрибуты токена",
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "auto"
+                                        },
+                                        "$": {
+                                            "|tokenVars": {
+                                                "$": {
+                                                    "@form": {
+                                                        "object": "easyflow",
+                                                        "form": "tokenVarsForm"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "actions": {
+                                            "onSaveTokenVar": [
+                                                {
+                                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'saveTokenVar', params: {tokenId: mem.id, name: params.name, value: params.value}})"
+                                                },
+                                                {
+                                                    "name": "onLoadToken"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "processVars": {
+                                        "title": "Атрибуты процесса",
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "auto"
+                                        },
+                                        "$": {
+                                            "|processVars": {
+                                                "$": {
+                                                    "@form": {
+                                                        "object": "easyflow",
+                                                        "form": "tokenVarsForm"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "actions": {
+                                            "onSaveTokenVar": [
+                                                {
+                                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'saveTokenVar', params: {tokenId: mem.process_id, name: params.name, value: params.value}})"
+                                                },
+                                                {
+                                                    "name": "onLoadToken"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "candidates": {
+                                        "title": "Кандидаты",
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "auto"
+                                        },
+                                        "$": {
+                                            "@form": {
+                                                "object": "easyflow",
+                                                "form": "taskCandidatesForm"
+                                            }
+                                        },
+                                        "visible$": "mem.type=='task'"
+                                    },
+                                    "journal": {
+                                        "title": "Журнал",
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "auto"
+                                        },
+                                        "$": {
+                                            ".journal": {
+                                                "control": "ObjectJournal",
+                                                "controlProps": {
+                                                    "objectKey$": "mem.objectKey"
+                                                },
+                                                "actions": {
+                                                    "onGetRows": {
+                                                        "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'getObjectJournal', params: {objectKey: mem.objectKey}}).then(r=>onSuccess(r))"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        "tokenCommonInfoForm": {
+            "title": "Общая информация о токене",
+            "className": "vertical",
+            "$": {
+                "@head": {
+                    "className": "horizontal",
+                    "style": {
+                        "width": "100%",
+                        "paddingTop": "8px"
+                    },
+                    "$": {
+                        "@ids": {
+                            "className": "vertical",
+                            "style": {
+                                "flex": 1
+                            },
+                            "$": {
+                                "id": {
+                                    "label": "id",
+                                    "control": "TextEdit"
+                                },
+                                "process_id": {
+                                    "label": "process_id",
+                                    "control": "TextEdit"
+                                },
+                                "parent_id": {
+                                    "label": "parent_id",
+                                    "control": "TextEdit"
+                                },
+                                "flow_id": {
+                                    "label": "flow_id",
+                                    "control": "TextEdit"
+                                },
+                                "deployment_code": {
+                                    "label": "Сценарий",
+                                    "control": "TextEdit"
+                                },
+                                "flow_name": {
+                                    "label": "Действие",
+                                    "control": "TextEdit"
+                                },
+                                "@operations": {
+                                    "$": {
+                                        ".ap": {
+                                            "control": "ActionPanel",
+                                            "controlOpts": {
+                                                "actions": [
+                                                    {
+                                                        "title": "Остановить таймер",
+                                                        "visible$": "mem.type=='timer' && mem.state=='active'",
+                                                        "action": {
+                                                            "confirm": {
+                                                                "title": "Подтверждение",
+                                                                "message$": "`Остановить таймер?`",
+                                                                "yes": "Да",
+                                                                "no": "Нет"
+                                                            },
+                                                            "name": "onStopToken"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@add": {
+                            "className": "vertical",
+                            "style": {
+                                "flex": 1
+                            },
+                            "$": {
+                                "type": {
+                                    "label": "Тип",
+                                    "control": "TextEdit"
+                                },
+                                "state": {
+                                    "label": "Состояние",
+                                    "control": "TextEdit"
+                                },
+                                "task_state": {
+                                    "label": "Состояние задачи",
+                                    "control": "TextEdit"
+                                },
+                                "created": {
+                                    "label": "Создан",
+                                    "control": "TextEdit",
+                                    "getter": "formatters.datetimesec(mem.created)"
+                                },
+                                "@bi": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "initiator": {
+                                            "label": "Инициатор",
+                                            "style": {
+                                                "width": "75%"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "btnChangeInitiator": {
+                                            "control": "Button",
+                                            "style": {
+                                                "marginLeft": "5px"
+                                            },
+                                            "label": "Изменить",
+                                            "controlProps": {
+                                                "variant": "text",
+                                                "color": "primary"
+                                            },
+                                            "action": {
+                                                "js": "frontend.dialog({object:'easyflow', form: 'modifyInitiatorDialog', mem: {tokenId: mem.id, oldInitiator: mem.initiator, initiator: mem.initiator }});"
+                                            }
+                                        }
+                                    }
+                                },
+                                "performer": {
+                                    "label": "Исполнитель",
+                                    "control": "TextEdit"
+                                },
+                                "@ts": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "started": {
+                                            "label": "Запущен",
+                                            "style": {
+                                                "flex": 1
+                                            },
+                                            "control": "TextEdit",
+                                            "getter": "formatters.datetimesec(mem.started)"
+                                        },
+                                        "completed": {
+                                            "label": "Завершен",
+                                            "style": {
+                                                "flex": 1
+                                            },
+                                            "control": "TextEdit",
+                                            "getter": "formatters.datetimesec(mem.completed)"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": {
+                    "label": "Описание",
+                    "control": "TextEdit",
+                    "controlProps": {
+                        "multiline": true,
+                        "minRows": 3
+                    }
+                },
+                "@children": {
+                    "title": "Подпроцессы",
+                    "$": {
+                        "children": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "id": {
+                                        "label": "Идентификатор",
+                                        "width": 200
+                                    },
+                                    "deployment_code": {
+                                        "label": "Код сценария",
+                                        "flex": 1
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onRowDoubleClicked": {
+                                    "js": "tm.newTask({pathname: '/easyflow/process-list', title: 'Процессы', params: {tokenId: params.selectedRow.id}});",
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    },
+                    "visible$": "mem.children?.length > 0"
+                },
+                ".error": {
+                    "label": "Ошибка",
+                    "control": "TextEdit",
+                    "controlProps": {
+                        "multiline": true,
+                        "minRows": 7
+                    },
+                    "getter": "mem.tokenVars?.error?.message"
+                }
+            },
+            "actions": {
+                "onStopToken": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'stopToken', params: {tokenId: mem.id}})"
+                    },
+                    {
+                        "name": "onLoadToken"
+                    }
+                ],
+                "onChangeInitiator": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'changeProcessInitiator', params: {'tokenId': params.tokenId, 'oldInitiator': params.oldInitiator, 'initiator': params.initiator}});"
+                    },
+                    {
+                        "name": "onLoadToken"
+                    }
+                ]
+            }
+        },
+        "tokenVarsForm": {
+            "title": "Атрибуты токена",
+            "$": {
+                ".vars": {
+                    "control": "ListTable",
+                    "getter": "Object.keys(mem).map(x=>({name: x, value: JSON.stringify(mem[x], null, 4)}))",
+                    "controlOpts": {
+                        "columns!": {
+                            "name": {
+                                "label": "Атрибут",
+                                "width": 200
+                            },
+                            "value": {
+                                "label": "Значение",
+                                "flex": 1,
+                                "editable": true,
+                                "cellEditor": "agLargeTextCellEditor",
+                                "cellStyle": {
+                                    "whiteSpace": "normal !important",
+                                    "lineHeight": 1.4,
+                                    "display": "flex",
+                                    "alignItems": "center"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onRowDoubleClicked": {
+                            "js": "frontend.dialog({object: 'easyflow', form: 'modifyTokenVarDialog', mem: {name: selectedRow.name, value: selectedRow.value}})"
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        "modifyTokenVarDialog": {
+            "title": "Коррекция атрибута токена",
+            "className": "vertical",
+            "style": {
+                "width": "800px",
+                "height": "500px",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "object": "easyflow",
+                    "form": "modifyTokenVarForm"
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "js": "context.j = JSON.parse(mem.value)"
+                                },
+                                {
+                                    "name": "onSaveTokenVar",
+                                    "params": {
+                                        "name$": "mem.name",
+                                        "value$": "context.j"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "modifyTokenVarForm": {
+            "title": "Коррекция атрибута токена",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "name": {
+                    "style": {
+                        "marginTop": "4px"
+                    },
+                    "label": "Наименование",
+                    "control": "TextEdit",
+                    "readOnly": true
+                },
+                "value": {
+                    "visible": false,
+                    "label": "Значение",
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "control": "TextEdit",
+                    "controlProps": {
+                        "multiline": true,
+                        "style": {
+                            "height": "100%"
+                        },
+                        "InputProps": {
+                            "style": {
+                                "height": "100%"
+                            }
+                        },
+                        "inputProps": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "auto"
+                            },
+                            "spellCheck": false
+                        }
+                    }
+                },
+                "@json": {
+                    "style": {
+                        "flex": 1
+                    },
+                    "$": {
+                        "value": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "requestJsonEdit",
+                                "mode": "json"
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "taskCandidatesForm": {
+            "title": "Кандидаты",
+            "className": "vertical",
+            "style": {
+                "overflowY": "hidden",
+                "width": "600px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "overflowY": "hidden",
+                        "flexGrow": 1
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Добавить",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "addCandidate"
+                                        }
+                                    },
+                                    {
+                                        "title": "Удалить",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "deleteCandidate",
+                                            "confirm": {
+                                                "title": "Удалить кандидата",
+                                                "message$": "`Удалить кандидата ${context.selectedCandidate.user}, группа ${context.selectedCandidate.group} ?`",
+                                                "yes": "Да",
+                                                "no": "Нет"
+                                            }
+                                        },
+                                        "disabled$": "!context.selectedCandidate"
+                                    }
+                                ]
+                            }
+                        },
+                        "|candidates": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "$": {
+                                    "user": {
+                                        "label": "Пользователь",
+                                        "fastFilter": false,
+                                        "editable": true,
+                                        "width": 300
+                                    },
+                                    "group": {
+                                        "label": "Группа",
+                                        "fastFilter": false,
+                                        "editable": true,
+                                        "flex": 1
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "context.selectedCandidate = selectedRow;"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        },
+                        "addCandidate": {
+                            "js": "context.selectedCandidate = null; mem.candidates.push({user: null, group: null});mem.candidates = [...mem.candidates];"
+                        },
+                        "deleteCandidate": {
+                            "js": "mem.candidates.splice(mem.candidates.indexOf(context.selectedCandidate), 1); context.selectedCandidate=null;mem.candidates = [...mem.candidates];"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnApply": {
+                            "label": "Применить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'saveCandidates', params: {tokenId: mem.id, candidates:mem.candidates}})",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "objectJournalTask": {
+            "title": "Журнал объекта",
+            "className": "task task-panel",
+            "$": {
+                "@buttons": {
+                    "style": {
+                        "margin": "8px"
+                    },
+                    "$": {
+                        ".btnRefresh": {
+                            "label": "Обновить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "name": "refresh"
+                            }
+                        }
+                    }
+                },
+                "@journal": {
+                    "style": {
+                        "flex": 1,
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        ".journal": {
+                            "control": "ObjectJournal",
+                            "controlProps": {
+                                "objectKey$": "task.params.objectKey",
+                                "refreshEvent": "onRefreshJournal"
+                            },
+                            "actions": {
+                                "onGetRows": {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'getObjectJournal', params: {objectKey: task.params.objectKey}}).then(r=>onSuccess(r))"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": "task.events.fireEvent('onRefreshJournal')"
+                }
+            }
+        },
+        "selectTaskUserDialog": {
+            "title": "Выбор пользователя",
+            "style": {
+                "height": "500px",
+                "width": "800px",
+                "overflow": "hidden"
+            },
+            "className": "vertical",
+            "$": {
+                "@form": {
+                    "style": {
+                        "flexGrow": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@candidates": {
+                            "visible$": "context.mode == 'candidates'",
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                "|candidates": {
+                                    "style": {
+                                        "height": "100%"
+                                    },
+                                    "control": "ListTable",
+                                    "controlProps": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "gridOptions": {
+                                            "domLayout": "normal"
+                                        }
+                                    },
+                                    "controlOpts": {
+                                        "columns!": {
+                                            "code": {
+                                                "label": "Код",
+                                                "width": 150
+                                            },
+                                            "longname": {
+                                                "label": "Наименование",
+                                                "flex": 1
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "onSelectionChanged": [
+                                            {
+                                                "js": "context.selectedUser = selectedRow.code;"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "@allusers": {
+                            "visible$": "context.mode == 'allusers'",
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                "@form": {
+                                    "object": "cbs.user",
+                                    "form": "selectUserForm",
+                                    "style": {
+                                        "height": "100%"
+                                    },
+                                    "actions": {
+                                        "onSelectUser": [
+                                            {
+                                                "js": "context.selectedUser = params.userCode"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnMode": {
+                            "label$": "context.mode=='allusers'?'Кандидаты':'Все пользователи'",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "text"
+                            },
+                            "action": [
+                                {
+                                    "js": "context.mode=context.mode=='allusers'?'candidates':'allusers'; context.selectedUser=null;"
+                                },
+                                {
+                                    "name": "refresh"
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "text"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnSelect": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "readOnly$": "!context.selectedUser",
+                            "action": [
+                                {
+                                    "name": "onAssignTaskToUser",
+                                    "params": {
+                                        "tokenId$": "params.taskId",
+                                        "user$": "context.selectedUser"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onAssignTaskToUser": {
+                    "js": "return backend.post('/easyflow/runtime/assignTaskById', {tokenId: params.tokenId, assignee: params.user})"
+                },
+                "onElementCreated": [
+                    {
+                        "js": "context.mode = 'candidates';"
+                    },
+                    {
+                        "js": "return backend.post('/easyflow/runtime/candidates', {token_id: params.taskId}).then(r=>{mem.candidates=r; forceUpdate();})"
+                    }
+                ],
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "modifyInitiatorDialog": {
+            "title": "Инициатор токена",
+            "className": "vertical",
+            "$": {
+                "@params": {
+                    "className": "horizontal",
+                    "$": {
+                        "initiator": {
+                            "label": "Инициатор",
+                            "style": {
+                                "width": "100%",
+                                "paddingTop": "8px"
+                            },
+                            "control": "TextEdit",
+                            "required": true
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        "btnAppy": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "style": {
+                                "padding": "8px"
+                            },
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "name": "onChangeInitiator",
+                                    "params": {
+                                        "tokenId$": "mem.tokenId",
+                                        "oldInitiator$": "mem.oldInitiator",
+                                        "initiator$": "mem.initiator"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        },
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "style": {
+                                "padding": "8px"
+                            },
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "changeProcessUser": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "#\n# Изменение инициатора процесса и исполнителя по задачам\n#\nfrom apng_core.easyflow.models import Token, TokenAut\nfrom django.conf import settings\nfrom django.db import transaction\n\np = parameters['token']\noldUser = parameters['oldUser']\nnewUser = parameters['newUser']\n\nwith transaction.atomic(using=settings.APPS_DB['easyflow']):\n    # Меняем инициатора процесса, так как новые задачи могут продолжить\n    # назначаться на старого пользователя\n    if p.initiator == oldUser:\n        p.initiator = newUser\n        p.save()\n    \n    # Активные задачи по процессу\n    for t in p.tokens.filter(state__in=['active', 'suspended']):\n        needSave = False\n        \n        # Инициатор задачи\n        if t.initiator == oldUser:\n            t.initiator = newUser\n            needSave = True\n        \n        # Исполнитель задачи\n        if t.performer == oldUser:\n            t.performer = newUser\n            needSave = True\n        \n        if needSave:\n            t.save()\n        \n        # Пользовательские задачи\n        if t.flow.typ == 'task':\n            # Заменим кандидата\n            if t.candidates.filter(username = oldUser).count() > 0:\n                if t.candidates.filter(username=newUser).count() == 0:\n                    ta = TokenAut(\n                        token = t,\n                        username = newUser\n                    )\n                    ta.save()"
+            }
+        },
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import Deployment\nfrom apng_core.aoa.services import applyFilterModel2, applySortModel\n\nquery = Deployment.objects\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    filterModel2 = parameters['request'].get('filterModel2') if parameters.get('request') else None\n        \n    if filterModel2:\n        query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    if len(parameters.get('request', {}).get('sortModel', []))>0:\n        query = applySortModel(query, parameters['request']['sortModel'])\n    else: \n        query = query.order_by('code')\n    \n    if parameters.get('request', {}).get('startRow') is not None:\n        query = query[parameters['request']['startRow']:parameters['request']['endRow']]\n        \ndata = []\nfor ef in query:\n    d = {\n        'id': ef.id.__str__(),\n        'code': ef.code,\n        'name': ef.name,\n        'modified': ef.modified\n    }\n    \n    data.append(d)\n\n\n"
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import Deployment\n\nw = Deployment.objects.get(id=parameters['id'])\nw.delete()\n\n#raise UserException(json.dumps(parameters, indent=4))"
+            }
+        },
+        "downloadAttribute": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import TokenVar\nimport base64\nfrom django.http import HttpResponse\nimport urllib\n\n\n\n#raise UserException(json.dumps(parameters, indent=4))\n\ntv = TokenVar.objects.get(\n    token_id=parameters['tokenId'], \n    name=parameters['attribute'],\n)\n\nattributeData = base64.b64decode(tv.value)\n\n#\n# Формирование ответа сервиса\n#\ndata = HttpResponse(\n    attributeData,\n    content_type=parameters['content-type']\n)\ndata[\"Content-Disposition\"] = 'Content-Disposition: inline; filename=\"{filename}\"'.format(\n    filename = parameters['filename'],\n)\ndata[\"Content-Length\"] = len(attributeData)\n\n\n"
+            }
+        },
+        "getActiveTimerList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.services import applyFilterModel2\nfrom apng_core.easyflow.models import Token\n\nquery = Token.objects.filter(type='timer', state='active')\n\nfilterModel2 = parameters['request'].get('filterModel2') if parameters.get('request') else None\n    \nif filterModel2:\n    if 'errorsOnly' in filterModel2:\n        if filterModel2['errorsOnly'] == True:\n            query = query.filter(task_state='error')\n        del filterModel2['errorsOnly']\n    query = applyFilterModel2(query, filterModel2)\nelse:\n    query = query.all()\n\n\nif parameters.get('request', {}).get('startRow') is not None:\n    query = query[parameters['request']['startRow']:parameters['request']['endRow']]\n\n\ndata = []\nfor t in query:\n    data.append({\n        'id': t.id.__str__(),\n        'state': t.state,\n        'task_state': t.task_state,\n        'created': t.created,\n        'initiator': t.initiator,\n        'started': t.started,\n        'scheduled': t.scheduled,\n        'wait_time': t.scheduled - t.started if t.started and t.scheduled else None,\n        'description': t.description,\n        'workflow_id': t.process.flow_id, \n    })"
+            }
+        },
+        "getTokenInfo": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import Token\n\nt = Token.objects.get(id=parameters.get('id'))\n\nobjectKey = t.objectKey or t.processToken.objectKey or t.getTopProcess().objectKey\nif not objectKey:\n    objectKey = t.process.vars_dict.get('objectKey')\n\nif t.process_id is not None:\n    # Обычный токен, не сам процесс\n    children = [{'id': c.id.__str__(),'deployment_code': c.deployment.code,'deployment_name' : c.deployment.name} for c in t.children.all()]\nelse:\n    # Для процесса не зачитываем детали\n    children = None\n\ndata = {\n    'id': t.id.__str__(),\n    'parent_id': t.parent_id.__str__(),\n    'deployment_id': t.deployment_id.__str__(),\n    'process_id': t.processToken.id.__str__(),\n    'flow_id': t.flow_id.__str__(),\n    'type': t.type,\n    'deployment_code': t.deployment.code if t.deployment else '',\n    'flow_name': t.flow.name if t.flow else '',\n    'state': t.state,\n    'task_state': t.task_state,\n    'created': t.created,\n    'initiator': t.initiator,\n    'performer': t.performer,\n    'started': t.started,\n    'completed': t.completed,\n    'description': t.description,\n\n    \n    'processVars': t.processToken.vars_dict,\n    'tokenVars': t.vars_dict,\n    \n    'objectKey': objectKey,\n    'candidates': [{'user': x.username, 'group': x.groupname} for x in t.candidates.all()],\n    'children': children\n}\n"
+            }
+        },
+        "saveTokenVar": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import TokenVar\n\ntv = TokenVar.objects.get(token_id=parameters['tokenId'], name=parameters['name'])\n\ntv.value = parameters['value']\ntv.save()\n"
+            }
+        },
+        "getObjectJournal": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.services import RuntimeService as rs\n\nos = rs.getStateByObjectKey(parameters['objectKey'])\noj = rs.getJournalByObjectKey(parameters['objectKey'])\n\ndata = []\n\nfor r in os:\n    d = {\n        'token_id': r.id.__str__(),\n        'type': r.type,\n        'state': r.state,\n        'task_state': r.task_state,\n        'initiator': r.initiator,\n        'performer': r.performer,\n        'candidate': '',\n        'created': r.created,\n        'started': r.started,\n        'scheduled': r.scheduled,\n        'description': r.description,\n        'isIdle': r.isIdle,\n    }\n    if d['performer'] is None:\n        candidates = r.candidates.all()\n        d['candidate'] = ', '.join([c.username or c.groupname for c in candidates if c.username is not None or c.groupname is not None])\n    \n    if d['task_state'] == 'error':\n        d['token_error'] = r.vars_dict.get('error')\n    \n    data.append(d)\n    \nfrom django.db.models import prefetch_related_objects\nprefetch_related_objects(oj, 'token')\n\nfor r in oj:\n    d = {\n        'token_id': r.token_id.__str__(),\n        'type': r.token.flow.typ if r.token.flow else None,\n        'state': None,\n        'task_state': None,\n        'initiator': None,\n        'performer': r.performer,\n        'candidate': '',\n        'created': r.created,\n        'started': None,\n        'scheduled': None,\n        'description': r.description,\n    }\n    data.append(d)"
+            }
+        },
+        "saveCandidates": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import Token, TokenAut\r\nfrom django.conf import settings\r\nfrom django.db import transaction\r\n\r\n#print('saveCandidates  start')\r\n\r\nif not parameters.get('tokenId'):\r\n    raise Exception('Не задан токен')\r\n\r\n# Замена кандидатов\r\nwith transaction.atomic(using=settings.APPS_DB['easyflow']):\r\n    candidates = TokenAut.objects.filter(token_id = parameters.get('tokenId'))\r\n    candidates.delete()\r\n    \r\n    for candidate in parameters.get('candidates'):\r\n        c = TokenAut()\r\n        c.token_id = parameters.get('tokenId')\r\n        c.username = candidate.get('user')\r\n        c.groupname = candidate.get('group')\r\n        c.save()"
+            }
+        },
+        "stopToken": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.easyflow.services import RuntimeService as rs\nrs.stopToken(parameters.get('tokenId'))\n"
+            }
+        },
+        "getUserTasks": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.easyflow.models import Token\nfrom apng_core.easyflow.services import RuntimeService\nfrom django.utils import timezone\nfrom django.db.models import Q\n\n#raise UserException(json.dumps(parameters))\n\nfrom apng_core.auth import getUser\n\ncurrent_user = getUser()\n\nfrom apng_core.easyflow.auth import Authentication\nAuthentication.setAuthenticatedUser(current_user)\n\n#\n# Получение списка задач\n#\ndef getTasks(params):\n    if current_user:\n        q = Token.objects.distinct().filter(state=Token.STATE_ACTIVE)\n        if params.get('id'):\n            q = q.filter(id=params['id'])\n        else:\n            if 'actual_user' in params:\n                actual_user = getattr(current_user, 'su') if hasattr(current_user, 'su') and current_user.su else current_user.username\n                q = q.filter(Q(performer__isnull=True) | Q(performer=actual_user), candidates__username=actual_user)\n                \n\n            # Задачи назначенные на группу\n            qg = None            \n            if len(current_user.groups)>0:\n                qg = Token.objects.filter(state=Token.STATE_ACTIVE, performer__isnull=True, candidates__groupname__in=current_user.groups)\n                \n            if 'deployment' in params:\n                q = q.filter(deployment__code=params['deployment'])\n                \n            order_by = []\n            request = params.get('request')\n            if request:\n                filterModel = request.get('filterModel')\n                if filterModel:\n\n                    kwargs = {}\n                    for fname, fmodel in filterModel.items():\n                        lookupField = fname\n                        if lookupField=='name':\n                            lookupField = 'description'\n                        if fmodel['filterType'] == 'set' and fmodel['values']:\n                            kwargs[lookupField + '__in'] = fmodel['values']\n                        elif fmodel.get('type') == 'contains':\n                            kwargs[lookupField + '__contains'] = fmodel['filter']\n                    q = q.filter(**kwargs)\n                    \n                    if qg:\n                        qg = qg.filter(**kwargs)\n                        \n                filterModel2 = request.get('filterModel2')\n                if filterModel2:\n                    from apng_core.aoa.services import applyFilterModel2\n                    q = applyFilterModel2(q, filterModel2)\n                    if qg:\n                        qg = applyFilterModel2(qg, filterModel2)\n                    \n                for col in request.get('sortModel', []):\n                    field = '-' if col['sort'] == 'desc' else ''\n                    col_id = col['colId']\n                    if col_id == 'name':\n                        col_id = 'description'\n                    field += col_id\n                    order_by.append(field)                \n\n            if qg:\n                q = q.union(qg, all=False)\n\n\n\n            if order_by:\n                q = q.order_by(*order_by)\n            else:\n                q = q.order_by('-created')\n                \n        \n        if params.get('request', {}).get('startRow') is not None:\n            q = q[params['request']['startRow']:params['request']['endRow']]\n            \n        #print ('sql: ', q.query)\n    else:\n        raise Exception('No authenticated user')\n    return q\n    \n\ntokens = getTasks({'actual_user': current_user.code, **parameters})\n\ntasks = []\nfor t in tokens:\n    \n    \n    taskName = '???'\n    if t.description:\n        taskName = t.description\n    elif t.flow:\n        taskName = t.flow.name\n\n        \n    r = {\n        'id'        : t.id,\n        'name'      : taskName,\n        'created'   : timezone.localtime(t.created),\n        'state'     : t.state,\n        'priority'  : t.priority,\n        'initiator' : t.initiator,\n        'flow': t.flow_id,                    \n        'performer' : t.performer\n    }\n    if t.task_state:\n        r['task_state'] = t.task_state\n    if t.started:\n        r['started'] = t.started\n    if t.completed:\n        r['completed'] = t.completed\n            \n    r['performer2'] = ''\n    if t.performer == current_user.code:\n        r['performer2'] = 'assigned'\n    else:\n        candidates = t.candidates.all()\n        if len(candidates) == 1 and candidates[0].username == current_user.code:\n            r['performer2'] = 'assigned'\n        elif (t.performer is None and\n                (len(candidates) > 1 or len(candidates) == 1 and candidates[0].groupname is not None)):\n            r['performer2'] = 'unassigned'\n\n    tasks.append(r)\n\ndata = tasks\n"
+            }
+        },
+        "changeProcessInitiator": {
+            "sql": {
+                "sql": ""
+            },
+            "script": {
+                "py": "#\r\n# Изменение инициатора процесса\r\n#\r\nfrom apng_core.easyflow.models import Token, TokenAut\r\nfrom django.conf import settings\r\nfrom django.db import transaction\r\n\r\nt = Token.objects.get(id=parameters.get('tokenId'))\r\n\r\noldInitiator = parameters['oldInitiator']\r\ninitiator = parameters['initiator']\r\n\r\nif oldInitiator != initiator:\r\n    with transaction.atomic(using=settings.APPS_DB['easyflow']):\r\n    # Меняем инициатора процесса\r\n        if t.initiator == oldInitiator:\r\n            t.initiator = initiator\r\n            t.save()\r\n"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "code": {
+                    "title": "Код",
+                    "width": 340,
+                    "sortable": true
+                },
+                "name": {
+                    "title": "Наименование",
+                    "flex": 1,
+                    "sortable": true
+                },
+                "modified": {
+                    "title": "Изменен",
+                    "width": 130,
+                    "format": "datetime"
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Создать",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/easyflow/diagram-graphics-edit",
+                        "title": "Новый сценарий",
+                        "data": {
+                            "deployment": {
+                                "data": "<workflow id=\"new_workflow\"></workflow>"
+                            },
+                            "loaded": true
+                        }
+                    }
+                },
+                {
+                    "title": "Создать копию",
+                    "icon": "clone",
+                    "mini": true,
+                    "disabled$": "!$listRow",
+                    "command": {
+                        "type": "js",
+                        "js": "frontend.dialog({object: 'easyflow', form: 'createDiagramCopyDialog', mem: {}, params: {id: $listRow.id, code: $listRow.code, name: $listRow.name}, context: {}})"
+                    }
+                },
+                {
+                    "title": "Открыть",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/easyflow/diagram-graphics-edit",
+                        "title$": "`${$listRow.code} ${$listRow.name}`",
+                        "params": {
+                            "deploymentId$": "$listRow.id"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Удалить",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Удалить сценарий ${$listRow.code}, ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Сервис",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Редактировать XML",
+                            "command": {
+                                "type": "task",
+                                "call": "/easyflow/diagram-text-edit",
+                                "title$": "$listRow.name",
+                                "data": {
+                                    "deploymentId$": "$listRow.id"
+                                }
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "Запустить",
+                            "command": {
+                                "type": "workflow",
+                                "call$": "$listRow.code",
+                                "params": {}
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "Удалить все процессы",
+                            "command": {
+                                "type": "js",
+                                "js": "backend.post('/easyflow/runtime/deleteProcessesByDeploymentId', {deploymentId: $listRow.id})"
+                            },
+                            "disabled$": "!$listRow"
+                        }
+                    ]
+                },
+                {
+                    "title": "Инструменты",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Пакеты",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.id, model: 'easyflow.Deployment'}, context: {}})"
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "История",
+                            "command": {
+                                "type": "task",
+                                "title$": "`История объекта: ${$listRow.code}`",
+                                "call": "/aoa/ObjectTask",
+                                "params": {
+                                    "object": "aos.ModifiedObjects",
+                                    "form": "historyTask",
+                                    "model": "easyflow.Deployment",
+                                    "objectId$": "$listRow.id"
+                                }
+                            },
+                            "disabled$": "!$listRow"
+                        }
+                    ]
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Фильтр",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Код",
+                                    "control": "TextEdit"
+                                },
+                                "name": {
+                                    "label": "Наименование",
+                                    "control": "TextEdit"
+                                },
+                                "data": {
+                                    "label": "Содержит",
+                                    "control": "TextEdit"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Очистить",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Применить",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            }
+        },
+        "userTasks": {
+            "getList": "getUserTasks",
+            "id": "id",
+            "columns": {
+                "name": {
+                    "title": "Наименование",
+                    "flex": 1,
+                    "sortable": true,
+                    "cellStyle": {
+                        "whiteSpace": "normal !important",
+                        "lineHeight": 1.2,
+                        "display": "flex",
+                        "alignItems": "center"
+                    },
+                    "getter": "data?.name?.substring(0, 200)"
+                },
+                "created": {
+                    "title": "Создана",
+                    "sortable": true,
+                    "width": 130,
+                    "format": "datetime"
+                },
+                "performer2": {
+                    "title": "Исполнитель",
+                    "width": 130,
+                    "decode": {
+                        "assigned": {
+                            "value": "Назначен"
+                        },
+                        "unassigned": {
+                            "value": "Не назначен"
+                        }
+                    }
+                },
+                "task_state": {
+                    "title": "Состояние задачи",
+                    "width": 140,
+                    "control": "chip",
+                    "decode": {
+                        "created": {
+                            "value": "Назначено",
+                            "color": "#F2994A"
+                        },
+                        "inwork": {
+                            "value": "В работе",
+                            "color": "#00AA44"
+                        }
+                    }
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Выполнить",
+                    "command": {
+                        "type": "js",
+                        "js": "frontend.easyflow.executeTaskById($listRow.id);"
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Принять",
+                    "command": {
+                        "type": "js",
+                        "js": "frontend.easyflow.claimTaskById($listRow.id);"
+                    },
+                    "disabled$": "!$listRow || $listRow?.task_state != 'created'"
+                },
+                {
+                    "title": "Вернуть",
+                    "command": {
+                        "type": "js",
+                        "js": "frontend.easyflow.untakeTaskById($listRow.id);"
+                    },
+                    "disabled$": "!$listRow || $listRow?.task_state != 'inwork'"
+                },
+                {
+                    "title": "Переназначить",
+                    "command": {
+                        "type": "js",
+                        "js": "frontend.dialog({object: 'easyflow', form: 'selectTaskUserDialog', params: {taskId: $listRow.id}});"
+                    },
+                    "disabled$": "!$listRow"
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "380px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Фильтр",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "description": {
+                                    "label": "Наименование",
+                                    "control": "TextEdit"
+                                },
+                                "task_state__exact": {
+                                    "label": "Состояние",
+                                    "control": "SelectList",
+                                    "controlProps": {
+                                        "list": [
+                                            {
+                                                "value": "created",
+                                                "name": "Назначено"
+                                            },
+                                            {
+                                                "value": "inwork",
+                                                "name": "В работе"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "@period": {
+                                    "$": {
+                                        "@chips": {
+                                            "$": {
+                                                "today": {
+                                                    "label": "Сегодня",
+                                                    "action": {
+                                                        "name": "setToday"
+                                                    },
+                                                    "control": "Chip",
+                                                    "controlProps": {
+                                                        "style": {
+                                                            "height": "24px"
+                                                        }
+                                                    }
+                                                },
+                                                "prevmonth": {
+                                                    "label": "Прошлый месяц",
+                                                    "action": {
+                                                        "name": "setPrevMonth"
+                                                    },
+                                                    "control": "Chip",
+                                                    "controlProps": {
+                                                        "style": {
+                                                            "height": "24px"
+                                                        }
+                                                    }
+                                                },
+                                                "lastmonth": {
+                                                    "label": "Текущий Месяца",
+                                                    "action": {
+                                                        "name": "setLastMonth"
+                                                    },
+                                                    "control": "Chip",
+                                                    "controlProps": {
+                                                        "style": {
+                                                            "height": "24px"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "className": "horizontal"
+                                        },
+                                        "@dates": {
+                                            "$": {
+                                                "created__date__gte": {
+                                                    "label": "С",
+                                                    "style": {
+                                                        "flexGrow": 1
+                                                    },
+                                                    "control": "DateEdit"
+                                                },
+                                                "created__date__lte": {
+                                                    "label": "По",
+                                                    "style": {
+                                                        "flexGrow": 1
+                                                    },
+                                                    "control": "DateEdit"
+                                                }
+                                            },
+                                            "className": "horizontal"
+                                        }
+                                    },
+                                    "actions": {
+                                        "setToday": {
+                                            "jsScript": "let dt = new Date(); let df = new Date(); mem.created__date__gte = df.toISOString().substring(0,10); mem.created__date__lte = dt.toISOString().substring(0,10);"
+                                        },
+                                        "setPrevMonth": {
+                                            "jsScript": "let dt = new Date(); let df = new Date(); df.setMonth(df.getMonth()-1); df.setDate(1); dt.setDate(0); mem.created__date__gte = df.toISOString().substring(0,10); mem.created__date__lte = dt.toISOString().substring(0,10);"
+                                        },
+                                        "setLastMonth": {
+                                            "jsScript": "let dt = new Date(); let df = new Date(); df.setDate(1); mem.created__date__gte = df.toISOString().substring(0,10); mem.created__date__lte = dt.toISOString().substring(0,10);"
+                                        }
+                                    },
+                                    "className": "vertical"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Очистить",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Применить",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            },
+            "events": {
+                "onRowDoubleClicked": {
+                    "js": "frontend.easyflow.executeTaskById($listRow.id);"
+                }
+            }
+        }
+    },
+    "references": {},
+    "js": {}
+}

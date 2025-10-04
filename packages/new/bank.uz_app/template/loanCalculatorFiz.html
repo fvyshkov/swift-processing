@@ -1,0 +1,144 @@
+{% load functions %}
+<html>
+    <head>
+        <title>Предварительный расчет кредита</title>
+        <style>
+            @media print {
+                @page {
+                    margin-top: 10mm;
+                    margin-bottom: 10mm;
+                    width: 210mm;
+                }
+            }
+            @media screen {
+                body {
+                    width: 210mm;
+	                margin-left: 15mm;
+	                margin-right: 10mm;
+                }
+                
+            }
+            
+            body {
+                
+                font-size: 16px;
+            }
+            
+            .field {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+            .label {
+                font-weight: 600px;
+                margin-right: 8px;
+            }
+            .label::after {
+                content: ": ";
+            }
+            .value {
+                font-weight: 400px;
+            }
+            .thead {
+                display: flex;
+                flex-direction: row;
+                align-items: stretch;
+                border: 1px solid;
+            }
+            .thead > div {
+                padding: 0px 6px 0px 6px;
+                text-align: center;
+            }
+            .thead > div:not(:first-child) {
+                border-left: 1px solid;
+            }
+            .tbody {
+            }
+            .tbody > .trow {
+                border-left: 1px solid;
+                border-right: 1px solid;
+                border-bottom: 1px solid;
+            }
+            .trow {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+            .tcell {
+                padding: 4px 8px 4px 8px;
+            }
+            .w10 {
+                width: 10mm;
+            }
+            .w20 {
+                width: 20mm;
+            }
+            .w30 {
+                width: 30mm;
+            }
+            .w40 {
+                width: 40mm;
+            }
+            .tar {
+                text-align: right;
+            }
+            .tac {
+                text-align: center;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <div class="field">
+            <div class="label">Сумма кредита</div><div class="value">{{data.amount|currency}}</div>
+        </div>
+        <div class="field">
+            <div class="label">Срок кредита</div><div class="value">{{data.duration}}</div>
+        </div>
+        <div class="field">
+            <div class="label">Ставка</div><div class="value">{{data.interest|currency}}%</div>
+        </div>
+        <div class="field">
+            <div class="label">Эффективная ставка</div><div class="value">{{data.effectiveInterest|currency}}%</div>
+        </div>
+        <div class="field">
+            <div class="label">Вид графика</div><div class="value">{{data.paymentType}}</div>
+        </div>
+        
+        <div
+            style="margin-top: 16px;"
+        >
+            Предварительный график погашения
+        </div>
+        <div class="thead">
+            <div class="w20">Платеж №</div>
+            <div class="w30">Дата</div>
+            <div class="w40">Погашение долга</div>
+            <div class="w40">Погашение процентов</div>
+            <div class="w40">Сумма платежа</div>
+            <div class="w40">Остаток долга</div>
+        </div>
+        <div class="tbody">
+	        {% for payment in data.payments %}
+	            <div class="trow">
+	                <div class="tcell w20 tar">{{payment.pay_no}}</div>
+	                <div class="tcell w30 tac">{{payment.pay_date|date}}</div>
+	                <div class="tcell w40 tar">{{payment.pay_debt|currency}}</div>
+	                <div class="tcell w40 tar">{{payment.pay_interest|currency}}</div>
+	                <div class="tcell w40 tar">{{payment.pay|currency}}</div>
+	                <div class="tcell w40 tar">{{payment.rest|currency}}</div>
+	            </div>
+	        {% endfor %}
+        </div>
+    </body>
+</html>
+<!-- 7E5BC701-DDCB-5E05-76C2-11220A03F3A1 -->
+{
+    "parameters": {},
+    "method": {
+        "sql": {},
+        "script": {
+            "py": "data = parameters.get('context')"
+        }
+    }
+}

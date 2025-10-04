@@ -1,0 +1,2615 @@
+{
+    "forms": {
+        "appEditTask": {
+            "title": "Редактирование заявки",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@wrapperForm": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "object": "app",
+                    "form": "wrapperEditForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return !task.params?.componentPath && task.params?.objectKey && backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getApplication', params: {...task.params.objectKey}}).then((r)=>{mem.app=r; if(!task.params.taskId)action({name: 'onSetTaskTitle'});  forceUpdate();})"
+                    },
+                    {
+                        "js": "if(task.params.app){mem.app = task.params.app} else if(!task.params?.componentPath && !task.params?.objectKey){mem.app = task.data.forms}"
+                    },
+                    {
+                        "js": "context.readOnly = (task.params && 'readOnly' in task.params)?task.params.readOnly : mem.app?.state && mem.app?.state != 'START'"
+                    },
+                    {
+                        "js": "!context.appTypes && backend.post('/aoa/getDataObject', {type: 'refer', code: 'appType'}, {useCache: true}).then((r)=>{context.appTypes = r; forceUpdate();})"
+                    }
+                ],
+                "onSetTaskTitle": {
+                    "js": "tm.setTaskTitle(task.key, `Заявка ${mem.app.app.code}, ${mem.app.client.name}`);"
+                }
+            }
+        },
+        "appResolutionTask": {
+            "title": "Заключение по заявки",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@wrapperForm": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "object": "app",
+                    "form": "wrapperResolutionForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return !task.params.componentPath && backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getApplication', params: {...task.params.objectKey}}).then((r)=>{mem.app=r; forceUpdate();});"
+                    },
+                    {
+                        "js": "!context.appTypes && backend.post('/aoa/getDataObject', {type: 'refer', code: 'appType'}, {useCache: true}).then((r)=>{context.appTypes = r; forceUpdate();})"
+                    }
+                ]
+            }
+        },
+        "appDecisionTask": {
+            "title": "Решение по заявки",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@wrapperForm": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "object": "app",
+                    "form": "wrapperDecisionForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "!task.params.componentPath && backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getApplication', params: {...task.params.objectKey}}).then((r)=>{mem.app=r; forceUpdate();});"
+                    },
+                    {
+                        "js": "!context.appTypes && backend.post('/aoa/getDataObject', {type: 'refer', code: 'appType'}, {useCache: true}).then((r)=>{context.appTypes = r; forceUpdate();})"
+                    }
+                ]
+            }
+        },
+        "appEditForm": {
+            "title": "Редактирование заявки",
+            "style": {
+                "display": "flex",
+                "flexDirection": "row",
+                "height": "100%"
+            },
+            "$": {
+                "@form": {
+                    "params": {
+                        "isNew$": "mem.app?.state==undefined || mem.app?.state=='START'"
+                    },
+                    "style": {
+                        "height": "100%",
+                        "flex": 1,
+                        "display": "flex",
+                        "flexDirection": "column"
+                    },
+                    "className": "task task-panel",
+                    "$": {
+                        "@form": {
+                            "style": {
+                                "flexGrow": 1,
+                                "padding": "8px",
+                                "overflowY": "auto"
+                            },
+                            "className": "navigator-container",
+                            "$": {
+                                "@form": {
+                                    "object$": "context.appTypes?.find((t)=>t.code==mem.app.appType)?.appForm?.object",
+                                    "form$": "context.appTypes?.find((t)=>t.code==mem.app.appType)?.appForm?.form",
+                                    "visible$": "!!mem.app",
+                                    "readOnly$": "context.readOnly"
+                                }
+                            },
+                            "params": {
+                                "appType$": "context.appTypes?.find((t)=>t.code==mem?.app?.appType)"
+                            }
+                        },
+                        "@buttons": {
+                            "style": {
+                                "padding": "8px"
+                            },
+                            "$": {
+                                ".ap": {
+                                    "control": "ActionPanel",
+                                    "controlOpts": {
+                                        "actions": [
+                                            {
+                                                "title": "Сохранить",
+                                                "action": {
+                                                    "name": "onSaveApp"
+                                                },
+                                                "visible$": "!mem.app?.state || mem.app.state=='START' || task.params.readOnly==false"
+                                            },
+                                            {
+                                                "expand": true,
+                                                "actions$": "task.params?.actions?.map((a)=>({title: a.name, action: {name: 'onWorkflowAction', params: {action: a.value, name: a.name, disableUpdate: true}}}))"
+                                            },
+                                            {
+                                                "title": "Печать заявлений",
+                                                "actions": [
+                                                    {
+                                                        "title": "Заявление заемщика",
+                                                        "action": {
+                                                            "js": "backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'printApplication', params: {dep_id: mem.app.dep_id, id: mem.app.id, report: 'applicationBorrower'}}, {download: true}).then((r)=>{fileDownload(r.blob, r.fileName)})"
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Заявление созаёмщика",
+                                                        "actions": [
+                                                            {
+                                                                "expand": true,
+                                                                "actions$": "mem.app?.coborrowers?.map(c=>({title: c.customer.name, action: {name: 'onPrintApplicationCoBorrower', params: {code: c.customer.code}}}))"
+                                                            }
+                                                        ],
+                                                        "visible$": "mem.app?.coborrowers?.length>0"
+                                                    }
+                                                ],
+                                                "disabled$": "!mem.app.id"
+                                            },
+                                            {
+                                                "title": "Печать заключения",
+                                                "visible$": "['CONCLUSIONS', 'DECISIONS', 'FIN', 'COMPLETED'].includes(mem.app?.stage)",
+                                                "action": {
+                                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'printApplication', params: {dep_id: mem.app.dep_id, id: mem.app.id, report: 'conclusion'}}, {download: true}).then((r)=>{fileDownload(r.blob, r.fileName)})"
+                                                }
+                                            },
+                                            {
+                                                "title": "Печать протокола КК",
+                                                "visible$": "['DECISIONS', 'FIN', 'COMPLETED'].includes(mem.app?.stage)",
+                                                "action": {
+                                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'printApplication', params: {dep_id: mem.app.dep_id, id: mem.app.id, report: 'decision', isjur: mem.app.client.isJur||mem.app.client.isIE}}, {download: true}).then((r)=>{fileDownload(r.blob, r.fileName)})"
+                                                }
+                                            },
+                                            {
+                                                "title": "Передать на рассмотрение",
+                                                "variant": "contained",
+                                                "action": [
+                                                    {
+                                                        "name": "onSaveApp"
+                                                    },
+                                                    {
+                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'startReview', params: {appId: mem.app.app.appId}})"
+                                                    },
+                                                    {
+                                                        "js": "setTimeout(()=>frontend.closeTask(), 0);"
+                                                    }
+                                                ],
+                                                "visible$": "mem.app?.state=='START' && !mem.app?.app?.isImported"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@panel": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "form": "appPanel"
+                }
+            },
+            "actions": {
+                "onSaveApp": [
+                    {
+                        "js": "if (!validate()){throw 'Abort';}"
+                    },
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'saveApplication', params: {app: mem.app, needCalculateInterest: context.needCalculateInterest||task.params?.needCalculateInterest}}).then((r)=>{context.needCalculateInterest=false; mem.app.dep_id = r.dep_id; mem.app.id = r.id; mem.app.app.appId=r.appId; mem.app.app.code=r.code; mem.app.app.interest=r.interest; mem.app.pledges = r.pledges; mem.app.state=r.state; mem.app.stage=r.stage; mem.app.changepoint=r.changepoint; tm.setTaskTitle(task.key, `Заявка ${mem.app.app.code}, ${mem.app.client.name}`); context.dossier = null; })"
+                    }
+                ],
+                "onPrintApplicationCoBorrower": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'printApplication', params: {dep_id: mem.app.dep_id, id: mem.app.id, report: 'applicationCoBorrower', code: params.code}}, {download: true}).then((r)=>{fileDownload(r.blob, r.fileName)})"
+                },
+                "onWorkflowAction": [
+                    {
+                        "name": "onSaveApp"
+                    },
+                    {
+                        "js": "return frontend.easyflow.completeTaskById(task.params.taskId, {[task?.params?.actionVar||'action']: {action: params.action, name: params.name}}, ()=>{setTimeout(()=>frontend.closeTask(), 0);});",
+                        "disableUpdate": true
+                    }
+                ]
+            }
+        },
+        "appResolutionForm": {
+            "title": "Заключение по заявке",
+            "style": {
+                "display": "flex",
+                "flexDirection": "row",
+                "height": "100%"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "height": "100%",
+                        "flex": 1,
+                        "display": "flex",
+                        "flexDirection": "column"
+                    },
+                    "className": "vertical task task-panel",
+                    "$": {
+                        "@form": {
+                            "params": {
+                                "isNew$": "mem.app?.state==undefined || mem.app?.state=='START'"
+                            },
+                            "style": {
+                                "flexGrow": 1,
+                                "padding": "8px",
+                                "overflowY": "auto"
+                            },
+                            "className": "navigator-container",
+                            "$": {
+                                "@form": {
+                                    "object$": "context.appTypes?.find((t)=>t.code==mem.app.appType)?.appForm?.object",
+                                    "form$": "context.appTypes?.find((t)=>t.code==mem.app.appType)?.appForm?.form",
+                                    "visible$": "!!mem.app",
+                                    "readOnly": true,
+                                    "params": {
+                                        "appType$": "context.appTypes?.find((t)=>t.code==mem?.app?.appType)"
+                                    }
+                                }
+                            }
+                        },
+                        "@resolution": {
+                            "className": "vertical",
+                            "style": {
+                                "padding": "8px"
+                            },
+                            "$": {
+                                "resolution": {
+                                    "$": {
+                                        "comment": {
+                                            "label": "Коментарий к заключению",
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "multiline": true,
+                                                "minRows": 3
+                                            }
+                                        }
+                                    }
+                                },
+                                "@buttons": {
+                                    "className": "horizontal",
+                                    "$$": "task.params.actions.reduce((a, b)=>{a['.btn'+b.value]={label: b.name, control: 'Button', controlProps: {color: 'primary', variant: 'contained'}, action: {name: 'onButtonAction', params: {action: b.value, name: b.name}}}; return a;}, {})",
+                                    "actions": {
+                                        "onButtonAction": {
+                                            "js": "return frontend.easyflow.completeTaskById(task.params.taskId, {[task?.params?.actionVar||'action']: {value: params.action, name: params.name, text: mem.resolution.comment||''}}, ()=>{frontend.closeTask()});",
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@panel": {
+                    "form": "appPanel"
+                }
+            }
+        },
+        "appDecisionForm": {
+            "title": "Решение по заявке",
+            "style": {
+                "display": "flex",
+                "flexDirection": "row",
+                "height": "100%"
+            },
+            "$": {
+                "@form": {
+                    "params": {
+                        "isNew$": "mem.app?.state==undefined || mem.app?.state=='START'"
+                    },
+                    "style": {
+                        "height": "100%",
+                        "flex": 1,
+                        "display": "flex",
+                        "flexDirection": "column"
+                    },
+                    "className": "vertical task task-panel",
+                    "$": {
+                        "@form": {
+                            "style": {
+                                "flexGrow": 1,
+                                "padding": "8px",
+                                "overflowY": "auto"
+                            },
+                            "className": "navigator-container",
+                            "$": {
+                                "@form": {
+                                    "object$": "context.appTypes?.find((t)=>t.code==mem.app.appType)?.appForm?.object",
+                                    "form$": "context.appTypes?.find((t)=>t.code==mem.app.appType)?.appForm?.form",
+                                    "visible$": "!!mem.app",
+                                    "readOnly": true
+                                }
+                            }
+                        },
+                        "@decision": {
+                            "className": "vertical",
+                            "style": {
+                                "padding": "16px 8px 8px 8px",
+                                "borderTop": "1px solid var(--panel-border)"
+                            },
+                            "$": {
+                                "decision": {
+                                    "className": "vertical",
+                                    "$": {
+                                        "@g1": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "date": {
+                                                    "label": "Дата решения",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "DateEdit",
+                                                    "required": true
+                                                },
+                                                "number": {
+                                                    "label": "Номер",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "controlProps": {
+                                                        "InputProps": {
+                                                            "inputProps": {
+                                                                "maxLength": 5
+                                                            }
+                                                        }
+                                                    },
+                                                    "required": true
+                                                }
+                                            }
+                                        },
+                                        "code": {
+                                            "label": "Орган принявший решение",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "SelectList",
+                                            "controlProps": {
+                                                "list": [
+                                                    {
+                                                        "value": "01",
+                                                        "name": "Кредитный комитет филиала КБ"
+                                                    },
+                                                    {
+                                                        "value": "02",
+                                                        "name": "Кредитный комитет регионального подразделения КБ"
+                                                    },
+                                                    {
+                                                        "value": "03",
+                                                        "name": "Кредитный комитет Головного банка"
+                                                    },
+                                                    {
+                                                        "value": "04",
+                                                        "name": "Правление банка"
+                                                    },
+                                                    {
+                                                        "value": "05",
+                                                        "name": "Совет банка"
+                                                    }
+                                                ]
+                                            },
+                                            "readOnly$": "!!task.params?.decision?.code",
+                                            "required": true
+                                        },
+                                        "decision": {
+                                            "label": "Решение",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "SelectList",
+                                            "controlProps": {
+                                                "list": [
+                                                    {
+                                                        "value": "accept",
+                                                        "name": "Одобрить"
+                                                    },
+                                                    {
+                                                        "value": "decline",
+                                                        "name": "Отказать"
+                                                    }
+                                                ]
+                                            },
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "refreshDecision"
+                                                }
+                                            },
+                                            "readOnly$": "!!task.params?.decision?.decision",
+                                            "required": true
+                                        },
+                                        "declineReason": {
+                                            "label": "Причина отказа",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "SelectList",
+                                            "controlProps": {
+                                                "list$": "context.declineReasons||[]"
+                                            },
+                                            "visible$": "mem.decision==='decline'",
+                                            "required": true
+                                        },
+                                        "text": {
+                                            "label": "Заключение",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "multiline": true,
+                                                "minRows": 3
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "refreshDecision": {
+                                            "js": "if(mem.decision=='accept'){mem.declineReason=null;}"
+                                        }
+                                    }
+                                },
+                                "@buttons": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        ".btnRegister": {
+                                            "label": "Зарегистрировать",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "contained",
+                                                "color": "primary"
+                                            },
+                                            "action": [
+                                                {
+                                                    "name": "onSaveDecision"
+                                                },
+                                                {
+                                                    "js": "return frontend.easyflow.completeTaskById(task.params.taskId, {[task?.params?.actionVar||'action']: {...mem.decision, name: context.declineReasons?.find((i)=>i.value==mem.decision.declineReason)?.name}}, ()=>{frontend.closeTask()});",
+                                                    "disableUpdate": true
+                                                }
+                                            ]
+                                        },
+                                        ".btnRework": {
+                                            "label": "В доработку",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "contained",
+                                                "color": "primary"
+                                            },
+                                            "action": {
+                                                "js": "return frontend.easyflow.completeTaskById(task.params.taskId, {[task?.params?.actionVar||'action']: {decision: 'review', name: 'В доработку'}}, ()=>{frontend.closeTask()});",
+                                                "disableUpdate": true
+                                            },
+                                            "visible": false
+                                        },
+                                        ".btnPrint": {
+                                            "label": "Печать протокола",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "contained",
+                                                "color": "primary"
+                                            },
+                                            "action": [
+                                                {
+                                                    "name": "onSaveDecision"
+                                                },
+                                                {
+                                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'printDecision', params: {dep_id: mem.app.dep_id, id: mem.app.id, isJur: mem.app.client.isJur}}, {download: true}).then(r=>{fileDownload(r.blob, r.fileName)})"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "actions": {
+                                        "onSaveDecision": [
+                                            {
+                                                "js": "if(!validate()) throw 'Abort';"
+                                            },
+                                            {
+                                                "js": "context.decision={...mem.decision, name: context.declineReasons?.find((i)=>i.value==mem.decision.declineReason)?.name};"
+                                            },
+                                            {
+                                                "js": "return frontend.easyflow.saveProcessVarsByTokenId(task.params.taskId, {decision: context.decision});"
+                                            },
+                                            {
+                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'saveDecision', params: {dep_id: mem.app.dep_id, id: mem.app.id, decision: context.decision}})"
+                                            }
+                                        ],
+                                        "onButtonAction": {
+                                            "js": "return frontend.easyflow.completeTaskById(task.params.taskId, {[task?.params?.actionVar||'action']: {value: params.action, name: params.name, text: mem.resolution.comment||''}}, ()=>{frontend.closeTask()});",
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@panel": {
+                    "form": "appPanel"
+                }
+            },
+            "actions": {
+                "onElementCreated": [
+                    {
+                        "js": "!context.appTypes && backend.post('/aoa/getDataObject', {type: 'refer', code: 'appType'}, {useCache: true}).then((r)=>{context.appTypes = r; forceUpdate();})"
+                    },
+                    {
+                        "js": "if (!!task.params.decision) {const {show_dialog, ...decision}=task.params.decision; mem.decision=decision;}"
+                    },
+                    {
+                        "js": "if(!context.declineReasons){backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getDeclineReasons'}, {useCache: true}).then((r)=>{context.declineReasons=r; forceUpdate()})}"
+                    }
+                ]
+            }
+        },
+        "wrapperEditForm": {
+            "title": "Редактирование заявки",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@staticForm": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "object": "app",
+                    "form": "wrapperStaticForm",
+                    "visible$": "!!task.params?.componentPath",
+                    "params": {
+                        "componentPath": "/loanapp/static-edit-form"
+                    }
+                },
+                "@dynamicTask": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@dynamicForm": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "app",
+                            "form": "appEditForm",
+                            "visible$": "!!mem?.app?.appType"
+                        }
+                    }
+                }
+            }
+        },
+        "wrapperStaticForm": {
+            "title": "Редактирование заявки, статические формы",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                ".app": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "control": "ModuleComponent",
+                    "controlProps": {
+                        "componentPath$": "params.componentPath",
+                        "draftKey$": "task.key"
+                    }
+                }
+            }
+        },
+        "wrapperResolutionForm": {
+            "title": "Заключение по заявке",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@staticTask": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "object": "app",
+                    "form": "wrapperStaticForm",
+                    "visible$": "!!task.params.componentPath",
+                    "params": {
+                        "componentPath": "/loanapp/static-resolution-form"
+                    }
+                },
+                "@dynamicTask": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@dynamicForm": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "app",
+                            "form": "appResolutionForm",
+                            "visible$": "mem?.app?.appType"
+                        }
+                    }
+                }
+            }
+        },
+        "wrapperDecisionForm": {
+            "title": "Решение по заявке",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@staticTask": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "object": "app",
+                    "form": "wrapperStaticForm",
+                    "visible$": "!!task.params.componentPath",
+                    "params": {
+                        "componentPath": "/loanapp/static-register-decision-form"
+                    }
+                },
+                "@dynamicTask": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@dynamicForm": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "app",
+                            "form": "appDecisionForm",
+                            "visible$": "mem?.app?.appType"
+                        }
+                    }
+                }
+            }
+        },
+        "appPanel": {
+            "className": "task task-panel",
+            "style": {
+                "marginLeft": "20px",
+                "width": "300px",
+                "height": "100%"
+            },
+            "$": {
+                ".tabs": {
+                    "style": {
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "height": "100%"
+                    },
+                    "control": "Tabs",
+                    "controlProps": {
+                        "pages": {
+                            "content": {
+                                "title": "Разделы",
+                                "$": {
+                                    ".navigator": {
+                                        "control": "Navigator",
+                                        "controlProps": {
+                                            "containerClass": "navigator-container",
+                                            "contentClass": "navigated-content",
+                                            "titleClass": "navigated-title",
+                                            "isLoaded$": "params.isLoaded"
+                                        }
+                                    }
+                                }
+                            },
+                            "journal": {
+                                "title": "Журнал",
+                                "style": {
+                                    "overflowY": "auto"
+                                },
+                                "$": {
+                                    ".state": {
+                                        "comment": "Старый журнал, от него надо избавляться",
+                                        "control": "ModuleComponent",
+                                        "controlProps": {
+                                            "componentPath": "/easyflow/state",
+                                            "objectKey$": "`loanapp:${mem.app?.dep_id},${mem.app?.id}`",
+                                            "variant": "wide"
+                                        },
+                                        "visible": false
+                                    },
+                                    ".journal": {
+                                        "control": "ObjectJournal",
+                                        "controlProps": {
+                                            "objectKey$": "`loanapp:${mem.app?.dep_id},${mem.app?.id}`"
+                                        },
+                                        "actions": {
+                                            "onGetRows": {
+                                                "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'getObjectJournal', params: {objectKey: `loanapp:${mem.app?.dep_id},${mem.app?.id}`}}).then(r=>onSuccess(r))"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "defaultTab$": "params.defaultTab || 'content'"
+                    }
+                }
+            }
+        },
+        "clientInfoFizForm": {
+            "title": "Данные клиента, юридичекое лицо",
+            "$": {
+                "@client": {
+                    "className": "vertical navigated-content",
+                    "title": "Данные клиента",
+                    "titleClass": "navigated-title",
+                    "$": {
+                        "client": {
+                            "className": "vertical",
+                            "$": {
+                                "@identifyWithValidator": {
+                                    "className": "vertical",
+                                    "$": {
+                                        "@identifyFields": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "@identify": {
+                                                    "style": {
+                                                        "width": "570px"
+                                                    },
+                                                    "object": "loanapp",
+                                                    "form": "appIdentifyClientForm"
+                                                },
+                                                "code": {
+                                                    "label": "Код клиента",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly": true,
+                                                    "required": true
+                                                }
+                                            }
+                                        },
+                                        "@error": {
+                                            "params": {
+                                                "message$": "validator.error && validator.helperText"
+                                            },
+                                            "visible$": "!!params.message",
+                                            "$": {
+                                                ".error": {
+                                                    "getter": "params.message",
+                                                    "control": "Text",
+                                                    "controlProps": {
+                                                        "color": "error"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "validate": "!mem.code && {helperText: 'Клиент не идентифицирован'}||undefined"
+                                },
+                                "@clientWarningsDialog": {
+                                    "style": {
+                                        "padding": 0
+                                    },
+                                    "visible$": "context.clientWarnings?.length>0",
+                                    "$": {
+                                        ".clientWarningsDialog": {
+                                            "control": "ObjectDialog",
+                                            "controlProps": {
+                                                "object": "app",
+                                                "form": "clientWarningsDialog",
+                                                "title": "Предупреждения",
+                                                "variant": "warning"
+                                            },
+                                            "actions": {
+                                                "onClose": {
+                                                    "js": "context.clientWarnings=null;"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "@sellWarnings": {
+                                    "visible$": "context.sellWarnings?.length>0",
+                                    "style": {
+                                        "width": "860px"
+                                    },
+                                    "object": "app",
+                                    "form": "sellWarningsForm"
+                                },
+                                "@r2": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "lastname": {
+                                            "label": "Фамилия",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "firstname": {
+                                            "label": "Имя",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "secondname": {
+                                            "label": "Отчество",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@r3": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "birthday": {
+                                            "label": "Дата рождения",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "DateEdit",
+                                            "required": true
+                                        },
+                                        "phone": {
+                                            "label": "Телефон",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "required": true
+                                        },
+                                        "email": {
+                                            "label": "Электронная почта",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@r4": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "sex": {
+                                            "label": "Пол",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "SelectList",
+                                            "controlProps": {
+                                                "list": [
+                                                    {
+                                                        "value": "M",
+                                                        "name": "Мужской"
+                                                    },
+                                                    {
+                                                        "value": "F",
+                                                        "name": "Женский"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "isResident": {
+                                            "label": "Резидент",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "Checkbox"
+                                        },
+                                        "inn": {
+                                            "label": "ИНН",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@clientRelations": {
+                                    "style": {
+                                        "display": "flex",
+                                        "flexDirection": "column"
+                                    },
+                                    "visible$": "mem.isRelatedPerson || mem.isInAffilatedGroup || mem.isBankEmployee || mem.isRelativeBankEmployee || false",
+                                    "$": {
+                                        "@r1": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "isRelatedPerson": {
+                                                    "label": "Связанное лицо",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "Checkbox"
+                                                },
+                                                "isBankEmployee": {
+                                                    "label": "Сотрудник банка",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "Checkbox"
+                                                },
+                                                "isRelativeBankEmployee": {
+                                                    "label": "Родственник сотрудника Банка",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "Checkbox"
+                                                }
+                                            }
+                                        },
+                                        "@r2": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "isInAffilatedGroup": {
+                                                    "label": "Связан с группой лиц",
+                                                    "style": {
+                                                        "width": "280px"
+                                                    },
+                                                    "control": "Checkbox"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@r5": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "clientType": {
+                                            "label": "Тип заемщика",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "typeOfBorrower",
+                                                "reference": "default"
+                                            },
+                                            "controlOpts": {
+                                                "referenceParams": {
+                                                    "clientType$": "mem.isJur?'1':mem.isIE?'3':'2'"
+                                                },
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "clientTypeName": {
+                                            "label": "",
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@idDocument": {
+                                    "title": "Документ, удостоверяющий личность",
+                                    "className": "vertical",
+                                    "$": {
+                                        "idDocument": {
+                                            "className": "vertical",
+                                            "$": {
+                                                "@r1": {
+                                                    "className": "horizontal",
+                                                    "$": {
+                                                        "type": {
+                                                            "label": "Код удост. личности",
+                                                            "style": {
+                                                                "width": "280px"
+                                                            },
+                                                            "control": "TextEdit"
+                                                        },
+                                                        "typeName": {
+                                                            "label": "",
+                                                            "style": {
+                                                                "width": "570px"
+                                                            },
+                                                            "control": "TextEdit"
+                                                        }
+                                                    }
+                                                },
+                                                "@r2": {
+                                                    "className": "horizontal",
+                                                    "$": {
+                                                        "date": {
+                                                            "label": "Дата выдачи",
+                                                            "style": {
+                                                                "width": "280px"
+                                                            },
+                                                            "control": "DateEdit"
+                                                        },
+                                                        "serials": {
+                                                            "label": "Серия документа",
+                                                            "style": {
+                                                                "width": "280px"
+                                                            },
+                                                            "control": "TextEdit"
+                                                        },
+                                                        "number": {
+                                                            "label": "Номер документа",
+                                                            "style": {
+                                                                "width": "280px"
+                                                            },
+                                                            "control": "TextEdit"
+                                                        }
+                                                    }
+                                                },
+                                                "issuedBy": {
+                                                    "label": "Кем выдан",
+                                                    "style": {
+                                                        "width": "860px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@address": {
+                                    "title": "Адреса клиента",
+                                    "className": "vertical",
+                                    "$": {
+                                        "@registrationAddress": {
+                                            "title": "Адрес регистрации",
+                                            "titleStyle": {
+                                                "fontSize": "14px",
+                                                "fontWeight": "normal"
+                                            },
+                                            "className": "vertical",
+                                            "$": {
+                                                "registrationAddress": {
+                                                    "$": {
+                                                        "@address": {
+                                                            "object": "app",
+                                                            "form": "clientAddressForm"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "@liveAddres": {
+                                            "title": "Адрес проживания",
+                                            "titleStyle": {
+                                                "fontSize": "14px",
+                                                "fontWeight": "normal"
+                                            },
+                                            "className": "vertical",
+                                            "$": {
+                                                "liveAddress": {
+                                                    "$": {
+                                                        "address": {
+                                                            "label": "Адрес",
+                                                            "style": {
+                                                                "width": "860px"
+                                                            },
+                                                            "control": "TextEdit"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "readOnly": true
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onIdentifyClient": [
+                            {
+                                "js": "if (validator.error){cleanErrors(); forceUpdate();}"
+                            },
+                            {
+                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'identifyClient', params: {pinfl: params.pinfl, nibbd: params.nibbd, forceFiz: true, withIdentDocType: null, withRegistrationAddress: true, withLiveAddress: true,}}).then((r)=>{context.client=r;})"
+                            },
+                            {
+                                "js": "if(!context.client){let lookup={pinfl: params.pinfl, nibbd: params.nibbd}; mem.client={...lookup}; context.clientWarnings=null; context.sellWarnings=null; action({name: 'onClientIdentified', params: {client: null}}); forceUpdate(); throw 'Abort'}"
+                            },
+                            {
+                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'client', method: 'checkRule', params: {code: context.client.code, rule: 'CLI_LOAN_APP'}}).then((r)=>{context.clientWarnings=r;})"
+                            },
+                            {
+                                "js": "context.disableApp = context.clientWarnings.filter((w)=>w.STATUS>=2).length>0; if (context.disableApp)throw 'Abort';"
+                            },
+                            {
+                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'product', method: 'checkSellClient', params: {clientCode: context.client.code, productCode: params.product.code}}).then((r)=>{context.sellWarnings=r;})"
+                            },
+                            {
+                                "js": "if (!context.sellWarnings.canSell && !params.disableSellCheck){throw 'Abort';}"
+                            },
+                            {
+                                "name": "onClientIdentified",
+                                "params": {
+                                    "client$": "context.client"
+                                }
+                            },
+                            {
+                                "js": "mem.client=context.client; if (params.myId){mem.client.myId = params.myId;}"
+                            },
+                            {
+                                "name": "onClientAccepted",
+                                "params": {
+                                    "client$": "context.client"
+                                }
+                            }
+                        ],
+                        "onCancelWarnings": [
+                            {
+                                "js": "let lookup={pinfl: mem.client.pinfl, nibbd: mem.client.nibbd}; mem.client={...lookup};"
+                            },
+                            {
+                                "name": "onClientRejected"
+                            }
+                        ],
+                        "onAcceptWarnings": {
+                            "js": ";"
+                        },
+                        "onRenewClient": {
+                            "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'renewClient', params: {client: mem.client}}).then((r)=>{mem.client=r; forceUpdate()})"
+                        }
+                    }
+                }
+            }
+        },
+        "clientInfoJurForm": {
+            "title": "Данные клиента, юридичекое лицо",
+            "$": {
+                "@client": {
+                    "className": "vertical navigated-content",
+                    "title$": "params.title || 'Данные клиента'",
+                    "titleClass": "navigated-title",
+                    "$": {
+                        "client": {
+                            "className": "vertical",
+                            "$": {
+                                "@row1": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "inn": {
+                                            "label": "ИНН",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "name": {
+                                            "label": "Наименование клиента",
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@row2": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "code": {
+                                            "label": "Код клиента",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "categoryName": {
+                                            "label": "Статус заёмщика",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        ".btnRenewClient": {
+                                            "label": "Обновить",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "color": "primary",
+                                                "variant": "text"
+                                            },
+                                            "visible$": "task.params.readOnly === false || !!params.enableRenew",
+                                            "readOnly": false,
+                                            "action": {
+                                                "name": "onRenewClient"
+                                            }
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@row3": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "phone": {
+                                            "label": "Контактный телефон",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "masked": {
+                                                    "mask": [
+                                                        "+",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "(",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        ")",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/"
+                                                    ],
+                                                    "placeholderChar": "_",
+                                                    "showMask": true,
+                                                    "guide": true
+                                                }
+                                            },
+                                            "setter": "mem.phone=(params.value.match(/\\d/g)||[]).join('');",
+                                            "required": true
+                                        },
+                                        "email": {
+                                            "label": "Адрес эл. почты",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "validate": [
+                                                "mem.email?.length>0 && !mem.email.match(/^\\S+@\\S+\\.\\S+$/) && {helperText: 'Неправильне значение'} || undefined"
+                                            ]
+                                        },
+                                        "isResident": {
+                                            "label": "Резидент",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "Checkbox",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@row4": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "clientType": {
+                                            "label": "Тип заемщика",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "typeOfBorrower",
+                                                "reference": "default"
+                                            },
+                                            "controlOpts": {
+                                                "referenceParams": {
+                                                    "clientType$": "mem.isJur?'1':'3'"
+                                                },
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "clientTypeName": {
+                                            "label": "",
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@row5": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "companyClass": {
+                                            "label": "Класс предприятия",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectSelectList",
+                                            "controlProps": {
+                                                "object": "companyClass",
+                                                "method": "getList"
+                                            },
+                                            "controlOpts": {
+                                                "translate": {
+                                                    "value": "code",
+                                                    "name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "nibbd": {
+                                            "label": "НИББД",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@clientRelations": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "isRelatedPerson": {
+                                            "label": "Связанное лицо",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "Checkbox"
+                                        },
+                                        "isInAffilatedGroup": {
+                                            "label": "Связан с группой лиц",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "Checkbox"
+                                        }
+                                    },
+                                    "readOnly": true,
+                                    "visible$": "mem.isRelatedPerson || mem.isInAffilatedGroup || false"
+                                },
+                                "@address": {
+                                    "title$": "params.titleAddress || 'Адрес клиента'",
+                                    "className": "vertical",
+                                    "$": {
+                                        "registrationAddress": {
+                                            "$": {
+                                                "@address": {
+                                                    "object": "app",
+                                                    "form": "clientAddressForm"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "readOnly": true
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onRenewClient": {
+                            "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'renewClient', params: {client: mem.client}}).then((r)=>{mem.client=r; forceUpdate()})"
+                        }
+                    }
+                }
+            }
+        },
+        "clientAddressForm": {
+            "title": "Адрес клиента",
+            "className": "vertical",
+            "$": {
+                "@region": {
+                    "className": "horizontal",
+                    "$": {
+                        "region": {
+                            "label": "Код области",
+                            "style": {
+                                "width": "280px"
+                            },
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "regionName": {
+                            "style": {
+                                "width": "570px"
+                            },
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "@district": {
+                    "className": "horizontal",
+                    "$": {
+                        "district": {
+                            "label": "Код района",
+                            "style": {
+                                "width": "280px"
+                            },
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "districtName": {
+                            "style": {
+                                "width": "570px"
+                            },
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "address": {
+                    "label": "Адрес",
+                    "style": {
+                        "width": "860px"
+                    },
+                    "control": "TextEdit",
+                    "required": true
+                }
+            }
+        },
+        "creditReportForm": {
+            "title": "Кредитный отчет",
+            "className": "vertical",
+            "$": {
+                "@creditReport": {
+                    "title": "Кредитный отчет",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "$": {
+                        "agreement": {
+                            "label": "Согласие на кредитный отчет",
+                            "control": "Checkbox",
+                            "required": true,
+                            "validate": "mem.agreement != true && {helperText: 'Требуется согласие клиента'} || true"
+                        }
+                    }
+                }
+            }
+        },
+        "afsProfileForm": {
+            "title": "Анкета АФС",
+            "$": {
+                "@afs": {
+                    "title": "Анкета",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "style": {
+                        "width": "860px"
+                    },
+                    "$": {
+                        "afs": {
+                            "$": {
+                                "data": {
+                                    "control": "DynamicForm",
+                                    "controlProps": {
+                                        "context$": "context",
+                                        "mem$": "mem.data",
+                                        "elements": {
+                                            "className": "vertical",
+                                            "$$": "mem.description?.indicators?.reduce((a, i)=>{return {...a, [i.code]: {label: i.name, control: !!i.reference?'SelectList':'TextEdit', required: i.required,controlProps: {list: i.reference.map((r)=>{return {value: r.id, name: r.name}})}}};}, {})"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "dossierForm": {
+            "title": "Досье",
+            "$": {
+                "@dossier": {
+                    "title": "Досье",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "style": {
+                        "width": "860px"
+                    },
+                    "$": {
+                        ".dossier": {
+                            "control": "ListTable",
+                            "controlProps": {},
+                            "getter": "params.changepoint",
+                            "controlOpts": {
+                                "rowModelType": "infinite",
+                                "id": "docType",
+                                "refreshEvent": "onRefreshDossier",
+                                "columns!": {
+                                    "name": {
+                                        "label": "Наименование",
+                                        "flex": 1
+                                    },
+                                    "buttons": {
+                                        "label": "",
+                                        "control": "DynamicForm",
+                                        "elements": {
+                                            "style": {
+                                                "display": "flex",
+                                                "flexDirection": "row"
+                                            },
+                                            "$": {
+                                                ".btnAdd": {
+                                                    "label": "Добавить",
+                                                    "control": "IconButton",
+                                                    "controlProps": {
+                                                        "icon": "addCircle",
+                                                        "upload": true
+                                                    },
+                                                    "actions": {
+                                                        "onUploadFile": [
+                                                            {
+                                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'uploadDossierFile', file: params.file, params: {appId: mem.app.appId, docType: params.data.docType} }, {isFormData: true})"
+                                                            },
+                                                            {
+                                                                "js": "task.events.fire('onRefreshDossier', {mode: 'row', docType: params.data.docType})"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "readOnly": false
+                                                },
+                                                ".btnDel": {
+                                                    "label": "Удалить",
+                                                    "control": "IconButton",
+                                                    "controlProps": {
+                                                        "icon": "removeCircle",
+                                                        "confirm!": {
+                                                            "message$": "`Удалить ${params?.data?.name}?`"
+                                                        }
+                                                    },
+                                                    "action": [
+                                                        {
+                                                            "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'deleteDossierFile', params: {fId: params.data.fId}})"
+                                                        },
+                                                        {
+                                                            "js": "task.events.fire('onRefreshDossier', {mode: 'row', docType: params.data.docType})"
+                                                        }
+                                                    ],
+                                                    "readOnly$": "!params?.data?.isPresent"
+                                                },
+                                                ".btnView": {
+                                                    "label": "Просмотреть",
+                                                    "control": "IconButton",
+                                                    "controlProps": {
+                                                        "icon": "visibility"
+                                                    },
+                                                    "readOnly$": "!params?.data?.isPresent",
+                                                    "action": [
+                                                        {
+                                                            "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'downloadDossierFile', params: {fId: params.data.fId}}, {download: true}).then((r)=>{fileDownload(r.blob, r.fileName)})"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onGetRows": {
+                                    "js": "if (context.dossier && !params.docType){onSuccess(context.dossier)}else{backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getDossier', params: {dep_id: mem.dep_id, id: mem.id, docType: params.docType}}).then((r)=>{if(params.docType){const d = context.dossier.find((e)=>e.docType==params.docType); context.dossier.splice(context.dossier.indexOf(d), 1, r[0]);}else{context.dossier = r;} onSuccess(r);})}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "lookupClientJurForm": {
+            "title": "Подбор клиента юрлица",
+            "className": "vertical",
+            "$": {
+                "lookupFields": {
+                    "className": "vertical",
+                    "$": {
+                        "inn": {
+                            "label": "ИНН",
+                            "control": "TextEdit",
+                            "style": {
+                                "width": "300px"
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "refresh"
+                                }
+                            }
+                        },
+                        "@2": {
+                            "className": "horizontal",
+                            "$": {
+                                "nibbd": {
+                                    "label": "НИББД",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "width": "400px"
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "refresh"
+                                        }
+                                    }
+                                },
+                                "btnLookup": {
+                                    "label": "Идентифицировать",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "color": "primary",
+                                        "style": {
+                                            "textTransform": "none"
+                                        }
+                                    },
+                                    "readOnly$": "!mem.inn && !mem.nibbd",
+                                    "action": [
+                                        {
+                                            "js": "return backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'identifyClient', params: {taxcode: mem.inn, nibbd: mem.nibbd, withRegistrationAddress: true, forceJur: true}}).then(r=>{context.client=r;})"
+                                        },
+                                        {
+                                            "name": "onIdentifyClient"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "@lookupResult": {
+                    "className": "vertical",
+                    "$": {
+                        "client": {
+                            "$": {
+                                "name": {
+                                    "label": "Наименование клиента",
+                                    "style": {
+                                        "width": "400px"
+                                    },
+                                    "control": "TextEdit",
+                                    "readOnly": true
+                                }
+                            }
+                        },
+                        "relatedPerson": {
+                            "control": "Text",
+                            "style": {
+                                "color": "rgb(243, 159, 33)"
+                            },
+                            "visible$": "mem.client.isRelatedPerson"
+                        }
+                    },
+                    "visible$": "!!mem.client"
+                },
+                "@lookupErrors": {
+                    "title": "Ошибки контроля",
+                    "style": {
+                        "color": "red"
+                    },
+                    "$": {
+                        "checkErrors": {
+                            "control": "ListTable",
+                            "controlProps": {
+                                "gridOptions": {
+                                    "headerHeight": 0
+                                }
+                            },
+                            "controlOpts": {
+                                "$": {
+                                    "TXT_ERR": {
+                                        "label": "Ошибка",
+                                        "flex": 1
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "visible$": "mem.checkErrors?.length>0"
+                }
+            },
+            "actions": {
+                "onIdentifyClient": [
+                    {
+                        "js": "mem.relatedPerson = context?.client?.isRelatedPerson && 'Клиент является связанным лицом'"
+                    },
+                    {
+                        "js": "if (context.client){return backend.post('/aoa/execObjectMethod', {object: 'client', method: 'checkRule', params: {code: context.client.code, rule: 'CLI_LOAN_APP'}}).then(r=>{mem.checkErrors = r;})}"
+                    },
+                    {
+                        "js": "mem.client=context.client; if(context.client){mem.lookupFields = {inn: context.client.inn, nibbd: context.client.nibbd};}"
+                    },
+                    {
+                        "name": "refreshTask"
+                    }
+                ]
+            }
+        },
+        "lookupProductListForm": {
+            "title": "Доступные продукты",
+            "$": {
+                "|products": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "$": {
+                            "name": {
+                                "label": "Наименование",
+                                "flex": 1,
+                                "fields|": {
+                                    "code": {},
+                                    "name": {}
+                                }
+                            },
+                            "minAmount": {
+                                "label": "Мин.сумма кредита",
+                                "width": 180,
+                                "format": "currency"
+                            },
+                            "maxAmount": {
+                                "label": "Макс.сумма кредита",
+                                "width": 180,
+                                "format": "currency"
+                            },
+                            "currency": {
+                                "label": "Валюта",
+                                "width": 100
+                            },
+                            "interest": {
+                                "label": "Ставка",
+                                "width": 100
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSelectionChanged": [
+                    {
+                        "js": "context.selectedProduct = selectedRow;"
+                    },
+                    {
+                        "name": "refreshTask"
+                    }
+                ]
+            }
+        },
+        "lookupProductLineListForm": {
+            "title": "Кредитные линии клиента",
+            "$": {
+                "|lines": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "$": {
+                            "product": {
+                                "label": "Продукт",
+                                "flex": 1,
+                                "fields|": {
+                                    "DCL_CODE": {},
+                                    "DCL_NAME": {}
+                                }
+                            },
+                            "CODE": {
+                                "label": "Номер договора",
+                                "width": 150
+                            },
+                            "FROMDATE": {
+                                "label": "Дата начала",
+                                "width": 130,
+                                "format": "date"
+                            },
+                            "TODATE": {
+                                "label": "Дата окончания",
+                                "width": 130,
+                                "format": "date"
+                            },
+                            "AMOUNT": {
+                                "label": "Лимит задолженности",
+                                "width": 150,
+                                "format": "currency",
+                                "cellStyle": {
+                                    "textAlign": "right"
+                                }
+                            },
+                            "OST": {
+                                "label": "Доступный остаток",
+                                "with": 150,
+                                "format": "currency",
+                                "cellStyle": {
+                                    "textAlign": "right"
+                                }
+                            },
+                            "VAL_CODE": {
+                                "label": "Валюта",
+                                "width": 100
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSelectionChanged": [
+                    {
+                        "js": "context.selectedLine = selectedRow;"
+                    },
+                    {
+                        "name": "refreshTask"
+                    }
+                ]
+            }
+        },
+        "productParametersForm": {
+            "title": "Параметры продукта",
+            "className": "vertical",
+            "$": {
+                "parameters": {
+                    "className": "vertical",
+                    "$$": "Object.keys(params?.product?.parameters||{})?.filter((k)=>params?.product?.parameters[k]?.isHidden==false)?.reduce?.((a, p)=>{a[p] = {init: null, $: { ['@'+p]: {object: 'app', form: 'productParameterControl', params: {parameter: {code: p, ...params.product.parameters[p]}}}}}; return a;}, {})"
+                }
+            }
+        },
+        "productParameterControl": {
+            "$": {
+                ".numeric": {
+                    "label$": "params.parameter.name",
+                    "getter": "(()=>{if (mem==undefined || mem==null) return mem; if (params.parameter.minValue!=undefined && mem < params.parameter.minValue)return params.parameter.minValue; if (params.parameter.maxValue!=undefined && mem > params.parameter.maxValue)return params.parameter.maxValue; return mem})()",
+                    "control": "NumericField",
+                    "controlProps": {
+                        "numericProps$": "{minimumValue: params.parameter.minValue, maximumValue: params.parameter.maxValue}"
+                    },
+                    "validate": "mem!=undefined && params.parameter.minValue>0 && mem<=0 && {helperText: `Допустимо минимальное значение: ${params.parameter.minValue}`}||undefined",
+                    "visible$": "params.parameter.type == 'I'"
+                },
+                ".currency": {
+                    "label$": "params.parameter.name",
+                    "control": "CurrencyField",
+                    "visible$": "params.parameter.type == 'N'"
+                },
+                ".text": {
+                    "label$": "params.parameter.name",
+                    "control": "TextEdit",
+                    "visible$": "params.parameter.type == 'C' || params.parameter.type == 'S'"
+                },
+                ".date": {
+                    "label$": "params.parameter.name",
+                    "control": "DateEdit",
+                    "visible$": "params.parameter.type == 'D'"
+                },
+                ".checkbox": {
+                    "label$": "params.parameter.name",
+                    "control": "Checkbox",
+                    "visible$": "params.parameter.type == 'B'"
+                }
+            },
+            "required$": "params.parameter.isRequired",
+            "readOnly$": "isReadOnly || params.parameter.isReadOnly"
+        },
+        "clientWarningsDialog": {
+            "title": "Предупреждения",
+            "className": "vertical",
+            "style": {
+                "width": "900px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "auto"
+                    },
+                    "$": {
+                        "@form": {
+                            "object": "app",
+                            "form": "clientWarningsForm"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "onCancelWarnings"
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        },
+                        ".btnAccept": {
+                            "label": "Принять",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "readOnly$": "context.disableApp",
+                            "action": [
+                                {
+                                    "name": "onAcceptWarnings"
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "clientWarningsForm": {
+            "title": "Предупреждения карточки клиента",
+            "$": {
+                ".warnings": {
+                    "getter": "context.clientWarnings",
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "columns!": {
+                            "TXT_ERR": {
+                                "label": "Предупреждения",
+                                "flex": 1
+                            },
+                            "STATUS": {
+                                "label": "",
+                                "decode": {
+                                    "0": {
+                                        "value": "Предупреждение"
+                                    },
+                                    "1": {
+                                        "value": "Предупреждение"
+                                    },
+                                    "2": {
+                                        "value": "Запрет"
+                                    },
+                                    "3": {
+                                        "value": "Запрет"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "controlProps": {
+                        "gridOptions": {
+                            "headerHeight": 0
+                        }
+                    }
+                }
+            }
+        },
+        "sellWarningsForm": {
+            "title": "Запрет продажи продукта",
+            "$": {
+                ".title": {
+                    "init": "Запрет продажи продукта клиенту",
+                    "control": "Text"
+                },
+                ".message": {
+                    "init$": "context.sellWarnings?.message",
+                    "control": "Text"
+                }
+            }
+        },
+        "appEditJsonTask": {
+            "comment": "Редактирование заявки в виде JSON",
+            "className": "task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden",
+                "display": "flex",
+                "flexDirection": "column"
+            },
+            "$": {
+                "@panel": {
+                    "className": "horizontal",
+                    "style": {
+                        "padding": "8px 8px 8px 8px"
+                    },
+                    "$": {
+                        ".btnSave": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "context.j = JSON.parse(mem.json); context.j.app.changepoint=mem.app.app.changepoint;"
+                                },
+                                {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'saveApplicationJson', params: {...task.params.appKey, json: context.j}}).then((r)=>{context.modified=false; mem.app.app.changepoint=r.changepoint;})"
+                                }
+                            ],
+                            "readOnly$": "!context.modified"
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@json": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                "json": {
+                                    "style": {
+                                        "height": "100%",
+                                        "overflow": "hidden"
+                                    },
+                                    "control": "AceEditor",
+                                    "controlProps": {
+                                        "editorId": "appJsonEdit",
+                                        "mode": "json"
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getApplicationJson', params: task.params.appKey}).then((r)=>{mem.app = r;})"
+                    },
+                    {
+                        "js": "mem.json = JSON.stringify(mem.app||{}, null, 4);"
+                    }
+                ],
+                "onModified": {
+                    "js": "if (!context.modified){context.modified=true; forceUpdate();}",
+                    "disableUpdate": false
+                }
+            }
+        },
+        "decisionInfoForm": {
+            "title": "Информация по приятому решению",
+            "style": {
+                "width": "860px"
+            },
+            "$": {
+                "@decisionInfo": {
+                    "title": "Решение",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "readOnly": true,
+                    "$": {
+                        ".list": {
+                            "getter": "Object.values(mem.decisions)",
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "decision": {
+                                        "label": "Решение",
+                                        "width": 150,
+                                        "decode": {
+                                            "accept": {
+                                                "value": "Одобрить"
+                                            },
+                                            "decline": {
+                                                "value": "Отклонить"
+                                            }
+                                        }
+                                    },
+                                    "code": {
+                                        "label": "Орган",
+                                        "flex": 1,
+                                        "decode": {
+                                            "01": {
+                                                "value": "Кредитный комитет филиала КБ"
+                                            },
+                                            "02": {
+                                                "value": "Кредитный комитет регионального подразделения КБ"
+                                            },
+                                            "03": {
+                                                "value": "Кредитный комитет Головного банка"
+                                            },
+                                            "04": {
+                                                "value": "Правление банка"
+                                            },
+                                            "05": {
+                                                "value": "Совет банка"
+                                            }
+                                        }
+                                    },
+                                    "number": {
+                                        "label": "Номер",
+                                        "width": 140
+                                    },
+                                    "date": {
+                                        "label": "Дата",
+                                        "width": 160,
+                                        "format": "date"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "governmentDecisionForm": {
+            "title": "Признак выдачи кредита по решению правительства",
+            "$": {
+                "government": {
+                    "className": "vertical",
+                    "$": {
+                        "hasDecision": {
+                            "label": "Кредит по решению правительства",
+                            "style": {},
+                            "control": "Checkbox",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onChangeDecision"
+                                }
+                            }
+                        },
+                        "@number": {
+                            "className": "horizontal",
+                            "$": {
+                                "decisionNumber": {
+                                    "label": "Номер решения",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "TextEdit"
+                                },
+                                "decisionDate": {
+                                    "label": "Дата решения",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "TextEdit"
+                                }
+                            },
+                            "readOnly$": "isReadOnly && !mem.hasDecision"
+                        }
+                    },
+                    "actions": {
+                        "onChangeDecision": {
+                            "js": "if (!mem.hasDecision){mem.decisionNumber=null; mem.decisionDate=null;}"
+                        }
+                    }
+                }
+            }
+        },
+        "modifyDecisionDialog": {
+            "title$": "`Изменение решения по заявке ${params.code}`",
+            "$": {
+                "@form": {
+                    "style": {
+                        "marginTop": "4px",
+                        "marginBottom": "4px"
+                    },
+                    "object": "app",
+                    "form": "decisionForm"
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        },
+                        ".btnAccept": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "readOnly$": "context.disableApp",
+                            "action": [
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'modifyDecision', params: {dep_id: params.dep_id, id: params. id, decision: mem.decision}})",
+                                    "disableUpdate": true
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onDialogCreated": [
+                    {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getApplication', params: {dep_id: params.dep_id, id: params.id}}).then((app)=>{mem.decision=app.decisions[Object.keys(app.decisions||[])?.[0]] || {}; forceUpdate();})"
+                    }
+                ]
+            }
+        },
+        "decisionForm": {
+            "$": {
+                "decision": {
+                    "className": "vertical",
+                    "$": {
+                        "@g1": {
+                            "className": "horizontal",
+                            "$": {
+                                "date": {
+                                    "label": "Дата решения",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "DateEdit",
+                                    "required": true
+                                },
+                                "number": {
+                                    "label": "Номер",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "TextEdit",
+                                    "controlProps": {
+                                        "InputProps": {
+                                            "inputProps": {
+                                                "maxLength": 5
+                                            }
+                                        }
+                                    },
+                                    "required": true
+                                }
+                            }
+                        },
+                        "code": {
+                            "label": "Орган принявший решение",
+                            "style": {
+                                "width": "860px"
+                            },
+                            "control": "SelectList",
+                            "controlProps": {
+                                "list": [
+                                    {
+                                        "value": "01",
+                                        "name": "Кредитный комитет филиала КБ"
+                                    },
+                                    {
+                                        "value": "02",
+                                        "name": "Кредитный комитет регионального подразделения КБ"
+                                    },
+                                    {
+                                        "value": "03",
+                                        "name": "Кредитный комитет Головного банка"
+                                    },
+                                    {
+                                        "value": "04",
+                                        "name": "Правление банка"
+                                    },
+                                    {
+                                        "value": "05",
+                                        "name": "Совет банка"
+                                    }
+                                ]
+                            },
+                            "readOnly$": "!!task.params?.decision?.code",
+                            "required": true
+                        },
+                        "decision": {
+                            "label": "Решение",
+                            "style": {
+                                "width": "860px"
+                            },
+                            "control": "SelectList",
+                            "controlProps": {
+                                "list": [
+                                    {
+                                        "value": "accept",
+                                        "name": "Одобрить"
+                                    },
+                                    {
+                                        "value": "decline",
+                                        "name": "Отказать"
+                                    }
+                                ]
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "refreshDecision"
+                                }
+                            },
+                            "readOnly$": "!!task.params?.decision?.decision",
+                            "required": true
+                        },
+                        "declineReason": {
+                            "label": "Причина отказа",
+                            "style": {
+                                "width": "860px"
+                            },
+                            "control": "SelectList",
+                            "controlProps": {
+                                "list$": "context.declineReasons||[]"
+                            },
+                            "visible$": "mem.decision==='decline'",
+                            "required": true
+                        },
+                        "text": {
+                            "label": "Заключение",
+                            "style": {
+                                "width": "860px"
+                            },
+                            "control": "TextEdit",
+                            "controlProps": {
+                                "multiline": true,
+                                "minRows": 3
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refreshDecision": {
+                            "js": "if(mem.decision=='accept'){mem.declineReason=null;}"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onElementCreated": [
+                    {
+                        "js": "if(!context.declineReasons){backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getDeclineReasons'}, {useCache: true}).then((r)=>{context.declineReasons=r; forceUpdate()})}"
+                    }
+                ]
+            }
+        },
+        "channelInfoForm": {
+            "title": "Информация по каналу поступления",
+            "style": {
+                "width": "860px"
+            },
+            "$": {
+                "@channelInfo": {
+                    "title": "Канал поступления",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "readOnly": true,
+                    "$": {
+                        "inputChannel": {
+                            "label": "Канал",
+                            "control": "TextEdit",
+                            "getter": "mem.app.inputChannel"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getApplication": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.services import execObjectMethod\n\ndata = execObjectMethod({\n    'object': 'app', 'method': 'getApplicationJson',\n    'params': parameters\n})\n\nif data is None:\n    raise UserException('Заявка не найдена: %s' % json.dumps(parameters))\n\n# Преобразование старого формата залога\nif data.get('pledges'):\n    for p in data['pledges']:\n        if p.get('JSON'):\n            p.update(p['JSON'])\n            del p['JSON']\n\nif not data.get('changepoint'):\n    if 'changepoint' in data['app']:\n        data['changepoint'] = data['app']['changepoint']\n        del data['app']['changepoint']"
+            }
+        },
+        "saveApplication": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "#\n# Сохранение заявки\n#\n# Входные параметры\n#   dep_id, id - идентификаторы заявки\n#   app - объект заявки\n#\n# Выходные параметры\n#   dep_id, id - идентификаторы заявки\n#   code - номер заявки\n#   appId - уникальный номер заявки\n#   interest - ставка\n#   changepoint - состояние последней модификации\n#   state - состояние заявки\n#   stage - стадия рассмотрения заявки\n#   pledges - список залогов после обновления\n#\nSQL=\"\"\"\n    declare\n        bNew boolean;\n        idReqDep number := :dep_id;\n        idReq number := :id;\n        sCode varchar2(60);\n        changePoint varchar2(60);\n        \n        idCliDep number;\n        idCli number;\n        \n        sDclCode varchar2(60);\n        idDcl number;\n        \n        sSelDep C_DEP.CODE%%type;\n        \n        sCliCode varchar2(60);\n        \n        \n        -- Получение срока по продукту\n        function getDurationCode(pNum in number, pDim in varchar2, pDclCode in varchar2) return varchar is\n          sDurationCode colvir.T_DEAPRD_STD.CODE%%type;\n        begin\n            select\n                (select p.code \n                from colvir.T_DEALNKPRD m, colvir.T_DEAPRD_STD p, colvir.T_DEACLS_STD t\n                where m.PRD_ID = p.ID and m.DCL_ID = t.ID and t.code=pDclCode\n                  and p.time_type = pDim and p.time_unit = pNum\n                )\n            into sDurationCode\n            from dual;\n        \n            if sDurationCode is null then\n                raise_application_error(-20000, colvir.LocalFrmt(\n                    'Для продукта %%0:s не настроен срок договора %%1:s %%2:s', \n                    colvir.vargs(pDclCode, pNum, pDim)\n                ));\n            end if;\n        \n            return sDurationCode;\n        \n        end;\n    \n        -- Получение цели использования по прдукту\n        function getPurposeCode(pDclCode in varchar2) return varchar2 is\n            sPurCode colvir.L_PURDSC_STD.CODE%%type;\n        begin\n            select \n                (select d.CODE \n                from L_DEAPUR l, L_PURDSC_STD d, T_DEACLS_STD t\n                where l.PUR_ID=d.ID and l.DCL_ID=t.ID and t.CODE=pDclCode\n                and rownum=1)\n            into sPurCode from dual;\n                \n            --if sPurCode is null then\n            --    raise_application_error(-20000, colvir.LocalFrmt(\n            --        'Для продукта %%0:s не задана цель использования', \n            --        colvir.vargs(pDclCode)\n            --    ));\n            --end if;\n            \n            return sPurCode;\n            \n        end;\n        \n\n    begin\n    \n        -- Поиск заявки по appId, если нету, создадим новую\n        if idReq is null and json_value(:json, '$.app.appId') is not null then\n            begin\n                select dep_id, id into idReqDep, idReq from l_reqdea_ext where appid=json_value(:json, '$.app.appId');\n            exception when no_data_found then null;\n                when too_many_rows then\n                    raise_application_error(-20000, LocalFrmt(\n                        'Найдено более одной заявки с идентификатором %%0:s',\n                        vargs(json_value(:json, '$.app.appId'))\n                    ));\n                \n            end;\n        end if;\n    \n        bNew := idReq is null;\n    \n        if not bNew then\n            -- Проверка изменений\n            select to_char(nn) into changePoint from T_ORD where dep_id=idReqDep and id=idReq;\n            if changePoint <> nvl(:changePoint, '*') then\n                raise_application_error(-20000, Localize(\n                    'Заявка изменена в другой задаче или другим пользователем. Сохранение данных запрещено.'\n                ));\n            end if;\n        end if;\n        \n    \n        -- Получаем ID карточки клиента\n        sCliCode := json_value(:json, '$.client.code');\n        G_PkgCli.pGetCliId(sCliCode, idCliDep, idCli);\n        \n        -- Получаем ID продукта\n        sDclCode := json_value(:json, '$.app.productCode');\n        idDcl := T_PkgDea.fDclId(sDclCode);\n        \n        if idReqDep is null then\n            if json_value(:json, '$.app.depCode') is not null then\n                -- Берем подразделение из заявки\n                idReqDep := C_PkgDep.fGetIdDep(json_value(:json, '$.app.depCode'));\n            else\n                idReqDep := p_iddep2;\n            end if;\n            \n        end if;\n        \n        sSelDep := colvir.C_PkgDep.fGetCodeDep(idReqDep);\n        \n        sCode := json_value(:json, '$.app.code');\n        \n        L_BSREQDEA.pSave(\n            nDEP_ID         => idReqDep,\n            nID             => idReq,\n            sCODE           => sCode,\n            sSell_Dep_Code  => sSelDep,\n            sCli_Code       => sCliCode,\n            sDcl_Code       => sDclCode,\n            nAmount         => json_value(:json, '$.app.amount'),\n            sVal_Code       => json_value(:json, '$.app.currency'),\n            \n            nReq_Type_Id    => 2,\n            --sPrd_Code       => getDurationCode(json_value(:json, '$.app.duration'), json_value(:json, '$.app.durationUnit'), sDclCode),\n            sPur_Code       => getPurposeCode(sDclCode),\n            \n            dRecv           => to_date(substr(json_value(:json, '$.app.registrationDate'),1,10), 'YYYY-MM-DD'),\n            \n            sExternalfl     => case when json_value(:json, '$.isExternal') = 'true' then '1' else '0' end,\n            \n            sPrim           => ''\n    \n        );\n        \n        \n        if bNew then\n            -- Зачитаем созданный номер заявки\n            if sCode is null then\n                select CODE into sCode from T_ORD where DEP_ID=idReqDep and ID=idReq;\n            end if;\n            \n            insert into L_REQDEA_EXT (\n                DEP_ID, ID,\n                -- Идентификатор заявки\n                APPID,\n                -- Номер завки\n                APPNO,\n                -- Состояние заявки\n                STATE\n            ) values (\n                idReqDep, idReq,\n                -- Идентификатор заявки\n                json_value(:json, '$.app.appId'),\n                -- Номер завки\n                json_value(:json, '$.app.code'),\n                -- Состояние заявки\n                'START'\n            );\n            \n            -- Зачитываем точку изменений\n            select to_char(NN) into :changePoint from T_ORD\n            where dep_id=idReqDep and id=idReq\n            ;\n            \n            :state := 'START';\n            :stage := null;\n            \n        else\n            update L_REQDEA_EXT set\n                APPID = json_value(:json, '$.app.appId'),\n                APPNO = json_value(:json, '$.app.code')\n            where dep_id=idReqDep and id=idReq\n            returning state, reviewstage into :state, :stage\n            ;\n            \n            -- Меняем точку изменений\n            update T_ORD set\n                NN = to_number(changePoint)+1\n            where dep_id=idReqDep and id=idReq\n            returning to_char(NN) into :changePoint\n            ;\n            \n        end if;\n        \n        update L_REQDEA set\n            RATE_REQ = json_value(:json, '$.app.interest'),\n            JSON = :json \n        where DEP_ID=idReqDep and ID=idReq;                                    \n                \n        :dep_id := idReqDep;\n        :id := idReq;\n        :code := sCode;\n        \n    end;\n\"\"\"\n\nfrom django.db import transaction\nfrom django.conf import settings\nfrom apng_core.json import WebJSONEncoder\nfrom apng_core.auth import getUser\nfrom apng_core.aoa.services import execObjectMethod\nimport datetime\n\ndef makePledgeFromObjectOfCredit(type_ooc, ooc):\n    if type_ooc == 'AUTO':\n        pledge = {\n            'type'              : 'AUTO',\n            'typeName'          : 'Транспортные средства',\n            'baseType'          : 'AUTO',\n            'ens_code'          : '23',\n            'ens_name'          : 'Транспортные средства',\n            'vehicle_type'      : ooc.get('vehicle_type'),\n            'vehicle_type_name' : ooc.get('vehicle_type_name'),\n            'vehicle_model'     : ooc.get('vehicle_model'),\n            'issue_year'        : ooc.get('issue_year'),\n        }\n    elif type_ooc == 'REALTY':\n        pledge = {\n            'type'              : 'REALTY-RESIDENTAL',\n            'typeName'          : 'Жилая недвижимость',\n            'ens_code'          : '22',\n            'ens_name'          : 'Недвижимость',\n            'square_com'        : ooc.get('square'),\n            'address'           : {\n                'address'       : ooc.get('address'),\n            },\n            'own_amount'        : ooc.get('own_amount'),\n            'dea_num'           : ooc.get('dea_num'),\n            'dea_date'          : ooc.get('dea_date'),\n        }\n    else:\n        raise Exception('Тип %s объекта кредитования не реализован' % type_ooc)\n\n    pledge = {**pledge,\n        'dep_id'            : ooc.get('dep_id'),\n        'id'                : ooc.get('id'),\n        'mortgage_value'    : ooc.get('mortgage_value'),\n        'mortgage_value_currency': ooc.get('mortgage_value_currency'),\n        'fair_value'        : ooc.get('fair_value'),\n        'fair_value_currency': ooc.get('fair_value_currency'),\n        'name'              : ooc.get('description'),\n        'owner'             : {\n            'code'          : ooc.get('owner'),\n            'name'          : ooc.get('owner_name'),\n        },\n        'seller'            : ooc.get('seller'),\n    }\n    \n    return pledge\n\n\n# Получение системных настроек\nappSettings = execObjectMethod({\n    'object': 'settings',\n    'method': 'get'\n})['loanapp']\n\n\ncon = initDbSession(application='bank')\n\napp = parameters['app']\n\nif 'state' in app:\n    del app['state']\n    \nif 'stage' in app:\n    del app['stage']\n\n\nwith transaction.atomic(using=settings.APPS_DB['bank']):\n    need_calculate_interest = False\n    \n    if app['app'].get('appId') is None:\n        # Новая заявка\n        \n        #\n        # Генерация нового id заявки\n        #\n        app['app']['appId'] = execObjectMethod({'object': 'app', 'method': 'generateId'})\n    \n        #\n        # Генерация номера заявки\n        #\n        if app['app'].get('code') is None:\n            app['app']['code'] = execObjectMethod({\n                'object': 'bank_coderule', 'method': 'newCode',\n                'params': {\n                    'rule': 'L_REQDEACODE',\n                    'params': {}\n                }\n            })\n\n        \n        #\n        # Расчет ставки\n        # Нужен какой-то признак дополнительно, требуется ли ставка\n        #\n        if app.get('appType') not in ['factoring', 'factoringMonetaryClaim', 'guarantee']:\n            if app['app'].get('interest') is None:\n                need_calculate_interest = True\n    else:\n        # Существующая заявка\n        if parameters.get('needCalculateInterest') == True:\n            need_calculate_interest = True\n            \n        # Пересчет ставки при повторном сохранении если по какой-то причине\n        # попалась заявку с пустой ставкой\n        # Код для временного использования по проблемным заявкам\n        #if app['appType'] == 'loanfiz' and app['app'].get('interest') is None and app['product']['options'].get('interestEnabled')!=True:\n        #    need_calculate_interest = True\n            \n\n    if app.get('product', {}).get('options', {}).get('typeOfObjectOfCredit','') == 'REALTY':\n        app['app']['parameters']['L_PAYFIRST_R'] = app.get('objectOfCredit', '{}').get('own_amount')\n        \n    if need_calculate_interest:\n        try:\n            # Извлечение параметров из структуры заявки\n            doc_parameters = execObjectMethod({\n                'object': 'app', 'method': 'extractParameters', 'params': {'app': app}\n            })\n            \n            # Извлечение классификаторов из структуры заявки\n            doc_classifiers = execObjectMethod({\n                'object': 'app', 'method': 'extractClassifiers', 'params': {'app': app}\n            })\n            \n            # Расчет ставки\n            interest = execObjectMethod({\n                'object': 'loanapp', 'method': 'calculateInterest',\n                'params': {\n                    'clientCode': app['client']['code'],\n                    'productCode': app['app']['productCode'],\n                    'amount': app['app']['amount'],\n                    'currency': app['app']['currency'],\n                    'duration': app['app'].get('duration'),\n                    'durationUnit': app['app'].get('durationUnit'),\n                    'durationEndDate': app['app'].get('durationEndDate'),\n                    'parameters': {\n                        **(app['app'].get('parameters', {})),\n                        **doc_parameters\n                    },\n                    'classifiers': doc_classifiers,\n                    'withDebug': True,\n                }\n            })\n            \n            if interest is None:\n                raise UserError('Процентная ставка не рассчитана. Проверьте настройки продукта.');\n            \n            app['app']['interest'] = interest\n            \n        except UserException as e:\n            raise\n        except Exception as e:\n            raise Exception(\n                'Ошибка расчета процентной ставки\\nКлиент: {clientId}, продукт {productCode}\\n\\n{message}'.format(\n                    clientId=app['client']['code'],\n                    productCode=app['app']['productCode'],\n                    message=e\n                )\n            )\n        \n                    \n    if app.get('product', {}).get('options', {}).get('durationMethod', 'duration') == 'duration' and app['app'].get('duration'):\n        if parameters.get('disableCheckDuration', False) != True:\n            checkMethod = app.get('product', {}).get('options', {}).get('durationCheckMethod', 'checkDuration') or 'checkDuration'\n            execObjectMethod({\n                'object': 'product',\n                'method': checkMethod,\n                'params': {\n                    'code': app['app'].get('productCode'),\n                    'duration': app['app'].get('duration'),\n                    'durationUnit': app['app'].get('durationUnit')\n                }\n            })\n\n       \n    #\n    # Обовление объекта кредитования\n    #\n    pledges = app.get('pledges', [])\n    if app.get('product', {}).get('options', {}).get('typeOfObjectOfCredit'):\n        \n        # Убираем из залогов объект кредитования, если он там был\n        pledges = list(filter(lambda x: x.get('isObjectOfCredit')!=True, pledges))\n        \n        # Добавяем обновленное описание объекта залога\n        if app['objectOfCredit']['isPledge']:\n            pl = makePledgeFromObjectOfCredit(app['product']['options']['typeOfObjectOfCredit'], app['objectOfCredit'])\n            pledges.insert(0, {\n                'isObjectOfCredit': True,\n                **pl\n            })\n            \n    if app.get('withoutPledge') == True:\n        pledges = []\n\n    app['pledges'] = pledges\n    \n    def currentChange():\n        currentUser = getUser()\n        return {\n            # Код пользователя изменяющего заявку\n            'code'   : currentUser.code,\n            # Имя пользователя\n            'name'   : currentUser.name,\n            'modified': datetime.datetime.now(),\n        }\n\n    # Установка текущего пользователя\n    if app.get('user') is None:\n        app['user'] = currentChange()\n    else:\n        if not 'changes' in app['user']:\n            app['user']['changes'] = []\n        app['user']['changes'].append(currentChange())\n        \n\n    with con.cursor() as cursor:\n        changePoint = None\n        if 'changepoint' in app:\n            changePoint = app['changepoint']\n            del app['changepoint']\n\n        p = {\n            'dep_id': cursor.var(int),\n            'id': cursor.var(int),\n            'code': cursor.var(str),\n            'json': json.dumps(app, cls=WebJSONEncoder, ensure_ascii=False),\n            'changepoint': cursor.var(str),\n            'state': cursor.var(str),\n            'stage': cursor.var(str),\n        }\n            \n        p['dep_id'].setvalue(0, parameters.get('dep_id'))\n        p['id'].setvalue(0, parameters.get('id'))\n        p['changepoint'].setvalue(0, changePoint)\n            \n        cursor.execute(SQL, p)\n\n        r = {\n            'dep_id': p['dep_id'].getvalue(),\n            'id': p['id'].getvalue(),\n            'code': app['app']['code'],\n            'appId': app['app']['appId'],\n            'interest': app['app'].get('interest'),\n            'changepoint': p['changepoint'].getvalue(),\n            'state': p['state'].getvalue(),\n            'stage': p['stage'].getvalue(),\n            'pledges': app['pledges'],\n        }\n        \n        \n        if appSettings.get('identifyMyId') == True:\n            #\n            # Сохранение фотографии отправленной в myId\n            #            \n            if app['client'].get('myId', {}).get('photo'):\n                \n                execObjectMethod({\n                    'object': 'app', 'method': 'saveDossierFiles',\n                    'params': {\n                        'dep_id': r['dep_id'],\n                        'id': r['id'],\n                        'files': [\n                            {\n                                'docType': 'CRED.FOTO_CLI',\n                                'fileName': 'client_photo',\n                                'fileData': None,\n                                'base64Data': app['client']['myId']['photo']\n                            }\n                        ]\n                    }\n                })\n\n            #\n            # Сохранение фотографий myId созаёмщиков\n            #\n            for idx in range(1, 3):\n                coborrowers = app.get('coborrowers', []) or []\n                if idx <= len(coborrowers) and coborrowers[idx-1]['customer'].get('myId') is not None:\n                    execObjectMethod({\n                        'object': 'app', 'method': 'saveDossierFiles',\n                        'params': {\n                            'dep_id': r['dep_id'],\n                            'id': r['id'],\n                            'files': [\n                                {\n                                    'docType': 'CRED.FOTO_F%s' % (idx),\n                                    'fileName': 'client_%s_photo' % (coborrowers[idx-1]['customer']['code']),\n                                    'fileData': None,\n                                    'base64Data': coborrowers[idx-1]['customer']['myId']['photo']\n                                }\n                            ]\n                        }\n                    })\n                else:\n                    execObjectMethod({\n                        'object': 'loanapp',\n                        'method': 'deleteDossierFileByType',\n                        'params': {\n                            'dep_id': r['dep_id'],\n                            'id': r['id'],\n                            'code': 'CRED.FOTO_F%s' % idx\n                        }\n                    })\n            \n            #\n            # Сохранение фотографий myId поручителей\n            #\n            surerers = list(filter(lambda x: x['type'] == 'SURETY', app.get('pledges', [])))\n            for idx in range(1,3):\n                if idx <= len(surerers) and surerers[idx-1]['owner'].get('myId') is not None:\n                    execObjectMethod({\n                        'object': 'app', 'method': 'saveDossierFiles',\n                        'params': {\n                            'dep_id': r['dep_id'],\n                            'id': r['id'],\n                            'files': [\n                                {\n                                    'docType': 'CRED.FOTO.P%s' % (idx),\n                                    'fileName': 'client_%s_photo' % (surerers[idx-1]['owner']['code']),\n                                    'fileData': None,\n                                    'base64Data': surerers[idx-1]['owner']['myId']['photo']\n                                }\n                            ]\n                        }\n                    })\n                    \n                else:                \n                    execObjectMethod({\n                        'object': 'loanapp',\n                        'method': 'deleteDossierFileByType',\n                        'params': {\n                            'dep_id': r['dep_id'],\n                            'id': r['id'],\n                            'code': 'CRED.FOTO.P%s' % (idx)\n                        }\n                    })\n                \n        \n    \n        data = r\n                \n\n\n"
+            }
+        },
+        "deleteApplication": {
+            "sql": {},
+            "script": {
+                "py": "with initDbSession(application='bank').cursor() as cursor:\n    p = {\n        'DEP_ID': parameters.get('dep_id'),\n        'ID': parameters.get('id')\n    }\n    \n    cursor.execute(\"\"\"\n        declare\n            appState varchar2(60);\n        begin\n            select state into appState from l_reqdea_ext where DEP_ID=:DEP_ID and ID=:ID;\n            \n            if appState <> 'START' then\n                raise_application_error(-20000, localize('Нельзя удалять заявки после отправки на рассмотрение'));\n            end if;\n            \n            -- Удаление псевдо записи в журнале\n            update T_OPERJRN set UNDOFL='1' where DEP_ID=:DEP_ID and ORD_ID=:ID;\n            --delete from T_OPERJRN where DEP_ID=:DEP_ID and ORD_ID=:ID and NJRN=0;\n            \n            update L_INFONIKI set ORD_DEP_ID=null, ORD_ID=null where ORD_DEP_ID=:DEP_ID and ORD_ID=:ID;\n            delete from T_ARLDEA where DEP_ID=:DEP_ID and ORD_ID=:ID;\n            L_BSREQDEA.pDel(:DEP_ID, :ID);\n        end;\n    \"\"\", p)\n"
+            }
+        },
+        "getDossier": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "SQL=\"\"\"\nselect\n    e.dep_id||','||e.id||','||e.docType \"fId\",\n    D.CODE \"docType\", \n    D.LONGNAME \"name\", \n    e.extfile \"fileName\",\n    case\n        when dbms_lob.getlength(e.datablob) > 0 then 1\n        else 0\n    end \"isPresent\"\nfrom T_DOCREFDSC R, T_DOCREFSET S, T_DEADOC D , L_REQDEADOS e\nwhere D.ID = e.DOCTYPE(+)\n    and S.ID = R.ID\n    and D.ID = S.DDO_ID\n    and R.DDD_id=(\n        select DDD_ID from T_DEACLS_STD s \n        where s.id=(select dcl_id from t_dea where dep_id=:DEP_ID and id=:ID)\n        and t_Pkgdeaprm.fClsPar(s.ID, T_pkgDeaPrm.fGetParId('L_REQDOCLIST')) is not null\n        and instr(','||t_Pkgdeaprm.fClsPar(s.ID, T_pkgDeaPrm.fGetParId('L_REQDOCLIST'))||',',','||R.CODE||',')>0\n    )\n    and e.DEP_ID(+) = :DEP_ID\n    and e.ID(+) = :ID\n    and d.code=nvl(:docType, d.code)\n\"\"\"\ncon = initDbSession(application='bank')\nwith con.cursor() as cur:\n    p = {\n        'DEP_ID': parameters.get('dep_id'),\n        'ID': parameters.get('id'),\n        'docType': parameters.get('docType'),\n    }    \n\n    cur.execute(SQL, p)\n    from apng_core.db import fetchall\n    data = fetchall(cur)\n    \n    for r in data:\n        r['isPresent'] = r['isPresent'] == 1\n        \n"
+            }
+        },
+        "uploadDossierFile": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "sql = \"\"\"\n    declare\n        dt T_DEADOC%%rowtype;\n        re l_reqdea_ext%%rowtype;\n        idUs number;\n    begin\n        begin\n            select * into dt from t_deadoc where code=:docType;\n        exception when no_data_found then\n            raise_application_error(-20000, LocalFrmt(\n                'Тип документа %%0:s не существует',\n                vargs(:docType)\n            ));\n        end;\n        \n        select * into re from l_reqdea_ext where appid=:appId;\n        begin\n            if :fId is not null then\n                update l_reqdeados set\n                    datablob = :fileData,\n                    extfile = :fileName\n                where dep_id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 1)\n                    and id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 2)\n                    and docType=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 3)\n                return correctdt, id_us into :modifyDate, idUs\n                ;\n            else\n                update l_reqdeados set extfile=extfile where dep_id=re.dep_id and id=re.id and doctype=dt.id;\n                if sql%%notfound then\n                    insert into l_reqdeados(\n                        dep_id, id, doctype\n                    )values(\n                        re.dep_id, re.id, dt.id\n                    );\n                end if;\n                \n                :fId := re.dep_id||','||re.id||','||dt.id;\n                \n                update l_reqdeados set\n                    datablob = :fileData,\n                    extfile = :filename\n                where dep_id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 1)\n                    and id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 2)\n                    and docType=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 3)\n                return correctdt, id_us into :modifyDate, idUs\n                ;\n            end if;\n            \n            select code into :modifyUser from c_usr where id=idUs;\n        end;\n        \n        \n        \n    end;\n\"\"\"\nimport json\nimport datetime\n\nfiles = parameters['$files']\ndel parameters['$files']\n\n#raise Exception(json.dumps(parameters, indent=4))\n\nimport oracledb\nwith initDbSession(application='bank').cursor() as cursor:\n    p = {\n        'docType': parameters.get('docType'),\n        'appId': parameters.get('appId'),\n        'fileName': files['file'].name,\n        'fileData': cursor.var(oracledb.BLOB),\n        'fId': cursor.var(str),\n        'modifyDate': cursor.var(datetime.datetime),\n        'modifyUser': cursor.var(str),\n    }\n    p['fileData'].setvalue(0, files['file'].read())\n    \n    cursor.execute(sql, p)\n    \n    data = {\n        'fId': p['fId'].getvalue(),\n        'modifyDate': p['modifyDate'].getvalue(),\n        'modifyUser': p['modifyUser'].getvalue(),\n    }\n    "
+            }
+        },
+        "deleteDossierFile": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "con = initDbSession(application='bank')\nwith con.cursor() as cursor:\n    p = {\n        'fId': parameters.get('fId'),\n    }\n    cursor.execute(\"\"\"\n        declare\n        begin\n            delete from L_REQDEADOS\n            where dep_id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 1)\n                and id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 2)\n                and docType=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 3)\n            ;\n        end;\n    /\"\"\", p)\n"
+            }
+        },
+        "downloadDossierFile": {
+            "sql": {
+                "params": [],
+                "sql": ""
+            },
+            "script": {
+                "params": [],
+                "py": "sql=\"\"\"\n    select \n        rd.datablob \"fileData\",\n        rd.extfile \"fileName\"\n    from t_deadoc d, l_reqdeados rd\n    where rd.dep_id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 1)\n        and rd.id=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 2)\n        and rd.docType=REGEXP_SUBSTR(:fId, '([0-9]+),([0-9]+),(.+)', 1, 1, '', 3)\n        and d.id=rd.doctype\n        \n\"\"\"\n\ncon = initDbSession(application='bank')\n\nfrom django.db import connections\nfrom apng_core.db import fetchone\nimport io\nimport cx_Oracle\nfrom django.http import HttpResponse\nimport urllib.parse\n\n\nfileData = io.BytesIO()\n\nwith con.cursor() as cursor:\n    p = {\n        'fId': parameters.get('fId'),\n    }\n    \n    cursor.execute(sql, p)\n\n    row = fetchone(cursor)\n    if not row:\n        raise UserException('Файл не существует')\n    \n    blob = row['fileData']\n    filename = row['fileName']\n    if not filename:\n        filename = 'file.dat'\n    offset = 1\n    numBytesInChunk = 65536\n    while True:\n        data = blob.read(offset, numBytesInChunk)\n        fileData.write(data)\n        if len(data) < numBytesInChunk:\n            break\n        offset += len(data)\n    \nfileData.seek(0)\n\ndata = HttpResponse(\n    content_type=\"application/octet-stream\", \n    content=fileData,\n)\n        \ndownload_file_name = urllib.parse.quote(filename)\ndata['Content-Disposition'] = 'inline; filename=\"%s\"' % (download_file_name)\n    \n"
+            }
+        },
+        "saveDecision": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.services import execObjectMethod\n\nexecObjectMethod({\n    'object': 'loanapp', 'method': 'updateDecisions',\n    'params': {\n        'dep_id': parameters.get('dep_id'),\n        'id': parameters.get('id'),\n        'decisions': {\n            parameters['decision']['code']: parameters['decision']\n        }\n    }\n})\n"
+            }
+        },
+        "printDecision": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "#\n# Формирование протокола КК\n#\nfrom django.http import HttpResponse\nfrom apng_core.auth import getUser\n\ndef generate(*args, **kwargs):\n    from apng_core.aoa.services import execObjectMethod\n    p = {\n        'colvir_session': args[0],\n        'code': args[1],\n        'rpt_params': args[2],\n        **kwargs,\n    }\n    \n    return execObjectMethod({\n        'object': 'cbs.report',\n        'method': 'generate',\n        'params': p\n    })\n\ncolvir_session = getUser().xcolvirs\nrpt_code = 'C_116_FOLN_008' if parameters['isJur'] else 'C_116_FOLN_004'\nrpt_params = {\n    \"DEP_ID\": {\"type\": \"N\", \"value\": parameters['dep_id']},\n    \"ID\": {\"type\": \"N\", \"value\": parameters['id']},\n}\n\nreportData = generate(colvir_session, rpt_code, rpt_params, rpt_type='WORD', lng_code='OZ')\n\ndata = HttpResponse(\n    reportData,\n    content_type=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\"\n)\ndata[\"Content-Disposition\"] = 'Content-Disposition: inline; filename=\"app-{id}-{report}.docx\"'.format(**{'report': 'decision', **parameters})\ndata[\"Content-Length\"] = len(data.content)\n\n"
+            }
+        },
+        "prepareApplicationDistrict": {
+            "script": {
+                "py": "#\n# Подготовка области и района подачи заявки\n#\ndef getApplicationDistrict(params=None):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'region': cursor.var(str),\n            'regionName': cursor.var(str),\n            'district': cursor.var(str),\n            'districtName': cursor.var(str),\n            'address': cursor.var(str),\n            \n            'depCode': cursor.var(str),\n            'depName': cursor.var(str),\n        }\n        \n        if params:\n            p['depCode'].setvalue(0, params.get('depCode'))\n        \n        cursor.execute(\"\"\"\n            declare\n                adrType varchar2(60);\n                depCliCode varchar2(60);\n                idCliDep number;\n                idCli number;\n                idAppDep number;\n                virtualBalanceDepCode varchar2(30);\n            begin\n                -- Тип адреса в карточке подразделения\n                adrType := nvl(\n                    C_PkgPrm.fGetValPrm('CDEPADRTYPE'),\n                    GCLIADR_FACT\n                );\n                \n                if :depCode is not null then\n                    idAppDep := C_PkgDep.fGetIdDep(:depCode);\n                else\n                    idAppDep := P_IDDEP2;\n                end if;\n                \n                :depCode := C_PkgDep.fGetCodeDep(idAppDep);\n                \n                virtualBalanceDepCode := C_PKGDEPCLI.fGetAddAttr(idAppDep, 'VRTBALDEP');\n                if virtualBalanceDepCode is not null and virtualBalanceDepCode <> :depCode then\n                    :depCode := virtualBalanceDepCode;\n                    idAppDep := C_PkgDep.fGetIdDep(virtualBalanceDepCode);\n                end if;\n                \n                \n                :depName := C_PkgDep.fGetNameDep(idAppDep);\n                \n                depCliCode := C_PkgPrm.fGetValPrm('CDEPCLIENT', idAppDep);\n                if depCliCode is null then\n                    raise_application_error(-20000, localfrmt(\n                        'Для подразделения %%0:s не задана карточка клиента, системный параметр CDEPCLIENT',\n                        vargs(C_pkgDep.fGetCodeDep(idAppDep))\n                    ));\n                end if;\n                \n                begin\n                    select dep_id, id into idCliDep, idCli from G_CLI where CODE=depCliCode;\n                exception when no_data_found then\n                    null;\n                end;\n                \n                if idCli is not null then\n                    begin\n                        select \n                            g_pkgaddress_uz.fgetObl(a.ID) OBL_CODE,\n                            U_PKGUNIREF_UZ.fgetOblNameByCode(g_pkgaddress_uz.fgetObl(a.ID)) OBL_NAME,\n                            g_pkgaddress_uz.fgetRn(a.ID) RN_CODE,\n                            U_PKGUNIREF_UZ.fgetRnNameByCode(g_pkgaddress_uz.fgetRn(a.ID)) RN_NAME,\n                            g_pkgaddress.fGetFullAddr(a.ID, G_ADDR_CNTR) ADDRESS\n                        into :region, :regionName, :district, :districtName, :address\n                        from G_ADDRESS a\n                        where a.id = (select g_pkgaddress.fCliAddrId(idCliDep, idCli, adrType) from dual)\n                        ;\n                    exception when no_data_found then\n                        null;\n                    end;\n                    \n                end if;\n                \n            end;\n        /\"\"\", p)\n        \n    return {\n        'region': p['region'].getvalue(),\n        'regionName': p['regionName'].getvalue(),\n        'district': p['district'].getvalue(),\n        'districtName': p['districtName'].getvalue(),\n        'address': p['address'].getvalue(),\n        \n        'depCode': p['depCode'].getvalue(),\n        'depName': p['depName'].getvalue(),\n    }\n\ndata = getApplicationDistrict(parameters)\n"
+            },
+            "sql": {}
+        },
+        "prepareNewApplication": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.services import execObjectMethod\nfrom apng_core.auth import getUser\n\ninitDbSession(application='bank')\ncurrent_user = getUser()\n\n#\n# настройка заявок\n#\nappSettings = execObjectMethod({'object': 'settings', 'method': 'get'})['loanapp']\ndef getParameter(s, name, default=None):\n    return next(filter(lambda x: x['code']==name, s.get('parameters', [])), {}).get('value', default)\n\n#\n# Настройки продукта\n#\nps = execObjectMethod({\n    'object': 'product', 'method': 'getProductSetup',\n    'params': {\n        'productCode': parameters['product']['code'],\n        'withProduct': True,\n        'withParameters': True,\n        'withClassifiers': True,\n        'withConstraints': True,\n        'withOptions': True,\n        'currency': parameters['product'].get('currency'),\n    }\n})\n\n#\n# Подразделение заявки\n#\napp = {\n    'app': {\n        **execObjectMethod({'object': 'app', 'method': 'prepareApplicationDistrict'})\n    }\n}\n\n#\n# Дата заявки из опердня пользователя\n#\nif current_user.operday:\n    app['app']['registrationDate'] = current_user.operday\n\n#from loanapp.services.application.prepare import prepareNewApplication\n#app = prepareNewApplication({})\n\n# Сценарий рассмотрения заявки из настройки продукта\napp['app']['reviewWorkflow'] = ps.get('reviewWorkflow')\n\ndata={\n    **app,\n    'product': ps,\n}\n\nproductType = parameters.get('productType')\n\nif ps['options'].get('appType'):\n    # Тип заявки задаётся на продукте, параметр L_APP_TYPE\n    data['appType'] = ps['options']['appType']\n    \n    appType = execObjectMethod({'object': 'appType', 'method': 'get', 'params': {'code': ps['options']['appType']}})\nelse:\n    raise UserException('Для продукта %s не задан параметр L_APP_TYPE. Настройте продукт.' % parameters['product']['code'])\n\n\nclient = None\nif parameters.get('clientCode'):\n    client = execObjectMethod({\n        'object': 'loanapp',\n        'method': 'getClient',\n        'params': {\n            'code': parameters['clientCode'],\n            'withIdentDocType': None,\n        }\n    })\n\n\n    \"\"\"\n    data['afs'] = execObjectMethod({\n        'object': 'afs', 'method': 'getAfsMethodAndDescription',\n        'params': {\n            'productCode': parameters['product']['code'],\n            'CLI_TYPE': '3' if client['isIE'] else '2' if client['isJur'] else '1',\n            'CRE_TYPE': '53' if ps['options'].get('appType') == 'overdraftfiz' else None,\n            'sheet': 'OBJ',\n        }\n    })\n    data['afs']['data'] = {}\n    \"\"\"\n    data['afs'] = {\n        'data': {}\n    }\n    \n\ndata['app'] = {\n    **data['app'],\n    'productCode': parameters['product']['code'],\n    'productName': ps['name'],\n    'currency': parameters['product']['currency'],\n    'durationUnit': 'M',\n    \n    # Цель кредита\n    'purposeOfLoan': ps['purpose'].get('code'),\n    'purposeOfLoanName': ps['purpose'].get('name'),\n    \n    # Цель кредита по классификатору\n    'purpose112OfLoan': ps['classifiers']['UZ_PURPCRED_112']['value'] if ps['classifiers'].get('UZ_PURPCRED_112') else None,\n    'purpose112OfLoanName': ps['classifiers']['UZ_PURPCRED_112']['name'] if ps['classifiers'].get('UZ_PURPCRED_112') else None,\n    \n    # Нормативно правовой акт\n    'legalAct': ps['classifiers']['UZ_NPA']['value'] if ps['classifiers'].get('UZ_NPA') else None,\n    'legalActName': ps['classifiers']['UZ_NPA']['name'] if ps['classifiers'].get('UZ_NPA') else None,\n    \n    # Вид кредитования\n    'typeOfLending': ps['classifiers']['UZ_VIDCRED']['value'] if ps['classifiers'].get('UZ_VIDCRED') else None,    \n    'typeOfLendingName': ps['classifiers']['UZ_VIDCRED']['name'] if ps['classifiers'].get('UZ_VIDCRED') else None,\n    \n    # Вид кредитования  по классификатору\n    'typeOfLending110': ps['classifiers']['UZ_TYPECRED_110']['value'] if ps['classifiers'].get('UZ_TYPECRED_110') else None,    \n    'typeOfLending110Name': ps['classifiers']['UZ_TYPECRED_110']['name'] if ps['classifiers'].get('UZ_TYPECRED_110') else None,\n    \n    'parameters': {}\n}\n\nif parameters.get('appType') == 'loanfiz':\n    data['income'] = {\n        'hasPayments': True,\n        'hasWork': True,\n    }\n    \nif ps['options'].get('typeOfObjectOfCredit') != None:\n    data['objectOfCredit'] = {\n        \"objectType\": {'REALTY': 'realty', 'AUTO': 'auto'}.get(ps['options']['typeOfObjectOfCredit']),\n        \"isPledge\": True,\n        \"cost_currency\": parameters['product']['currency'],\n        \"mortgage_value_currency\": parameters['product']['currency'],\n        \"fair_value_currency\": parameters['product']['currency'],\n    }\n\ndata['client'] = client or {}\n\n#\n# Транш по кредитной линии\n#\nif productType == '3' and parameters.get('selectedLine'):\n    data['app']['purposeOfLoan'] = parameters['selectedLine']['PUR_CODE']\n    data['app']['purposeOfLoanName'] = parameters['selectedLine']['PUR_NAME']\n    \n    data['app']['interest'] = parameters['selectedLine']['RATE']\n    \n    if parameters['selectedLine'].get('app'):\n        data['client'] = {\n            **data['client'],\n            'clientType': parameters['selectedLine']['app']['client']['clientType'],\n            'clientTypeName': parameters['selectedLine']['app']['client']['clientTypeName'],\n            'companyClass': parameters['selectedLine']['app']['client']['companyClass'],\n        }\n        \n        if parameters['selectedLine']['app'].get('government') is not None:\n            data['government'] = parameters['selectedLine']['app']['government']\n\n        del parameters['selectedLine']['app']\n        \n    data['line'] = parameters['selectedLine']\n    \n#\n# Денежное требование по договору факторинга\n#\nif productType == '8' and parameters.get('factoring'):\n    data['app']['factoring'] = parameters['factoring']\n\nfor p in ps['parameters']:\n    data['app']['parameters'][p] = ps['parameters'][p]['value']\n    \n\n# Инициализация залогов\ndata['pledges'] = []\n\n# Инициализация созаёмщиков\ndata['coborrowers'] = []\n\n#\n# Дополнительная инициализация по типу заявки\n#\nif appType.get('prepareMethod', {}).get('method') is not None:\n    try:\n        data = execObjectMethod({\n            **appType['prepareMethod'],\n            'params': {\n                'app': data\n            }\n        })\n    except Exception as e:\n        raise UserException('Ошибка вызова метода подготовки заявки').withError(e)\n\n\n"
+            }
+        },
+        "renewClient": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "client = parameters['client']\n\n#\n# Зачитать данные клиента, обновить информацию и вернуть описание клиента\n#\n\nfrom apng_core.aoa.services import execObjectMethod\n\nclientParams = {}\nif client['isJur'] == False and client['isIE'] == False:\n    clientParams['withIdentDocType'] = None\n    clientParams['withLiveAddress'] = True\n\nc = execObjectMethod({\n    'object': 'loanapp', \n    'method': 'getClient', \n    'params': {\n        'code': client['code'],\n        **clientParams\n    }\n})\n\n\nclient['name'] = c.get('name')\nclient['isResident'] = c['isResident']\nclient['phone'] = client.get('mobilePhone') or c.get('phone') or client.get('phone')\nclient['email'] = c.get('email') or client.get('email')\n\nif c.get('registrationAddress'):\n    client['registrationAddress'] = c['registrationAddress']\n\nif client['isJur']:\n    client['inn'] = c.get('inn')\n    client['nibbd'] = c.get('nibbd')\n    client['oked'] = c.get('oked')\n    client['okedName'] = c.get('okedName')\n    \n        \nif client['isJur'] == False or client['isIE']:\n    client['firstname'] = c.get('firstname')\n    client['lastname'] = c.get('lastname')\n    client['secondname'] = c.get('secondname')\n    client['firstnameLat'] = c.get('firstnameLat')\n    client['lastnameLat'] = c.get('lastnameLat')\n    client['secondnameLat'] = c.get('secondnameLat')\n\n    client['sex'] = c.get('sex')\n    client['birthday'] = c.get('birthday')\n    \n    client['pinfl'] = c.get('pinfl')\n    client['inn'] = c.get('inn')\n    \n    if c.get('idDocument'):\n        client['idDocument'] = c['idDocument']\n    \n    if c.get('liveAddress'):\n        client['liveAddress'] = c['liveAddress']\n\ndata = client\n"
+            }
+        },
+        "getDeclineReasons": {
+            "sql": {},
+            "script": {
+                "py": "data = [\n    {\n        \"value\": \"01\",\n        \"name\": \"Нежизнеспособность бизнес плана\"\n    },\n    {\n        \"value\": \"02\",\n        \"name\": \"Несоответствие оформления кредитных документов внутренним нормативным  документам КБ по кредитным процедурам\"\n    },\n    {\n        \"value\": \"03\",\n        \"name\": \"Неудовлетворительное финансовое состояние потенциального заёмщика\"\n    },\n    {\n        \"value\": \"04\",\n        \"name\": \"Некредитоспособность потенциального заёмщика\"\n    },\n    {\n        \"value\": \"05\",\n        \"name\": \"Неудовлетворительное состояние предлагаемого обеспечения\"\n    },\n    {\n        \"value\": \"06\",\n        \"name\": \"Неудовлетворительная кредитная дисциплина потенциального заёмщика по погашению ранее полученных кредитов банка\"\n    },\n    {\n        \"value\": \"07\",\n        \"name\": \"Не соответствует кредитной политике коммерческого банка\"\n    },\n    {\n        \"value\": \"08\",\n        \"name\": \"Отказ заемщика в получении кредита\"\n    }\n]"
+            }
+        },
+        "setState": {
+            "sql": {},
+            "script": {
+                "py": "from functools import reduce\n\ncon = initDbSession(application='bank')\n\nupdate_fields = []\n\nif 'stage' in parameters:\n    update_fields.append({\n        'sql': 'REVIEWSTAGE=:stage',\n        'prm': {\n            'name': 'stage',\n            'value': parameters['stage'],\n        }\n    })\n\nif 'state' in parameters:\n    update_fields.append({\n        'sql': 'STATE=:state',\n        'prm': {\n            'name': 'state',\n            'value': parameters['state'],\n        }\n    })\n    \n\nwith con.cursor() as cur:\n    p = {\n        'dep_id': parameters.get('dep_id'),\n        'id': parameters.get('id'),\n        **reduce(lambda a, v: {**a, v['prm']['name']: v['prm']['value']}, update_fields, {})\n    }\n    SQL = 'update L_REQDEA_EXT set ' + ','.join([x['sql'] for x in update_fields]) + ' where DEP_ID=:dep_id and ID=:id'\n    \n    cur.execute(SQL, p)\n    \n\n"
+            }
+        },
+        "attachDocumentsToDea": {
+            "script": {
+                "py": "def attachDocumentsToDea(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'req_dep_id': params.get('req_dep_id'),\n            'req_id': params.get('req_id'),\n            'dea_dep_id': params.get('dea_dep_id'),\n            'dea_id': params.get('dea_id'),\n        }\n        \n        cursor.execute(\"\"\"\n            declare\n            begin\n                for r in (\n                    select d.code, dd.dep_id, dd.id, dd.datablob, dd.extfile filename \n                    from T_DEADOC d, L_REQDEADOS dd \n                    where d.id=dd.doctype\n                      and dd.dep_id=:req_dep_id and dd.ID=:req_id\n                ) loop\n                    declare\n                        idECpy number;\n                    begin\n                        -- savepoint req_doc;\n                        T_PKGDOCDOS.pSaveDeaDocSimple(\n                            pDEP_ID => :dea_dep_id,\n                            pORD_ID => :dea_id,\n                            pDOCTYPE => r.CODE,\n                            pECPY_ID => idECpy,\n                            pFULLPATH => r.FILENAME,\n                            pFILEEXT => substr(regexp_substr(r.FILENAME, '\\.[^\\.]*$'), 2),\n                            pReplaceFl => '1'\n                        );\n                        update T_DOCECPY set\n                            DOCBLB = r.DATABLOB\n                        where ID=idECpy\n                        ;\n                    --exception when others then\n                    --    rollback to savepoint req_doc;\n                    end;\n                end loop;\n            end;\n        /\"\"\", p)\n\nattachDocumentsToDea(parameters)\n"
+            }
+        },
+        "generateId": {
+            "script": {
+                "py": "#\n# Генерация id заявки (appId)\n#\ndef generateId():\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'id': cursor.var(str),\n        }\n        \n        cursor.execute(\"\"\"\n            begin\n                :id := L_UZ_UNIQNUMREQ_KEY.nextval;\n            end;\n        /\"\"\", p)\n\n    return p['id'].getvalue()\n\ndata = generateId()\n"
+            },
+            "sql": {}
+        },
+        "extractParameters": {
+            "script": {
+                "py": "#\n# Извлечение параметров заявки из структуры объекта\n#\npaths = [\n    {\n        'code': 'L_PAYALLSUMIP',\n        'path': 'objectOfCredit.cost'\n    }\n]\n\nfrom apng_core.json import extractObjectValues\ndata = extractObjectValues(parameters.get('app'), paths)\n"
+            }
+        },
+        "extractClassifiers": {
+            "script": {
+                "py": "#\n# Извлечение классификаторов из структуры заявки\n#\npaths = [\n    { \n        'code': 'UZ_TZ',\n        'path': 'client.clientType'\n    },\n    {\n        'code': 'UZ_PURPCRED_112',\n        'path': 'app.purpose112OfLoan'\n    },\n    {\n        'code': 'UZ_TYPECRED_110',\n        'path': 'app.typeOfLending110'\n    },\n]\n\nfrom apng_core.json import extractObjectValues\ndata = extractObjectValues(parameters.get('app'), paths)\n"
+            }
+        },
+        "saveDossierFiles": {
+            "script": {
+                "py": "#\n# Сохранение списка файлов в досье\n#\nfrom apng_core.aoa.services import execObjectMethod\n\ndef saveDossierFiles(params):\n    for file in params['files']:\n        execObjectMethod({\n            'object': 'app', 'method': 'saveDossierFile',\n            'params': {\n                'dep_id': params.get('dep_id'),\n                'id': params.get('id'),\n                **file\n            }\n        })\n\nsaveDossierFiles(parameters)\n"
+            }
+        },
+        "saveDossierFile": {
+            "script": {
+                "py": "#\n# Сохранение файла в досье\n#\nfrom base64 import decodebytes\nimport cx_Oracle\nimport re\n\ndef saveDossierFile(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n\n        p = {\n            'dep_id': params.get('dep_id'),\n            'id': params.get('id'),\n            'docType': params.get('docType'),\n            'fileName': params.get('fileName'),\n            'fileData': cursor.var(cx_Oracle.BLOB),\n        }\n        \n        if params.get('fileData'):\n            p['fileData'].setvalue(0, params['fileData'])\n        elif params.get('base64Data'):\n            b64 = params['base64Data']\n            \n            # Вырежем заголовок строки, если он пришел\n            r = re.match('data:(.+)/(.+);base64,', b64)\n            if r:\n                # Добавляем расширение файла по типу из заголовка\n                p['fileName'] = params.get('fileName')+'.'+r.group(2)\n                # Вырезаем заголовок\n                b64 = b64[len(r.group()):]\n                \n            p['fileData'].setvalue(0, decodebytes(b64.encode('utf-8')))\n\n        cursor.execute(\"\"\"\n            declare\n                idDocType number;\n            begin\n                select\n                    (select id from t_deadoc_std where code=:docType)\n                into idDocType\n                from dual;\n\n                if idDocType is null then\n                    raise_application_error(-20000, LocalFrmt(\n                        'Тип документа досье %%0:s не существует', \n                        vargs(:docType)\n                    ));\n                end if;\n\n                update L_REQDEADOS set\n                    extfile=:fileName, \n                    DATABLOB=:fileData \n                where DEP_ID=:dep_id and ID=:id and DOCTYPE=idDocType;\n\n                if SQL%%NOTFOUND then\n                    insert into L_REQDEADOS(\n                        dep_id, id, doctype, extfile\n                    )values(\n                        :dep_id, :id, idDocType, :fileName\n                    );\n\n                    update L_REQDEADOS set\n                        DATABLOB=:fileData \n                    where DEP_ID=:dep_id and ID=:id and DOCTYPE=idDocType;\n                end if;\n            end;\n        \"\"\", p)\n        \nsaveDossierFile(parameters)\n"
+            }
+        },
+        "getApplicationJson": {
+            "script": {
+                "py": "#\n# Зачитывание JSON заявки\n#\nfrom apng_core.db import fetchone\ndef getApplicationJson(params):\n    with initDbSession(application='bank').cursor() as cursor:\n        p = None\n        sql = None\n        if params.get('dep_id') and params.get('id'):\n            p = {\n                'idDep': params.get('dep_id'),\n                'idOrd': params.get('id'),\n            }\n            sql = \"\"\"\n                select re.dep_id, re.id, to_char(o.NN) changepoint, re.state, re.reviewstage, r.JSON \n                from T_ORD o, L_REQDEA r, L_REQDEA_EXT re\n                where r.DEP_ID=:idDep and r.ID=:idOrd and o.dep_id=r.dep_id and o.id=r.id\n                    and re.dep_id=r.dep_id and re.id=r.id\n            \"\"\"\n        elif params.get('appId'):\n            p = {\n                'appId': params['appId']\n            }\n            sql = \"\"\"\n                select re.dep_id, re.id, to_char(o.NN) changepoint, re.state, re.reviewstage, r.json \n                from t_ord o, l_reqdea r, l_reqdea_ext re \n                where r.dep_id=re.dep_id and r.id=re.id and re.appid=:appId and o.dep_id=r.dep_id and o.id=r.id\n            \"\"\"\n        elif params.get('appNo'):\n            p = {\n                'appNo': params['appNo']\n            }\n            sql = \"\"\"\n                select re.dep_id, re.id, to_char(o.NN) changepoint, re.state, re.reviewstage, r.json \n                from t_ord o, l_reqdea r, l_reqdea_ext re \n                where r.dep_id=re.dep_id and r.id=re.id and re.appNo=:appNo and o.dep_id=r.dep_id and o.id=r.id\n            \"\"\"\n        else:\n            raise UserException('Не заданы параметры для чтение заявки\\n%s' % params)\n            \n        cursor.execute(sql, p)\n        \n        d = fetchone(cursor)\n        if not d:\n            return None\n        \n        jlob = d.get('JSON')\n        if jlob:\n            j = json.loads(jlob.read())\n            j['dep_id'] = d['DEP_ID']\n            j['id'] = d['ID']\n            j['app']['changepoint'] = d['CHANGEPOINT']\n            j['state'] = d['STATE']\n            j['stage'] = d['REVIEWSTAGE']\n        else:\n            j = {}\n        \n        return j\n        \ndata = getApplicationJson(parameters)\n"
+            },
+            "sql": {}
+        },
+        "saveApplicationJson": {
+            "script": {
+                "py": "#\n# Сохранение JSON заявки\n#\nfrom apng_core.json import WebJSONEncoder\n\ndef saveApplicationJson(params):\n    if not params.get('json'):\n        raise UserException('Не задан JSON заявки, атрибут json')\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        j = {**params['json']}\n        changepoint = j['app'].get('changepoint')\n        \n        # Чистим лишние атрибуты в JSON\n        for n in ['dep_id', 'id', 'changepoint', 'state', 'stage']:\n            if n in j:\n                del j[n]\n\n        \n        p = {\n            'idDep': params.get('dep_id'),\n            'idOrd': params.get('id'),\n            'appId': params.get('appId'),\n            'json': json.dumps(j, ensure_ascii=False, cls=WebJSONEncoder),\n            'changePoint': cursor.var(str),\n        }\n        \n        p['changePoint'].setvalue(0, changepoint)\n\n        cursor.execute(\"\"\"\n            declare\n                prevJson clob;\n                idDep number := :idDep;\n                idOrd number := :idOrd;\n                changePoint varchar2(60);\n            begin\n            \n                if (idDep is null or idOrd is null) and :appId is not null then\n                    select dep_id, id into idDep, idOrd from l_reqdea_ext where appid=:appId;\n                end if;\n\n                -- Проверка изменений\n                select to_char(nn) into changePoint from T_ORD where dep_id=idDep and id=idOrd;\n                if changePoint <> nvl(:changePoint, '*') then\n                    raise_application_error(-20000, Localize(\n                        'Заявка изменена в другой задаче или другим пользователем. Сохранение данных запрещено.'\n                    ));\n                end if;\n                \n            \n                select JSON into prevJson from l_reqdea where DEP_ID=idDep and ID=idOrd;\n                update L_REQDEA set JSON=:json where DEP_ID=idDep and ID=idOrd;\n                \n                --\n                -- Обновляем атрибуты, которые должны лежать и в таблицах\n                --\n                if json_value(prevJson, '$.app.registrationDate') <> json_value(:json, '$.app.registrationDate') then\n                    update l_reqdea set\n                        dop = to_date(substr(json_value(:json, '$.app.registrationDate'), 1,10), 'YYYY-MM-DD')\n                    where DEP_ID=idDep and ID=idOrd;\n                end if;\n                \n                if json_value(prevJson, '$.app.appId') <> json_value(:json, '$.app.appId') then\n                    update l_reqdea_ext set\n                        appId = json_value(:json, '$.app.appId')\n                    where DEP_ID=idDep and ID=idOrd;\n                end if;\n                \n                -- Меняем точку изменений\n                update T_ORD set\n                    NN = to_number(changePoint)+1\n                where dep_id=idDep and id=idOrd\n                returning to_char(NN) into :changePoint\n                ;\n                \n                \n            end;\n        \"\"\", p)\n        \n        changepoint = p['changePoint'].getvalue()\n        j['app']['changepoint'] = changepoint\n        \n    return {\n        'changepoint': changepoint\n    }\n\ndata = saveApplicationJson(parameters)"
+            },
+            "sql": {}
+        },
+        "updateApplicationJson": {
+            "sql": {},
+            "script": {
+                "py": "\ndef updateApplicationJson(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DEP_ID': params.get('DEP_ID'),\n            'ID': params.get('ID'),\n            'JSON': params.get('JSON'),\n            'attr': params.get('attr'),\n        }\n        cursor.execute(\"\"\"\n            declare\n                json_data clob;\n                json_a json_object_t;\n                json_b json_object_t;\n                json_t json_object_t;\n                keys JSON_KEY_LIST;\n                i integer;\n            begin\n                select JSON into json_data from L_REQDEA\n                where DEP_ID=:DEP_ID and ID=:ID;\n                \n                json_a := treat(json_element_t.parse(nvl(json_data, '{}')) as json_object_t);\n                json_b := treat(json_element_t.parse(:JSON) as json_object_t);\n                \n                if :attr is not null then\n                    json_t := json_a.get_object(:attr);\n                    if json_t is null then\n                        json_a.put(:attr, json_object_t());\n                        json_t := json_a.get_object(:attr);\n                    end if;\n                else\n                    json_t := json_a;\n                end if;\n                \n                keys := json_b.get_keys();\n                i := keys.first();\n                while i is not null loop\n                    json_t.put(keys(i), json_b.get(keys(i)));\n                    i := keys.next(i);\n                end loop;\n                \n                json_data := json_a.to_clob();\n                \n                update L_REQDEA set JSON=json_data\n                where DEP_ID=:DEP_ID and ID=:ID;\n                \n                --\n                -- Обновляем атрибуты, которые должны лежать и в таблицах\n                --\n                if json_value(:JSON, '$.app.registrationDate') is not null then\n                    update l_reqdea set\n                        dop = to_date(substr(json_value(:JSON, '$.app.registrationDate'), 1,10), 'YYYY-MM-DD')\n                    where DEP_ID=:DEP_ID and ID=:ID;\n                end if;\n                \n                -- Меняем точку изменений\n                --update T_ORD set\n                --    NN = NN+1\n                --where DEP_ID=:DEP_ID and ID=:ID;\n                \n            end;\n        /\"\"\", p)\n\ndata = updateApplicationJson(parameters)\n"
+            }
+        },
+        "registerTemplateLibrary": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.template import register\n\n@register.filter('appState')\ndef appState(value, param=None):\n\n    return {\n        'START': 'Заявка создана',\n        'ON_REVIEW': 'На рассмотрении',\n        'CREDEA': 'Создан договор',\n        'DEA_REGISTERED': 'Договор подписан',\n        'REFUSAL_BANK': 'Отказ банка',\n        'REFUSAL_CLI': 'Отказ клиента',\n        'CANCELED': 'Отменена',\n    }.get(value, value) or ''\n              \n\n@register.filter('appStage')\ndef appStage(value, param=None):\n              \n    return {\n        'START': 'Начало рассмотрения',\n        'CHECK': 'Контроль ввода',\n        'REGNEW': 'Регистрация заявки',\n        'STOPFACTORS1': 'Стоп факторы 1',\n        'STOPFACTORS2': 'Стоп факторы 2',\n        'SCORING': 'Скоринг',\n        'PREANALYSE': 'Подготовка к анализу',\n        'STOPFACTORS': 'Стоп факторы',\n        'CONCLUSIONS': 'Получение заключений',\n        'DECISIONS': 'Принятие решения',\n        'FIN': 'Завершение',\n        'COMPLETED': 'Завершено',\n        'CANCELED': 'Отменено',\n    }.get(value, value) or ''\n\n@register.filter('makeTask')\ndef makeTask(value, param=None):\n    import json\n    if isinstance(value, dict):\n        taskParams = {\n            'object': 'app',\n            'form': 'appEditTask',\n            'objectKey': {\n                'dep_id': value.get('dep_id'),\n                'id': value.get('id'),\n            }\n        }\n        task = {\n            'path': '/aoa/ObjectTask',\n            'title': 'Заявка {code}, {clientName}'.format(\n                code=value.get('code'),\n                clientName=value.get('clientName')\n            ),\n            'params': taskParams\n        }\n        return json.dumps(task)\n    else:\n        return None"
+            }
+        },
+        "modifyDecision": {
+            "sql": {},
+            "script": {
+                "py": "from django.db import transaction\nfrom django.conf import settings\nfrom apng_core.easyflow.services import RuntimeService as rs\nfrom apng_core.easyflow.auth import Authentication\nfrom apng_core.auth import getUser\n\ninitDbSession(application='bank')\n\nif parameters.get('dep_id') and parameters.get('id'):\n    app = execObjectMethod({\n        'object': 'app', 'method': 'getApplicationJson',\n        'params': {'dep_id': parameters['dep_id'], 'id': parameters['id'],}\n    })\nelse:\n    raise UserException('Не заданы идентификаторы заявки для запуска процесса изменения решения')\n\nwith transaction.atomic(using=settings.APPS_DB['easyflow']):\n    with Authentication.setAuthenticatedUser(getUser()):\n        rs.startProcessByCode('APP_MODIFY_DECISION', {\n            'objectKey': 'loanapp:%s,%s' % (app['dep_id'], app['id']),\n            'decision': parameters['decision']\n        })\n\n"
+            }
+        }
+    },
+    "lists": {},
+    "references": {},
+    "js": {}
+}

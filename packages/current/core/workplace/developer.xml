@@ -1,0 +1,15 @@
+<workplace code="developer" name="Разработчик">
+  <menu name="Разработка">
+    <menu name="Сценарии бизнес процессов" call="/aoa/ObjectListTask">
+      <p name="object" value="easyflow" />
+      <p name="list" value="default" />
+    </menu>
+    <menu name="Выполнение скриптов" call="dev.exec-script" />
+    <menu name="Шаблоны" call="/aoa/ObjectListTask">
+      <p name="object" value="template" />
+    </menu>
+    <menu name="Прикладные объекты" call="/aoa/ObjectListTask">
+      <p name="object" value="aoa" />
+    </menu>
+  </menu>
+</workplace>

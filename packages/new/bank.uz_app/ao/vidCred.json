@@ -1,0 +1,177 @@
+{
+    "forms": {
+        "vidCredListForm": {
+            "title": "Список видов кредитования",
+            "className": "horizontal",
+            "$": {
+                ".list": {
+                    "style": {
+                        "width": "660px"
+                    },
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "$": {
+                            "name": {
+                                "label": "Вид кредитования",
+                                "flex": 1,
+                                "cellStyle": {
+                                    "whiteSpace": "normal !important",
+                                    "lineHeight": 1.2,
+                                    "display": "flex",
+                                    "alignItems": "center"
+                                },
+                                "compact": true
+                            }
+                        }
+                    },
+                    "controlProps": {
+                        "gridOptions": {
+                            "headerHeight": 0
+                        }
+                    }
+                },
+                "btnSelect": {
+                    "label": "Выбрать",
+                    "control": "Button",
+                    "controlProps": {
+                        "color": "primary"
+                    },
+                    "action": {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'vidCred', method: 'getItemList'}, {useCache: true}).then((r)=>frontend.dialog({object: 'vidCred', form: 'selectVidCredDialog', mem: {vidcredlist: r.map((s)=>({...s, selected: !!mem.find((i)=>i.code==s.code)}))}}));"
+                    }
+                }
+            },
+            "actions": {
+                "closeDialog": {
+                    "jsScript": "dialog.actions.close();"
+                },
+                "applyDialog": {
+                    "jsScript": "mem.splice(0, mem.length, ...dialog.mem.vidcredlist.filter((s)=>s.selected)); dialog.actions.close();"
+                }
+            }
+        },
+        "selectVidCredDialog": {
+            "title": "Выбор видов кредитования",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden",
+                "width": "800px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "8px",
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "|vidcredlist": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "$": {
+                                    "selected": {
+                                        "label": "Выбран",
+                                        "width": 100,
+                                        "control": "checkbox"
+                                    },
+                                    "name": {
+                                        "label": "Вид кредитования",
+                                        "flex": 1,
+                                        "cellStyle": {
+                                            "whiteSpace": "normal !important",
+                                            "lineHeight": 1.2,
+                                            "display": "flex",
+                                            "alignItems": "center"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "text",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "name": "closeDialog"
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "name": "applyDialog"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getItemList": {
+            "sql": {
+                "params": [],
+                "sqlType": "query",
+                "database": "bank",
+                "sql": "select \r\n     l.code \"code\",    \r\n     l.longname \"name\" \r\nfrom U_UZ_VIDCRED  l \r\nwhere l.arcfl='0' and l.groupfl='0' \r\norder by l.code\r\n"
+            },
+            "script": {
+                "params": []
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 320
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code",
+                "isGroup": "item.groupFl=='1'"
+            },
+            "method": {
+                "sql": {
+                    "params": [
+                        "code"
+                    ],
+                    "sqlType": "query",
+                    "database": "bank",
+                    "sql": "select \r\n    l.CODE \"code\", \r\n    l.LONGNAME \"name\", \r\n    l.groupfl\r\nfrom U_UZ_VIDCRED l \r\nwhere l.arcfl='0' \r\n  and l.code=nvl(:code, l.code) \r\norder by l.code"
+                },
+                "script": {
+                    "params": []
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

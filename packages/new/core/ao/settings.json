@@ -1,0 +1,623 @@
+{
+    "forms": {
+        "editSettingsTask": {
+            "title": "Edit settings task",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Save",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "save"
+                                        },
+                                        "xdisabled$": "!context.modified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "auto"
+                    },
+                    "form": "editSettingsForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "context.categories = [{code: 'loanapp', name: 'Кредитные заявки'}];"
+                    },
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'settings', method: 'getFromDb', params: {}}).then((r)=>{mem.settings=r.settings||{}; mem.id=r.id; mem.modified=r.modified; forceUpdate()})"
+                    },
+                    {
+                        "js": "mem.categories = Object.keys(mem.settings).map((c)=>({code: c, name: mem.settings[c].name || context?.categories?.find(i=>i.code==c)?.name || c}))"
+                    }
+                ],
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "save": [
+                    {
+                        "js": "if (!validate()) throw 'Abort';"
+                    },
+                    {
+                        "js": "mem.settings = mem.categories.reduce((a,c)=>{a[c.code]={name: c.name, ...mem.settings[c.code]}; return a;}, {});"
+                    },
+                    {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'settings', method: 'save', params: {id: mem.id, modified: mem.modified, settings: mem.settings}}).then((r)=>{context.modified = false; mem.id=r.id; mem.modified=r.modified})"
+                    }
+                ]
+            }
+        },
+        "editSettingsForm": {
+            "title": "Форма настройки системных параметров",
+            "className": "horizontal",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@group": {
+                    "title": "Parameters",
+                    "className": "vertical",
+                    "style": {
+                        "width": "300px",
+                        "height": "100%"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Add group",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "js": "context.ctg.selectedRow=null;"
+                                            },
+                                            {
+                                                "js": "frontend.dialog({object: 'settings', form: 'editCategoryDialog', mem: {code: 'group'+(mem.categories.length+1), name: 'Group'+(mem.categories.length+1)}})"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "Modify group",
+                                        "icon": "edit",
+                                        "mini": true,
+                                        "action": {
+                                            "js": "frontend.dialog({object: 'settings', form: 'editCategoryDialog', mem: {...context.ctg.selectedRow}})"
+                                        },
+                                        "disabled$": "!context.ctg?.selectedRow"
+                                    },
+                                    {
+                                        "title": "Delete group",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "deleteCategory",
+                                            "confirm": {
+                                                "title": "Delete",
+                                                "message$": "`Delete group?`",
+                                                "yes": "Yes",
+                                                "no": "No"
+                                            }
+                                        },
+                                        "disabled$": "!context.ctg?.selectedRow"
+                                    }
+                                ]
+                            }
+                        },
+                        "|categories": {
+                            "control": "ListTable",
+                            "controlProps": {
+                                "listContext$": "(()=>{context.ctg=context.ctg||{}; return context.ctg;})()"
+                            },
+                            "controlOpts": {
+                                "columns!": {
+                                    "name": {
+                                        "label": "Name",
+                                        "editable": false,
+                                        "flex": 1
+                                    }
+                                },
+                                "rowDrag": true
+                            },
+                            "actions": {
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "context.selectedCategory = selectedRow; mem.selectedCategory=mem.settings[context.selectedCategory.code];"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onSaveCategory": [
+                            {
+                                "js": "if (context.ctg.selectedRow){let c=mem.categories.find((c)=>c.code==context.ctg.selectedRow.code); c.code=params.category.code; c.name=params.category.name;}else{mem.categories.push(params.category); mem.settings[params.category.code]={name: params.category.name};} mem.categories=[...mem.categories];"
+                            },
+                            {
+                                "name": "onModified"
+                            }
+                        ],
+                        "deleteCategory": {
+                            "js": "console.log('delete category')"
+                        }
+                    }
+                },
+                "@values": {
+                    "title$": "`${context.ctg.selectedRow.name}`",
+                    "style": {
+                        "flexGrow": 1,
+                        "height": "100%",
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "selectedCategory": {
+                            "$": {
+                                "@form": {
+                                    "style": {
+                                        "paddingTop": "8px"
+                                    },
+                                    "object$": "`settings_${app.stand.clientId||'default'}`",
+                                    "form": "editCategoryValuesForm",
+                                    "params": {
+                                        "category$": "context.ctg.selectedRow"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "visible$": "!!context.ctg.selectedRow"
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "parametersForm": {
+            "title": "Список параметров",
+            "className": "vertical",
+            "$": {
+                ".ap": {
+                    "control": "ActionPanel",
+                    "controlOpts": {
+                        "actions": [
+                            {
+                                "title": "Добавить",
+                                "icon": "add",
+                                "split": true,
+                                "actions": [
+                                    {
+                                        "title": "Строку",
+                                        "action": {
+                                            "js": "context.selectedParameter = null; frontend.dialog({object: 'settings', form: 'editParameterDialog', mem: {type: 'string'}})"
+                                        }
+                                    },
+                                    {
+                                        "title": "Число",
+                                        "action": {
+                                            "js": "context.selectedParameter = null; frontend.dialog({object: 'settings', form: 'editParameterDialog', mem: {type: 'integer'}})"
+                                        }
+                                    },
+                                    {
+                                        "title": "Флаг",
+                                        "action": {
+                                            "js": "context.selectedParameter = null; frontend.dialog({object: 'settings', form: 'editParameterDialog', mem: {type: 'boolean'}})"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "title": "Просмотреть",
+                                "icon": "view",
+                                "mini": true,
+                                "action": {
+                                    "js": "frontend.dialog({object: 'settings', form: 'editParameterDialog', mem: {...context.selectedParameter}})"
+                                },
+                                "disabled$": "!context.selectedParameter"
+                            },
+                            {
+                                "title": "Удалить",
+                                "icon": "delete",
+                                "mini": true,
+                                "disabled$": "!context.selectedParameter",
+                                "action": {
+                                    "name": "deleteParameter",
+                                    "confirm": {
+                                        "title": "Удаление",
+                                        "message$": "`Удалить параметр ${context.selectedParameter.code}?`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "|parameters": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "columns!": {
+                            "code": {
+                                "label": "Код",
+                                "width": 250,
+                                "compact": true
+                            },
+                            "name": {
+                                "label": "Наименование",
+                                "width": 400,
+                                "compact": true
+                            },
+                            "value": {
+                                "label": "Значение",
+                                "flex": 1,
+                                "compact": true
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onRowDoubleClicked": {
+                            "js": "frontend.dialog({object: 'settings', form: 'editParameterDialog', mem: {...context.selectedParameter}});"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSaveParameter": {
+                    "js": "if(!context.selectedParameter){mem.parameters.splice(0, 0, params.parameter);}else{mem.parameters.splice(mem.parameters.indexOf(context.selectedParameter), 1, params.parameter); context.selectedParameter=params.parameter;} mem.parameters=[...mem.parameters];"
+                },
+                "deleteParameter": {
+                    "js": "mem.parameters.splice(mem.parameters.indexOf(context.selectedParameter), 1); mem.parameters=[...mem.parameters]; context.selectedParameter = null;"
+                },
+                "onSelectionChanged": {
+                    "js": "context.selectedParameter = selectedRow;"
+                }
+            }
+        },
+        "editParameterDialog": {
+            "title": "Редактирование праметра",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "4px",
+                        "flexGrow": 1,
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "code": {
+                            "label": "Код",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name": {
+                            "label": "Наименование",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "@stringValue": {
+                            "$": {
+                                "value": {
+                                    "label": "Значение",
+                                    "control": "TextEdit"
+                                }
+                            },
+                            "visible$": "mem.type=='string'"
+                        },
+                        "@integerValue": {
+                            "$": {
+                                "value": {
+                                    "label": "Значение",
+                                    "control": "PositiveIntegerField"
+                                }
+                            },
+                            "visible$": "mem.type=='integer'"
+                        },
+                        "@booleanValue": {
+                            "$": {
+                                "value": {
+                                    "label": "Значение",
+                                    "control": "Checkbox"
+                                }
+                            },
+                            "visible$": "mem.type=='boolean'"
+                        },
+                        "comment": {
+                            "label": "Комментарий",
+                            "control": "TextEdit",
+                            "controlProps": {
+                                "multiline": true,
+                                "minRows": 3
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Abort';"
+                                },
+                                {
+                                    "name": "onSaveParameter",
+                                    "params": {
+                                        "parameter$": "mem"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "standInfo": {
+            "className": "vertical",
+            "style": {
+                "overflow": "auto"
+            },
+            "$": {
+                "standInfo": {
+                    "$": {
+                        "@form": {
+                            "className": "vertical",
+                            "style": {
+                                "marginTop": "4px",
+                                "paddingTop": "4px",
+                                "flexGrow": 1,
+                                "width": "700px"
+                            },
+                            "$": {
+                                "CLIENT_ID": {
+                                    "label": "CLIENT ID",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "CSS": {
+                                    "label": "CSS",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "APNG_DATABASE": {
+                                    "label": "APNG DATABASE",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "CBS_DATABASE": {
+                                    "label": "CBS DATABASE",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "DW_DATABASE": {
+                                    "label": "DW DATABASE",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "MBANK_DATABASE": {
+                                    "label": "MBANK DATABASE",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "CSL_APNG": {
+                                    "label": "CSL APNG",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "CSL_DW": {
+                                    "label": "CSL DW",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "CSL_RPT": {
+                                    "label": "CSL RPT",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "CCS_SERVICE": {
+                                    "label": "CCS SERVICE",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "MBANK_SERVICE": {
+                                    "label": "MBANK SERVICE",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "UZ_SEND_CB": {
+                                    "label": "Отправка отчетов в ЦБ",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                },
+                                "HG_REVISION": {
+                                    "label": "APNG Buld",
+                                    "control": "TextEdit",
+                                    "width": "200px"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onTaskCreated": {
+                            "js": "return backend.post('/site/stand-info', {...params}).then((r)=>{mem.CLIENT_ID=r.CLIENT_ID; mem.APNG_DATABASE=r.APNG_DATABASE; mem.CSS=r.CSS; mem.CBS_DATABASE=r.CBS_DATABASE; mem.DW_DATABASE=r.DW_DATABASE; mem.CSL_APNG=r.CSL_APNG; mem.CSL_DW=r.CSL_DW; mem.CSL_RPT=r.CSL_RPT; mem.CCS_SERVICE=r.CCS_SERVICE; mem.MBANK_SERVICE=r.MBANK_SERVICE; mem.UZ_SEND_CB=r.UZ_SEND_CB; mem.HG_REVISION=r.HG_REVISION; forceUpdate()})"
+                        }
+                    }
+                }
+            }
+        },
+        "editCategoryDialog": {
+            "title": "Add group of settings",
+            "className": "vertical",
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "4px",
+                        "flexGrow": 1,
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "code": {
+                            "label": "Code",
+                            "style": {
+                                "width": "280px"
+                            },
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name": {
+                            "label": "Name",
+                            "style": {
+                                "width": "560px"
+                            },
+                            "control": "TextEdit",
+                            "required": true
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Abort';"
+                                },
+                                {
+                                    "name": "onSaveCategory",
+                                    "params": {
+                                        "category$": "mem"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "editCategory-system-Form": {
+            "title": "Общесистемные настройки",
+            "className": "vertical",
+            "$": {}
+        }
+    },
+    "methods": {
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "#\n# Получение настроек \n#\nfrom django.conf import settings\nfrom beflex.aoa.services import execObjectMethod\n\ndata = execObjectMethod({\n    'object': 'settings',\n    'method': 'getFromDb'\n})['settings']\n"
+            }
+        },
+        "getFromDb": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "#\n# Получение настроек хранящихся в БД стенда\n#\n\nfrom beflex.aoa.models import DataObject\ndata = {}\ntry:\n    obj = DataObject.objects.get(type='settings', code='common')\n    if obj.data:\n        data = {\n            'id': obj.id.__str__(),\n            'modified': obj.modified,\n            'settings': obj.data\n        }\n    else:\n        data = {}\n        \nexcept DataObject.DoesNotExist:\n    pass\n\n"
+            }
+        },
+        "save": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aoa.models import DataObject\n\nif parameters.get('id'):\n    obj = DataObject.objects.get(id=parameters.get('id'))\nelse:\n    obj = DataObject()\n    obj.type = 'settings'\n    obj.code = 'common'\n\nobj.data = parameters['settings']\nobj.save()\n\ndata = {\n    'id': obj.id.__str__(),\n    'modified': obj.modified,\n}\n"
+            }
+        },
+        "getValue": {
+            "script": {
+                "py": "\nall_settings = data = execObjectMethod({\n    'object': 'settings',\n    'method': 'getFromDb'\n})['settings']\n\ndef get_by_path(path):\n    v = all_settings\n    for p in path:\n        try:\n            v = v[p]\n        except KeyError:\n            return None\n    return v\n\nif isinstance(parameters, list):\n    data = get_by_path(parameters)\nelse:\n    data = all_settings\n\n"
+            }
+        },
+        "getListValue": {
+            "script": {
+                "py": "if isinstance(parameters, tuple) or isinstance(parameters, list):\n    attr = parameters[0]\n    func = parameters[1]\nelse:\n    raise Exception('Bad arguments:\\n%s' % parameters)\n\n\nvl = execObjectMethod({\n    'object': 'settings', 'method': 'getValue', 'params': attr\n})\n\ndata = None\nif vl is not None:\n    data = next(filter(func, vl), None)"
+            }
+        }
+    },
+    "lists": {},
+    "references": {},
+    "js": {}
+}

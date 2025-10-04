@@ -1,0 +1,21 @@
+<workflow id="APP_CHANGE_INITIATOR" name="Измененить инициатора заявки">
+    <script id="bfa7495c-a81a-4df9-a947-5f83a0dd6960" name="Изменение инициатора">
+        <journal time="leave">
+            <![CDATA[Изменен инициатор заявки c {{process_vars.oldInitiator}} на {{process_vars.initiator}}]]>
+        </journal>
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+
+ok = pv.get('objectKey')
+
+execObjectMethod({
+    'object': 'loanapp',
+    'method': 'changeInitiator',
+    'params': {
+        'appId': pv['appId'],
+        'initiator': pv['initiator'],
+        'oldInitiator': pv['oldInitiator'],
+    }
+})
+]]>
+    </script>
+</workflow>

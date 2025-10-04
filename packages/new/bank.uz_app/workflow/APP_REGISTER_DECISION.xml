@@ -1,0 +1,242 @@
+<workflow id="APP_REGISTER_DECISION" name="Регистрация решения по заявке">
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <event name="onGetProcessObject">
+        <![CDATA[
+ok = process_vars.get('objectKey')
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+#
+# Загружаем общую информацию по заявке
+#
+token._po = execObjectMethod({
+    'object': 'app', 'method': 'getApplication',
+    'params': {
+        'dep_id': int(pk[0]),
+        'id'    : int(pk[1]),
+    }
+})
+
+
+]]>
+    </event>
+    <script id="init" name="Инициализация">
+        <![CDATA[
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+
+# Проверка переданного решения
+decision = pv.get('decision')
+if not decision:
+    from apng_core.easyflow.auth import Authentication
+    from colvir_cbs.auth import AuthenticatedUser
+    
+    with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+        decision_date = au.operday
+
+    pv['decision'] = {
+        'app_result': 'REJECT',
+        'agency_code': '02',
+        'agency_decision_code': '0',
+        'num': '123',
+        'date': decision_date,
+        'text': 'Decision text example',
+        'decline_reason_code': '01',
+        'show_dialog': True,
+    }
+
+]]>
+    </script>
+    <timer id="e86e6075-93c8-4846-a4bd-0157d1750a77" name="Регистрация решения" description="Регистрация решения, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <script id="085321ae-eac5-4fd9-aaf0-e2b1300f0ae7" name="Подготовка настроек решения">
+        <![CDATA[from apng_core.auth import User
+
+with User('COLVIR'):
+
+    pv['decisions'] = {}    
+    pv['decisions']['directors'] = execObjectMethod({
+        'object': 'cbs.dectbl', 'method': 'evalByOrd',
+        'params': {
+            'idDep': pv['dep_id'],
+            'idOrd': pv['id'],
+            'tblName': 'L_LIM_DIRECTORS',
+            'required': False,
+        }
+    }) == '1'
+]]>
+    </script>
+    <split id="need_dialog" name="Запросить решение">
+        <condition id="request_decision" name="Да" expression="pv[&apos;decision&apos;].get(&apos;show_dialog&apos;) == True">
+            <task id="decision_register" name="Регистрация решения уполномоченного органа" autoStart="true" description="Регистрация решения уполномоченного органа по заявке {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{ &apos;dep_id&apos;: pv[&apos;dep_id&apos;], &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                    <p name="actionVar" expression="&apos;decision_registered&apos;"/>
+                    <p name="decision" expression="pv.get(&apos;decision&apos;)"/>
+                    <p name="disableReview" expression="True"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appDecisionTask&apos;"/>
+                </clientTask>
+            </task>
+            <script id="store_decision" name="Сохранение решения при заявке">
+                <journal time="leave">
+                    <![CDATA[{%load wfj%}
+Решение УО: {{pv.decision_registered.number}} от {{ pv.decision_registered.date|date}} {{pv.decision_registered.text}}]]>
+                </journal>
+                <![CDATA[
+srv_code = '0' if pv['decision_registered']['decision']=='accept' else '1'
+
+#
+# Принудительное обновление решения в заявке
+# В пользовательской задаче иногда не срабатывает, надо еще там разобраться
+#
+
+d = {**pv['decision_registered']}
+if 'show_dialog' in d:
+    del d['show_dialog']
+
+execObjectMethod({
+    'object': 'loanapp', 'method': 'updateDecisions',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'decisions': {
+            d['code']: d
+        }
+    }
+})    
+]]>
+            </script>
+            <split id="9637f51e-2fde-4efb-b219-0ce0a13e46cf" name="Требуется решение Совета банка по связанным лицам">
+                <condition id="fd4e0d58-3f26-4508-ad08-d81c88b83032" name="Да" expression="po[&apos;client&apos;].get(&apos;isRelatedPerson&apos;) == True and pv[&apos;decision_registered&apos;][&apos;decision&apos;] == &apos;accept&apos;">
+                    <script id="eea171b9-2f2f-4a43-b99a-daf73339972b" name="Подготовка решения совета банка">
+                        <![CDATA[
+# Копируем исходное решение
+pv['decision_directors'] = {**pv['decision'],
+    'code': '05',  # Совет банка
+}
+
+]]>
+                    </script>
+                    <task id="dd083614-4ac1-4f47-b0b5-73709f42cf2c" name="Регистрация решения Совета банка для связанных лиц" autoStart="true" description="Регистрация решения Совета банка для связанных лиц, заявка {{po.app.code}}, {{po.client.name}}">
+                        <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                            <p name="objectKey" expression="{ &apos;dep_id&apos;: pv[&apos;dep_id&apos;], &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                            <p name="actionVar" expression="&apos;decision_directors&apos;"/>
+                            <p name="decision" expression="pv.get(&apos;decision_directors&apos;)"/>
+                            <p name="disableReview" expression="True"/>
+                            <p name="object" expression="&apos;app&apos;"/>
+                            <p name="form" expression="&apos;appDecisionTask&apos;"/>
+                        </clientTask>
+                    </task>
+                    <script id="97eb7ebf-12b1-4b47-9be2-3c7f1369813a" name="Сохранение решения Совета Банка при заявке">
+                        <journal time="leave">
+                            <![CDATA[{%load wfj%}
+Решение Совета банка: {{process_vars.decision_directors.number}} от {{process_vars.decision_directors.date|date}} {{process_vars.decision_directors.text}}]]>
+                        </journal>
+                        <![CDATA[
+import logging
+logger = logging.getLogger('loanapp')
+
+srv_code = '0' if pv['decision_directors']['decision']=='accept' else '1'
+
+with initDbSession(application='bank').cursor() as cursor:
+    from datetime import datetime
+    params = {
+        'nRES_ID'       : cursor.var(int),
+        'nREQ_DEP_ID'   : pv['dep_id'], 
+        'nREQ_ID'       : pv['id'], 
+        'sSrvCode'      : pv['decision_directors']['code'], 
+        'sSrvResCode'   : srv_code, 
+        'sTxtDscr'      : pv['decision_directors'].get('text'),
+        'sRejRsn'       : pv['decision_directors'].get('declineReason'),
+        'sCode'         : pv['decision_directors']['number'],
+        'dRes'         : datetime.fromisoformat(pv['decision_directors']['date']),
+        'sFINALFL'      : '0',
+    }
+    
+    #raise Exception('%s' % params)
+
+    cursor.execute("""
+        begin 
+            COLVIR.B3FOLN_R_PKGRES.pSetServiceResolution(
+                nRES_ID         => :nRES_ID,
+                nREQ_DEP_ID     => :nREQ_DEP_ID,
+                nREQ_ID         => :nREQ_ID,
+                sSrvCode        => :sSrvCode,
+                sSrvResCode     => :sSrvResCode,
+                sTxtDscr        => :sTxtDscr,
+                sRejRsn         => :sRejRsn,
+                sCode           => :sCode,
+                dDres           => :dRes,
+                sFINALFL        => :sFINALFL
+            );
+            
+        end;/""",
+        params
+    )
+        
+    ]]>
+                    </script>
+                </condition>
+                <condition id="ea363272-a0d0-4394-83e2-3f8e81c22efb" name="Нет"/>
+            </split>
+        </condition>
+        <condition id="no_dialog" name="Нет" expression="pv[&apos;decision&apos;].get(&apos;show_dialog&apos;) == False">
+            <script id="copy_input" name="Использовать предыдущие значения">
+                <![CDATA[from datetime import date
+pv['decision_registered'] = pv.get('decision')
+
+# Дата решения не может быть меньше даты заяви
+# Дата заявки могла быть изменения при регистрации во внешних системах
+if pv['decision_registered']['date'] < po['app']['registrationDate']:
+    pv['decision_registered']['date'] = po['app']['registrationDate']]]>
+            </script>
+            <script id="2ce9914f-2a10-41ef-be30-12664f1026e9" name="Сохранение решения при заявке (авто)">
+                <journal time="leave">
+                    <![CDATA[{%load wfj%}
+Решение УО: {{pv.decision_registered.number}} от {{ pv.decision_registered.date|date}} {{pv.decision_registered.text}}]]>
+                </journal>
+                <![CDATA[
+import logging
+logger = logging.getLogger('loanapp')
+
+
+srv_code = '0' if pv['decision_registered']['decision']=='accept' else '1'
+
+from apng_core.auth import User
+with User('COLVIR') as au:
+    
+
+    d = {**pv['decision_registered']}
+    if 'show_dialog' in d:
+        del d['show_dialog']
+
+    from apng_core.aoa.services import execObjectMethod
+    execObjectMethod({
+        'object': 'loanapp', 'method': 'updateDecisions',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'decisions': {
+                d['code']: d
+            }
+        }
+    })
+
+]]>
+            </script>
+        </condition>
+    </split>
+    <call id="777914df-d8e7-446d-b87a-734eaabfae4a" name="Обработка событий" call="&apos;APP_EVENT_PROCESS&apos;" condition="po.get(&apos;events&apos;, {}).get(&apos;onDecision&apos;) is not None">
+        <p name="event" expression="&apos;onDecision&apos;"/>
+    </call>
+</workflow>

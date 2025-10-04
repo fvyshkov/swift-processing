@@ -1,0 +1,14 @@
+<workplace code="app.admin" name="Application settings">
+  <menu name="Loan applications">
+    <menu name="Settings">
+      <menu name="Application types" call="/aoa/ObjectTask">
+        <p name="object" value="appType" />
+        <p name="form" value="editAppTypeTask" />
+      </menu>
+      <menu name="Analytic platform operations" call="/aoa/ObjectTask">
+        <p name="object" value="afs.op" />
+        <p name="form" value="operationsReferTask" />
+      </menu>
+    </menu>
+  </menu>
+</workplace>

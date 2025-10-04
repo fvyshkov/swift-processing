@@ -1,0 +1,145 @@
+<workflow id="APP_CREATE_FACTORING" name="Создание факторинга">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import getApplication
+from apng_core.aoa.services import execObjectMethod
+with AuthenticatedUser():
+    #token._po = getApplication({
+    #    'dep_id': int(pk[0]),
+    #    'id'    : int(pk[1]),
+    #})
+    token._po = execObjectMethod({
+        'object': 'app',
+        'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <script id="5c8bae06-4a9a-41dd-9bd0-685ba51b3bd4" name="Инициализация">
+        <![CDATA[ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])]]>
+    </script>
+    <timer id="ce499720-970d-442c-80c3-15948930791e" name="Создание договора факторинга" description="" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="a5e7641b-ee10-4e48-8a43-ffeb1e256b26" name="Создание договора факторинга">
+        <![CDATA[import traceback
+from django.db import transaction, connections
+from colvir_cbs.auth import AuthenticatedUser
+from apng_core.aoa.services import execObjectMethod
+from datetime import date
+
+process_vars['last_error'] = None
+
+try:
+
+    with AuthenticatedUser() as au:
+    
+        with transaction.atomic(using='cbs'):
+
+            # Создание договора
+            try:
+                
+                dea = execObjectMethod({
+                    'object': 'appFactoring',
+                    'method': 'createFactoring',
+                    'params': {
+                        'req_dep_id': pv['dep_id'],
+                        'req_id': pv['id'],
+                    }
+                })
+                pv['dea'] = {
+                    'dep_id': dea['dep_id'],
+                    'id': dea['id'],
+                    'code': dea['code']
+                }
+                pv['createFactoringLog'] = dea['log']
+                
+            except UserException as e:
+                raise UserException({
+                    'message': 'Ошибка создания договора по заявке %s\n%s' % (po['app']['code'], e)
+                }).withError(e.getError())
+            except Exception as e:
+                raise UserException({
+                    'message': 'Ошибка создания договора по заявке %s\n%s' % (po['app']['code'], e),
+                    'trace': traceback.format_exc()
+                })
+                
+                
+                
+            # Сохраняем обеспечение при договоре
+            from colvir_cbs.services.pledge import savePledge
+            for pledge in po['pledges']:
+                try:
+                    r = savePledge({
+                        'dea_dep_id'    : pv['dea']['dep_id'],
+                        'dea_id'        : pv['dea']['id'],
+                        'mrt_dep_id'    : None,
+                        'mrt_id'        : None,
+                        'pledge'        : pledge,
+                    })
+                    #pledge['MRT_DEP_ID'] = r['dep_id']
+                    #pledge['MRT_ID'] = r['id']
+                    pledge['cbs_code'] = r['code']
+                    pledge['cbs_refer'] = r['refer']
+                except Exception as e:
+                    raise UserException({
+                        'message': f'Ошибка сохранения обеспечения:\n{e}',
+                        'description': json.dumps(pledge, indent=4, ensure_ascii=False),
+                        'trace': traceback.format_exc()
+                    })
+                
+            # Сохранение ссылки на договор при заявке        
+            from colvir_cbs.services.application import updateApplicationJson
+            updateApplicationJson({
+                'DEP_ID': pv['dep_id'],
+                'ID': pv['id'],
+                'JSON': json.dumps({
+                    'dea': {
+                        'dep_id': pv['dea']['dep_id'],
+                        'id': pv['dea']['id'],
+                        'code': pv['dea']['code'],
+                    },
+                    'pledges': po['pledges']
+                }, ensure_ascii=False)
+            })    
+            
+            from loanapp.services import dossier
+            dossier.attachDocumentsToDea({
+                'req_dep_id': pv['dep_id'],
+                'req_id': pv['id'],
+                'dea_dep_id': pv['dea']['dep_id'],
+                'dea_id': pv['dea']['id'],
+            })
+except UserException as e:
+    raise UserException({
+        'message': 'Ошибка создания кредитного договора по заявке {appNo}\n{message}'.format(
+            appNo=po['app']['code'],
+            message=e
+        )
+    }).withError(e.getError())
+except Exception as e:
+    raise UserException({
+        'message': 'Ошибка создания кредитного договора по заявке {appNo}\n{message}'.format(
+            appNo=po['app']['code'],
+            message=e
+        ),
+        'trace': traceback.format_exc()
+    })
+
+]]>
+    </script>
+</workflow>

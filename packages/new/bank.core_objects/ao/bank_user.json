@@ -1,0 +1,309 @@
+{
+    "forms": {
+        "selectUserDialog": {
+            "title": "Выбор пользователя",
+            "className": "vertical",
+            "style": {
+                "marginTop": "8px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "horizontal",
+                    "$": {
+                        "user": {
+                            "init$": "''",
+                            "$": {
+                                "@control": {
+                                    "object": "bank_user",
+                                    "form": "selectUserControl",
+                                    "params": {
+                                        "label": "Пользователь"
+                                    }
+                                }
+                            }
+                        },
+                        "userName": {
+                            "label": "",
+                            "style": {
+                                "width": "450px"
+                            },
+                            "readOnly": true,
+                            "control": "TextEdit"
+                        }
+                    },
+                    "actions": {
+                        "onUserSelected": {
+                            "js": "mem.user=params.user.code; mem.userName=params.user.name; cleanErrors(validator.$.user);"
+                        },
+                        "onHandChange": [
+                            {
+                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'bank_user', method: 'get', params: {code: params.userCode}}, {silent: true}).then(r=>{mem.userName=r?.name; if(r){mem.user=r.code;}else{mem.userName=null; setError(validator.$.user);} forceUpdate();})"
+                            }
+                        ]
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "onUserSelected",
+                                    "params": {
+                                        "user": {
+                                            "code$": "mem.user",
+                                            "name$": "mem.userName",
+                                            "type$": "mem.userType"
+                                        }
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "selectUserForm": {
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "ownDepartment": {
+                    "label": "Только свой филиал",
+                    "control": "Checkbox",
+                    "actions": {
+                        "onChange": {
+                            "js": "task.events.fire('onRefreshUsers');"
+                        }
+                    }
+                },
+                ".list": {
+                    "style": {
+                        "height": "100%",
+                        "overflow": "hidden"
+                    },
+                    "control": "ListTable",
+                    "controlProps": {
+                        "style": {
+                            "height": "100%"
+                        },
+                        "gridOptions": {
+                            "domLayout": "normal",
+                            "treeData": true
+                        },
+                        "params$": "params"
+                    },
+                    "controlOpts": {
+                        "rowModelType": "serverSide",
+                        "id": "path",
+                        "columns!": {
+                            "name": {
+                                "label": "Наименование",
+                                "flex": 1,
+                                "fastFilter": true
+                            }
+                        },
+                        "groupColumns!": {
+                            "code": {
+                                "label": "Пользователь",
+                                "width": 280,
+                                "icon": {
+                                    "name$": "data?.type"
+                                },
+                                "fastFilter": true
+                            }
+                        },
+                        "isGroup": "data?.type=='department'",
+                        "getGroupKey": "data?.path",
+                        "isSelectable": "data.type=='user' || params?.isGroupSelectable && data.type=='group' ",
+                        "autoExpand": true,
+                        "refreshEvent": "onRefreshUsers"
+                    },
+                    "actions": {
+                        "onGetRows": {
+                            "js": "return backend.post('/aoa/execObjectMethod',{object: 'bank_user', method: 'getUsersRef', params: {request: {...params.request, refParams: {fltByDep: mem.ownDepartment}}}}).then((r)=>{onSuccess(r)})"
+                        },
+                        "onSelectionChanged": {
+                            "name": "onSelectUser",
+                            "params": {
+                                "userCode$": "selectedRow.code",
+                                "userName$": "selectedRow.name",
+                                "userType$": "selectedRow.type"
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onElementCreated": {
+                    "js": "mem.ownDepartment=true;"
+                }
+            }
+        },
+        "selectUserControl": {
+            "title": "Выбор пользователя",
+            "$": {
+                ".user": {
+                    "label$": "params.label||'Пользователь'",
+                    "control": "ButtonTextEdit",
+                    "action": {
+                        "js": "frontend.dialog({object: 'bank_user', form: 'selectUserControlDialog'});"
+                    },
+                    "actions": {
+                        "onChange": {
+                            "js": "actionDebounce({name: 'onHandChange'}, {params: {userCode: params.newValue}})"
+                        }
+                    }
+                }
+            },
+            "actions": {}
+        },
+        "selectUserControlDialog": {
+            "title": "Выбор пользователя",
+            "style": {
+                "height": "500px",
+                "width": "800px",
+                "overflow": "hidden"
+            },
+            "className": "vertical",
+            "$": {
+                "@form": {
+                    "style": {
+                        "flexGrow": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@allusers": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                "@form": {
+                                    "object": "bank_user",
+                                    "form": "selectUserForm",
+                                    "style": {
+                                        "height": "100%"
+                                    },
+                                    "actions": {
+                                        "onSelectUser": [
+                                            {
+                                                "js": "context.selectedUser = {code: params.userCode, name: params.userName, type: params.userType}"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "text"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnSelect": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "readOnly$": "!context.selectedUser",
+                            "action": [
+                                {
+                                    "name": "onUserSelected",
+                                    "params": {
+                                        "user$": "context.selectedUser"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        }
+    },
+    "methods": {
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "\nfrom apng_core.db import fetchone\ncon = initDbSession(application='bank')\nwith con.cursor() as cursor:\n    p = {\n        'code': parameters.get('code')\n    }\n    SQL = \"\"\"\n        select * from C_USER where code=upper(:code)\n    \"\"\"\n    cursor.execute(SQL, p)\n    \n    d = fetchone(cursor)\n    \n    if d:\n        data = {\n            'code': d['CODE'],\n            'name': d['FIO']\n        }"
+            }
+        },
+        "getUsersRef": {
+            "script": {
+                "py": "from apng_core.auth import getUser\nfrom apng_core.db import fetchall\n\ncurrent_user = getUser()\n\ndef buildFilterSql(filterModel, conditionSqlBuilder):\n    sql = ''\n\n    filterItems = filterModel.items()\n    \n    if len(filterItems) > 0:\n        filterSqls = [conditionSqlBuilder(filterItem) for filterItem in filterItems]\n        filterSqls = [s for s in filterSqls if s]\n        if len(filterSqls)>0:\n            sql = ' WHERE ' + ' AND '.join(filterSqls)\n        \n    return sql\n\ndef conditionDepSql(filter_condition):\n    sql = ''\n    \n    field = filter_condition[0]\n    condition = filter_condition[1]\n    \n    if field == 'ag-Grid-AutoColumn':\n        sql = \"\"\"\n            ID=any(\n                select ID from C_DEP_STD \n                start with ID=any(\n                        select dep_id from (\n                            select DEP_ID, CODE from C_USR\n                            union all\n                            select p.DEP_ID, u.CODE from c_usr p, c_stfusr pu, c_user u\n                            where p.id=pu.stf_id and u.id=pu.usr_id\n                        ) where upper(CODE) like upper('%s')\n                    ) \n                connect by prior id_hi = id\n            )\n        \"\"\" % ('%%'+condition['filter']+'%%')\n    elif field == 'name':\n        sql = \"\"\"\n            ID=any(\n                select ID from C_DEP_STD \n                start with ID=any(\n                        select dep_id from (\n                            select DEP_ID, LONGNAME from C_USR \n                            union all\n                            select p.DEP_ID, u.FIO LONGNAME from c_usr p, c_stfusr pu, c_user u\n                            where p.id=pu.stf_id and u.id=pu.usr_id\n                        ) \n                        where upper(LONGNAME) like upper('%s')\n                    ) \n                connect by prior id_hi = id\n            )\n        \"\"\" % ('%%'+condition['filter']+'%%')\n        \n    return sql\n\ndef conditionUserSql(filter_condition):\n    sql = ''\n    \n    field = filter_condition[0]\n    condition = filter_condition[1]\n    \n    if field == 'ag-Grid-AutoColumn':\n        sql = \"\"\"\n            upper(CODE) like upper('%s')\n        \"\"\" % ('%%'+condition['filter']+'%%')\n    elif field == 'name':\n        sql = \"\"\"\n            upper(LONGNAME) like upper('%s')\n        \"\"\" % ('%%'+condition['filter']+'%%')\n        \n    return sql\n\n\ndef getUsersRef(params):\n\n    filterModel = params['request'].get('filterModel')\n    \n    data = []\n    deps = []\n    users = []\n    \n    connection = initDbSession(application='bank')\n\n    with connection.cursor() as cursor:\n        p = {}\n\n        if len(params['request'].get('groupKeys', [])) == 0:\n            if not params['request'].get('refParams', {}).get('fltByDep'):\n                SQL = \"\"\"\n                    select\n                        *\n                    from C_DEP d\n                    where d.ID_HI is null\n                      AND d.ARCFL=0\n                \"\"\"\n            else:\n                p['usrcode'] = current_user.code\n                SQL =\"\"\"\n                    select \n                        d.* \n                    from C_DEP d, C_USR p\n                    where p.code = :usrcode \n                      AND d.id = p.dep_id  \n                \"\"\"\n            \n            if filterModel:\n                filterSql = buildFilterSql(filterModel, conditionDepSql)\n                if filterSql:\n                    SQL = 'select * from (' + SQL + ') d' + filterSql\n\n            SQL += ' order by d.CODE'\n            \n            cursor.execute(SQL, p)\n            deps = fetchall(cursor)\n        else:\n            \n            p['parent'] = params['request']['groupKeys'][len(params['request']['groupKeys'])-1]\n            SQL = \"\"\"\n                select\n                    *\n                from C_DEP d\n                where d.ID_HI=(select ID from colvir.C_DEP_STD where CODE=:parent)\n                  AND d.ARCFL=0\n            \"\"\"\n            \n            if filterModel:\n                filterSql = buildFilterSql(filterModel, conditionDepSql)\n                if filterSql:\n                    SQL = 'select * from (' + SQL + ') ' + filterSql\n                  \n            SQL += ' order by CODE'\n              \n            cursor.execute(SQL, p)\n            deps = fetchall(cursor)\n            \n            SQL = \"\"\"\n                select\n                    p.code,\n                    p.longname,\n                    '*' pos_code, '' pos_name,\n                    1 groupfl\n                from c_dep_std d, c_usr p\n                where d.id=p.dep_id\n                    and d.CODE=:parent\n                    and p.groupfl=1\n                union all\n                select\n                    u.code,\n                    u.fio longname,\n                    p.code pos_code, p.longname pos_name,\n                    0 groupfl\n                from c_usr p, c_stfusr pu, c_user u, c_dep_std d\n                where usr_id=u.id\n                    and p.id=pu.stf_id\n                    and p.arcfl=0 and p.arestfl=0\n                    and p_operday between pu.fromdate and pu.todate\n                    and p.dep_id=d.id\n                    and d.CODE=:parent\n            \"\"\"\n            \n            if filterModel:\n                filterSql = buildFilterSql(filterModel, conditionUserSql)\n                if filterSql:\n                    SQL = 'select * from (' + SQL + ') ' + filterSql\n            else:\n                SQL = 'select * from (%s)' % SQL\n\n            SQL += ' order by CODE'\n                      \n            cursor.execute(SQL, p)\n            users = fetchall(cursor)\n\n        #print (deps)\n        \n        for d in deps:\n            data.append({\n                'path': d['CODE'],\n                'code': d['CODE'],\n                'name': d['LONGNAME'],\n                'type': 'department',\n            })\n    \n        for u in users:\n            data.append({\n                'path': u['CODE']+u['POS_CODE'],\n                'code': u['CODE'],\n                'name': '%s (%s)' % (u['LONGNAME'], u['POS_NAME']),\n                'type': 'user' if u['GROUPFL']==0 else 'group',\n            })\n    return data\n    \ndata = getUsersRef(parameters)\n\n            "
+            },
+            "sql": {}
+        },
+        "getPositionInfo": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.db import fetchone\nwith initDbSession(application='bank').cursor() as c:\n    c.execute(\"\"\"\n        select\n            C_pkgDep.fGetCodeDep(DEP_ID) \"depCode\",\n            C_pkgDep.fGetNameDep(DEP_ID) \"depName\",\n            C_pkgDep.fGetCodeDep(P_DEPBAL(DEP_ID)) \"balDepCode\"\n        from C_USR u\n        where u.code=:position\n    \"\"\", {\n        'position': parameters['position']\n    })\n    \n    data = fetchone(c)\n"
+            }
+        },
+        "getDefaultUserPosition": {
+            "sql": {},
+            "script": {
+                "py": "#\n# Получение позиции по умолчанию для пользователя\n#\n# Входные параметры\n#   code - код пользователя\n# Выходные параметрв\n#   {\n#       code - код позиции\n#   }\nfrom apng_core.db import fetchone\nwith initDbSession(application='bank').cursor() as c:\n    c.execute(\"\"\"\n        select code \"code\"\n        from (\n            select s.code\n            from C_USR s, C_STFUSR l, C_USER u\n            where u.CODE = :code\n                and l.USR_ID = u.ID\n                and sysdate between l.FROMDATE and l.TODATE\n                and s.ID = l.STF_ID\n                and l.OWNERFL = '1'\n            order by l.DLASTLOGIN desc\n        )\n        where rownum = 1\n    \"\"\", {\n        'code': parameters['code']\n    })\n    \n    data = fetchone(c)\n"
+            }
+        }
+    },
+    "lists": {},
+    "references": {},
+    "js": {}
+}

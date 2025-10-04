@@ -1,0 +1,222 @@
+<workflow id="APP_RATING" name="Расчет рейтинга">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <script id="init" name="Подготовка вызова сервиса">
+        <![CDATA[
+
+ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+]]>
+    </script>
+    <script id="prepare_oper" name="Регистрация ввода">
+        <![CDATA[
+from colvir_mis.fsa_views import open_afs_oper_impl
+
+import logging
+logger = logging.getLogger('csl.mis')
+
+num_of_periods_dict = execObjectMethod({
+    'object': 'afs', 'method': 'get_num_of_periods'
+})
+pv['number_of_periods'] = num_of_periods_dict['num_of_periods']
+pv['number_of_periods_prev'] = num_of_periods_dict['num_of_periods_prev']
+
+p = {
+    'mnt_proc_id': po['afs']['monitoringId'],
+    'wf_label' :'HAND_INPUT',
+    'number_of_periods':  pv['number_of_periods'],
+    'number_of_periods_prev':  pv['number_of_periods_prev'],
+    'periods': pv['tax_periods'],
+}
+
+pv['mnt_proc_id'] = p['mnt_proc_id']
+pv['wf_label'] = p['wf_label']
+
+logger.debug('call open_afs_oper_impl: %s', p)
+logger.debug('process_vars: %s', pv)
+
+process_vars['opr_id'] = open_afs_oper_impl(p)
+
+logger.debug('opr_id: %s', pv['opr_id'])
+
+#raise Exception(process_vars['opr_id'])
+
+    ]]>
+    </script>
+    <task id="edit_data" name="Ввод данных" autoStart="true" description="Ввод данных АФС, заявка {{po.app.code}}, {{po.client.name}}">
+        <clientTask path="/fsa/app" taskName="Ввод данных АФС, заявка {{po.app.code}}, {{po.client.name}}">
+            <p name="process_vars" expression="{&apos;mnt_proc_id&apos;: pv[&apos;mnt_proc_id&apos;],&apos;number_of_periods&apos;: pv[&apos;number_of_periods&apos;],&apos;number_of_periods_prev&apos;: pv[&apos;number_of_periods_prev&apos;],&apos;wf_label&apos;: pv[&apos;wf_label&apos;], &apos;periods&apos;:pv[&apos;tax_periods&apos;]}"/>
+            <p name="resultVar" expression="&apos;CLIENT_RAING&apos;"/>
+        </clientTask>
+    </task>
+    <timer id="a7d0100a-05f7-4147-922b-e461710544a0" name="Расчет рейтинга" description="Расчет рейтинга, заявка {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <script id="rating-result" name="Получение значения рейтинга">
+        <![CDATA[
+#
+# Получение рейтинга
+#
+import traceback
+from apng_core.csl import Csl
+
+pv['last_error'] = None
+
+try:
+    with Csl('CSL_APP_URL') as csl:
+        response = csl.request(
+            '/FSAProcessor/GetResults',
+            {
+                'id': po['afs']['monitoringId'],
+                'path': 'MTH=>%s,SHT=>SR' % (po['afs']['method']),
+                'periods': pv['tax_periods']
+            }
+        )
+        
+        if response.status_code != 200:
+            raise UserException({
+                'message': 'Ошибка расчета рейтинга, заявка %s' % po['app']['code'],
+                'description': 'Ошибка сервиса %s' % csl.last_url['path']
+            }).withError(csl.extractLastError())
+        else:
+            r = json.loads(response.content)
+            pv['service_result'] = r
+            
+            if r['RESULT'].get('error'):
+                msg = r['RESULT'].get('error')
+                del r['RESULT']
+                pv['last_error'] = {
+                    'message': 'Ошибка расчета рейтинга\n%s' % msg,
+                    'trace': json.dumps(r, indent=4, ensure_ascii=False)
+                }
+                raise StopScriptExecution()
+    
+        
+            if r.get('REJECT') and r.get('REJECT').get('sql_value') == 'Да':
+                pv['rating'] = {
+                    'status': 'REJECT',
+                    'text' : r.get('REJECT').get('hint'),
+                    'value_text' : r.get('DESCRIPTION').get('sql_value'),
+                }
+            else:
+                pv['rating'] = {
+                    'status': 'ACCEPT',
+                    'text' : '',
+                    'value_text' : r.get('DESCRIPTION').get('sql_value'),
+                }
+
+except StopScriptExecution:
+    pass
+
+    
+]]>
+    </script>
+    <split id="de3e95cd-a622-4133-a3ff-219116e85db7" name="Результат расчета рейтинга">
+        <condition id="02d84c84-f496-4013-872e-77a37a2f03af" name="Рейтинг рассчитан" expression="process_vars[&apos;last_error&apos;] is None">
+            <timer id="1387ba44-cbd5-4fd5-97fc-b65e65691fe9" name="Получение отчета по рейтингу" description="Получение отчета по рейтингу, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:03:00" action="continue"/>
+            <script id="fd1410fd-7bd0-4443-a9e3-08a40133d320" name="Получение отчета по рейтингу">
+                <journal time="leave">
+                    <![CDATA[Рассчитан рейтинг: {{process_vars.rating.value_text}}/// {{pv.reportUrl}}]]>
+                </journal>
+                <![CDATA[from apng_core.csl import Csl
+import base64
+
+with Csl('CSL_APP_URL') as csl:
+
+    mis_mth = po['afs']['method']
+    mis_rpt = 'SCRG_R'
+
+    pv['reportRequest'] = {
+        'path': 'MTH=>%s,RPT=>%s' % (mis_mth, mis_rpt),
+        'parameters': {
+            'id': po['afs']['monitoringId'],
+            'crereq': '%s,%s' % (pv['dep_id'], pv['id']),
+            'periods': pv.get('tax_periods'),
+        } 
+    }
+
+    response = csl.request('/ESProcessor/GetReport', pv['reportRequest'])
+
+    if response.status_code != 200:
+        raise UserException({
+            'description': json.dumps(pv['reportRequest'], indent=4),
+        }).withError(csl.extractLastError())
+        
+
+    pv['reportData'] = base64.b64encode(response.content).decode('ascii')
+    
+import urllib
+pv['reportUrl'] = '/aoa/execObjectMethod?'+urllib.parse.urlencode({
+    'object': 'easyflow',
+    'method': 'downloadAttribute',
+    'params': json.dumps({
+        'tokenId': token.process.id.__str__(),
+        'attribute': 'reportData',
+        'content-type': 'application/pdf',
+        'filename': 'app-%s-rating.pdf' % po['app']['code']
+    })
+})
+]]>
+            </script>
+        </condition>
+        <condition id="b1d85179-7320-4a88-a262-0e1bb2c3204e" name="Ошибка расчета рейтинга" expression="process_vars[&apos;last_error&apos;] is not None">
+            <task id="c95d691a-0200-4985-8c9e-0837c785a08c" name="Показ ошибки расчета рейтинга" autoStart="true" description="Ошибка расчета рейтинга, заявка {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/easyflow/error-dialog" taskName="{{task.description}}">
+                    <p name="caption" expression="task[&apos;description&apos;]"/>
+                    <p name="error" expression="process_vars[&apos;last_error&apos;]"/>
+                    <p name="actions" expression="[  { &apos;name&apos;: &apos;Повторить&apos;,  &apos;value&apos;: &apos;repeat&apos; }  ]"/>
+                </clientTask>
+            </task>
+            <jump id="b84392ad-c28e-4716-8eb4-c56325a47bc4" name="Переход к Получение значения рейтинга" target_id="rating-result"/>
+        </condition>
+    </split>
+    <split id="spl_rating" name="Допустимое значение рейтинга">
+        <condition id="cnd_raing_decline" name="Нет" expression="process_vars[&apos;rating&apos;][&apos;status&apos;] == &apos;REJECT&apos;">
+            <script id="result_decline" name="Установка результата расчета рейтинга: отказано">
+                <![CDATA[
+process_vars['RATING_RESULT'] = {
+    'status': 'decline',
+    'text': 'Не достаточный рейтинг: %s' % (process_vars['rating'])
+}
+#process_vars['RATING_RESULT']['status'] = 'accept'
+            ]]>
+            </script>
+        </condition>
+        <condition id="cnd_raing_accept" name="Да">
+            <script id="result_accept" name="Установка результата расчета рейтинга: отказано">
+                <![CDATA[
+process_vars['RATING_RESULT'] = {
+    'status': 'accept',
+    'text': 'Достаточный рейтинг: %s' % (process_vars['rating'])
+}
+            ]]>
+            </script>
+        </condition>
+    </split>
+</workflow>

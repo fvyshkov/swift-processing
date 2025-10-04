@@ -1,0 +1,779 @@
+{
+    "packageId": "780c5c32-65a1-487e-858a-4b48b62dae14",
+    "packageName": "bank.uz_app",
+    "configs": [
+        {
+            "id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "name": "Application object",
+            "model_name": "aoa.Object"
+        },
+        {
+            "id": "292a0886-cc15-4a98-8b58-d6bed5d8d8b6",
+            "name": "Report template",
+            "model_name": "template.Template"
+        },
+        {
+            "id": "d0d0ef2f-5ab4-440e-83e3-ccb6aaef08f8",
+            "name": "Workflow diagram",
+            "model_name": "easyflow.Deployment"
+        },
+        {
+            "id": "1b050d46-3cca-4dde-b86d-1ce70589186a",
+            "name": "Rule",
+            "model_name": "rule.Rule"
+        }
+    ],
+    "content": [
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "10e46537-de1e-4a42-93b8-6c64c517cb6a",
+            "object_name": "Application types",
+            "object_attrs": {
+                "code": "appType",
+                "name": "Application types"
+            },
+            "file_name": "ao/appType.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "9e751383-39b6-4651-9c04-8a37e9189904",
+            "object_name": "Loan application",
+            "object_attrs": {
+                "code": "loanapp",
+                "name": "Loan application"
+            },
+            "file_name": "ao/loanapp.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "7a02d36c-9bd5-4739-bc8f-ec3b3af88500",
+            "object_name": "Вид кредитования",
+            "object_attrs": {
+                "code": "typeOfLending",
+                "name": "Вид кредитования"
+            },
+            "file_name": "ao/typeOfLending.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "18775349-b8f3-4403-9abe-ea372ec30f22",
+            "object_name": "Вид кредитования",
+            "object_attrs": {
+                "code": "vidCred",
+                "name": "Вид кредитования"
+            },
+            "file_name": "ao/vidCred.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "1235e8aa-d800-482f-a482-3057f6762c47",
+            "object_name": "Вид кредитования по классификатору",
+            "object_attrs": {
+                "code": "typeOfLending110",
+                "name": "Вид кредитования по классификатору"
+            },
+            "file_name": "ao/typeOfLending110.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "dc23039c-b6f4-4ff0-9656-2458419ae741",
+            "object_name": "Залоги по заявке",
+            "object_attrs": {
+                "code": "appPledge",
+                "name": "Залоги по заявке"
+            },
+            "file_name": "ao/appPledge.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "4c51f75b-1239-4530-9c72-3c194e86af2b",
+            "object_name": "Заявка на гарантию",
+            "object_attrs": {
+                "code": "appGuarantee",
+                "name": "Заявка на гарантию"
+            },
+            "file_name": "ao/appGuarantee.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "28c079e7-f7c6-4135-8eba-f263c24bb06b",
+            "object_name": "Заявка на кредит юридического лица",
+            "object_attrs": {
+                "code": "appLoanjur",
+                "name": "Заявка на кредит юридического лица"
+            },
+            "file_name": "ao/appLoanjur.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "04276704-21b3-4f58-a2d2-72facc41ae24",
+            "object_name": "Заявка на факторинг",
+            "object_attrs": {
+                "code": "appFactoring",
+                "name": "Заявка на факторинг"
+            },
+            "file_name": "ao/appFactoring.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "d9cd96ce-8e91-48c7-9712-375d7dc8e3a4",
+            "object_name": "Заявки",
+            "object_attrs": {
+                "code": "app",
+                "name": "Заявки"
+            },
+            "file_name": "ao/app.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "05af0876-5e7d-40cb-9f1c-c3a4f1280732",
+            "object_name": "Интеграция с АФС",
+            "object_attrs": {
+                "code": "bank_ap",
+                "name": "Интеграция с АФС"
+            },
+            "file_name": "ao/bank_ap.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "9c216493-c719-407c-98af-ab20ca69b275",
+            "object_name": "Класс предприятия",
+            "object_attrs": {
+                "code": "companyClass",
+                "name": "Класс предприятия"
+            },
+            "file_name": "ao/companyClass.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "2a74039d-cbcb-48b7-8fdd-68fd3f6c3b37",
+            "object_name": "Кредитная заявка физического лица",
+            "object_attrs": {
+                "code": "appLoanfiz",
+                "name": "Кредитная заявка физического лица"
+            },
+            "file_name": "ao/appLoanfiz.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "330d4131-86f6-49a3-a7e1-e7f06a1cda19",
+            "object_name": "Тип заемщика",
+            "object_attrs": {
+                "code": "typeOfBorrower",
+                "name": "Тип заемщика"
+            },
+            "file_name": "ao/typeOfBorrower.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "561291eb-dafc-423d-bc0f-a2cac03dab67",
+            "object_name": "Цель кредита по классификатору",
+            "object_attrs": {
+                "code": "purposeOfLoan112",
+                "name": "Цель кредита по классификатору"
+            },
+            "file_name": "ao/purposeOfLoan112.json"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Report template",
+            "object_id": "338ed643-6623-4574-ac49-0542123d46d4",
+            "object_name": "applications",
+            "object_attrs": {
+                "code": "applications",
+                "name": "Заявки по подразделениям"
+            },
+            "file_name": "template/applications.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Report template",
+            "object_id": "e0a3f216-990a-4162-8439-1fe8a3220d19",
+            "object_name": "loanapp_list",
+            "object_attrs": {
+                "code": "loanapp_list",
+                "name": "Список заявок"
+            },
+            "file_name": "template/loanapp_list.html"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "bd73e562-58cc-4c66-82fe-7d92c9676bc7",
+            "object_name": "Approve alternative amount",
+            "object_attrs": null,
+            "file_name": "workflow/APP_ALTERNATIVE_AMOUNT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "7225f83b-0921-4a9d-92dd-c3cc6d2aeda7",
+            "object_name": "ASOKI Requests",
+            "object_attrs": null,
+            "file_name": "workflow/APP_ASOKI_REPORT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "632ab6c9-e73d-46e8-8988-3a3809668ce0",
+            "object_name": "Завершение рассмотрения заявки",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_FIN.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "e24f0047-c4ff-4b59-9c73-cb3e6df29746",
+            "object_name": "Кредитная заявка юридических лиц",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_JUR.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "58451782-cded-4817-baf6-4fd4d7abfb52",
+            "object_name": "Ожидание актуализации договора",
+            "object_attrs": null,
+            "file_name": "workflow/APP_WAIT_DEA.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "1d537c4d-0113-4d01-8fbd-10d8e259ad84",
+            "object_name": "Передача заявки в АФС",
+            "object_attrs": null,
+            "file_name": "workflow/APP_TO_AFS.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "38f1cb5c-8ded-4d1c-b3e7-29c583ac3820",
+            "object_name": "Подтверждение клиентом получения кредита",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CLIENT_CONFIRMATION.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "f5c4e131-f23b-4575-a49b-b9a9e17465e0",
+            "object_name": "Принятие решения по завявке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_DECISION.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "4d66a26d-1054-4779-a223-bfbc82dd01f8",
+            "object_name": "Проверка документов досье",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHECK_DOSSIER.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "6fd843bc-b85e-471f-8f9a-3e6cc12cbb79",
+            "object_name": "Проверка достаточности обеспечения",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHECK_PLEDGE.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "d4e605cb-0ecf-42f7-bed8-dd2431c36945",
+            "object_name": "Проверка занятости заемщиков по заявке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHECK_INCOME_ALL.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "f50737c0-5c55-47b6-8eb0-c9fe3aaf96f0",
+            "object_name": "Регистрация заявки во внешних системах",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REGISTER_EXT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "b91b7ce9-2c6a-426a-96d7-610e268de72a",
+            "object_name": "Регистрация решения по заявке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REGISTER_DECISION.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Workflow diagram",
+            "object_id": "1ce62c08-0efc-4378-89d5-f028eeb88638",
+            "object_name": "Создание договора по заявке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_LOAN.xml"
+        },
+        {
+            "model_name": "rule.Rule",
+            "model_title": "Правила",
+            "object_id": "checkIncomeResult_method",
+            "object_name": "Метод проверки доходов",
+            "object_attrs": {
+                "code": "checkIncomeResult_method",
+                "name": "Метод проверки доходов"
+            },
+            "file_name": "rule/checkIncomeResult_method.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "10b2fd32-c8d4-4430-841f-ecd6b6641f91",
+            "object_name": "Залоги кредитной заявки",
+            "object_attrs": {
+                "code": "loanapp.pledge",
+                "name": "Залоги кредитной заявки"
+            },
+            "file_name": "ao/loanapp.pledge.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "fb01f518-8c12-4364-a73d-ca0785f44718",
+            "object_name": "Заявление на овердрафт(новая)",
+            "object_attrs": {
+                "code": "appLoanOverdraft",
+                "name": "Заявление на овердрафт(новая)"
+            },
+            "file_name": "ao/appLoanOverdraft.json"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "63542f7f-606e-461a-b1f1-c4b4cac7301d",
+            "object_name": "API. Изменение атрибутов заявки",
+            "object_attrs": null,
+            "file_name": "workflow/REQUEST_ModifyApplication.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "72c5c555-7d16-47d8-8188-3fd0b9b890a4",
+            "object_name": "API. Регистрация решения по заявке",
+            "object_attrs": null,
+            "file_name": "workflow/REQUEST_RegisterApplicationDecision.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "a86ba79c-6829-4335-a008-e7be18419fc9",
+            "object_name": "API. Создание заявки на кредит",
+            "object_attrs": null,
+            "file_name": "workflow/REQUEST_CreateApplicationAny.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "beb60c5a-b540-43e8-99b0-44a8ce6c3a1b",
+            "object_name": "API. Создание заявки Онлайнмикрозайм",
+            "object_attrs": null,
+            "file_name": "workflow/REQUEST_CreateApplication.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "23eebc0f-300b-40f7-80de-c74ee47797e4",
+            "object_name": "API. Состояние заявки",
+            "object_attrs": null,
+            "file_name": "workflow/REQUEST_ApplicationStatus.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "6a8742c9-c81e-4424-93ec-869c51cfcae7",
+            "object_name": "Выдача транша по кредитной линии",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_TRANCHE.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "ea9c785d-bbfc-4315-9a84-77dbdf57e105",
+            "object_name": "Генерация нового уникального номера заявки",
+            "object_attrs": null,
+            "file_name": "workflow/APP_RENEW_ID.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "0637307a-aa14-4322-ac7d-a4d2a6080e74",
+            "object_name": "Запросы во внешние системы",
+            "object_attrs": null,
+            "file_name": "workflow/APP_SERVICE_REQUEST.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "57483622-4b0f-4c38-8f58-55448d39319b",
+            "object_name": "Изменение решения по заявке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_MODIFY_DECISION.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "271f80e0-65dd-418d-8f6d-ea92429d0195",
+            "object_name": "Измененить инициатора заявки",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHANGE_INITIATOR.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "de8ec850-814e-4570-b56a-9efef8f10f2e",
+            "object_name": "КАТМ. Отмена заявки",
+            "object_attrs": null,
+            "file_name": "workflow/KATM_CANCEL.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "37456801-c12f-4e98-b0f5-804fb0f76584",
+            "object_name": "Контроль ввода заявки",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHECK_INPUT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "d60a018f-26c0-49ba-a077-218a1ed78436",
+            "object_name": "Коррекция атрибутов заявки",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHANGE_ATTR.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "bd704f72-b726-42a7-aadd-37c05162a664",
+            "object_name": "Кредитная заявка юридических лиц v2",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_JUR_V2.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "88d3def9-8d63-41ec-9dee-dc91d1ca4188",
+            "object_name": "Обработка события по завке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_EVENT_PROCESS.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "1b82439c-81ad-4fe0-bea9-bfeaec7683ce",
+            "object_name": "Отказ клиента",
+            "object_attrs": null,
+            "file_name": "workflow/APP_DECLINE_CLIENT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "95a01939-975e-4c9a-ace6-0c52abd11140",
+            "object_name": "Отмена рассмотрения заявки",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CANCEL_REVIEW.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "4042eda4-daae-4e11-95b4-f3045fff3b08",
+            "object_name": "Очистка процессов рассмотрения",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CLEAN_REVIEW.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "b41642b8-0d60-49d1-b66b-edd91c033f8c",
+            "object_name": "Получение заключений по заявке v2",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CONCLUSIONS_V2.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "31b7d44e-c22f-472d-bb23-49b797ab43b9",
+            "object_name": "Получение скоринга клиентов",
+            "object_attrs": null,
+            "file_name": "workflow/APP_SCORING_REPORT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "f63517c0-11cc-4dbb-8775-a48f6fd8989f",
+            "object_name": "Проверка доходов заемщика",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CHECK_INCOME.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "65ce44db-5378-41ef-90d4-4d454b8b402f",
+            "object_name": "Рассмотрение заявки. автоматическое v2",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_AUTO_V2.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "c2c73a39-158a-4416-823b-1fd8b77abcac",
+            "object_name": "Рассмотрение заявки. овердрафт",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_OVERDRAFT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "2dd0b71c-cf04-4482-90ee-3de54f4d9033",
+            "object_name": "Рассмотрение заявки онлайн микрозайм",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_ONLINE_MICRO.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "da9a521a-d364-4db3-8ba2-a880a588fda2",
+            "object_name": "Рассмотрение заяки. транш",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REVIEW_TRANCHE.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "b232d8f5-fa79-440d-82a0-f631e473309a",
+            "object_name": "Расчет рейтинга",
+            "object_attrs": null,
+            "file_name": "workflow/APP_RATING.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "6410eb6d-06cd-40ab-96ac-095d87a2b870",
+            "object_name": "Расчет стоп факторов 1",
+            "object_attrs": null,
+            "file_name": "workflow/APP_STOP_FACTORS_1.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "e51e4a4e-ddde-411c-9a61-1fdefc1e0c07",
+            "object_name": "Расчет стоп факторов 2",
+            "object_attrs": null,
+            "file_name": "workflow/APP_STOP_FACTORS_2.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "45a1c4ea-2974-4af1-9a36-5edf9375f05a",
+            "object_name": "Расчет стоп факторов 3",
+            "object_attrs": null,
+            "file_name": "workflow/APP_STOP_FACTORS_3.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "f2e2df3b-ddcb-4f16-8384-6bba46c8ba51",
+            "object_name": "Расчет стоп факторов физлиц",
+            "object_attrs": null,
+            "file_name": "workflow/APP_STOP_FACTORS_FIZ.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "703ce39c-3aee-4bf0-a3d1-ad404b893d20",
+            "object_name": "Расчет стоп факторов юрлиц",
+            "object_attrs": null,
+            "file_name": "workflow/APP_STOP_FACTORS_JUR.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "42c71d4a-cfa4-434d-b805-2aaee3a7f125",
+            "object_name": "Регистрация отказа во внешних сервисах",
+            "object_attrs": null,
+            "file_name": "workflow/APP_REJECT_EXT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "cd23b09a-b36c-443a-9551-92ca7bcb0033",
+            "object_name": "Скоринг по заявке",
+            "object_attrs": null,
+            "file_name": "workflow/APP_SCORING.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "61eb1791-6148-49ac-bba6-f9af4a6dbf9d",
+            "object_name": "Создание гарантии",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_GUARANTEE.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "f081d6d9-7b1a-4edf-96fd-228466e2ab03",
+            "object_name": "Создание договора лизинга",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_LEASING.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "7f81ac82-e660-4a50-a1e3-77d7ed487722",
+            "object_name": "Создание карты",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_CARD.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "f7a3f1b2-7352-4fcd-8151-6be8cec729d4",
+            "object_name": "Создание овердрафта по карте",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_OVERDRAFT.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "1f7a4045-393f-489e-a1e8-a2b473a77114",
+            "object_name": "Создание требования по договору факторингу",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_FACTORING_CLAIM.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "c4d5435b-79fd-4cdb-a597-d9f7eecf45f7",
+            "object_name": "Создание факторинга",
+            "object_attrs": null,
+            "file_name": "workflow/APP_CREATE_FACTORING.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "438c333c-a43b-44cc-9f40-d18e89ee02c9",
+            "object_name": "Установика признака По решению правительства",
+            "object_attrs": null,
+            "file_name": "workflow/APP_SET_GOVERNMENT.xml"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "a3b5816c-efca-457b-a687-e2bf6d52c6a6",
+            "object_name": "loanapp_exporter",
+            "object_attrs": {
+                "code": "loanapp_exporter",
+                "name": "Отчета по заявкам предприятий-экспортеров"
+            },
+            "file_name": "template/loanapp_exporter.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "3b34dfde-1ba3-488b-990c-c6f5338ad6b8",
+            "object_name": "loanapp_issue_dea",
+            "object_attrs": {
+                "code": "loanapp_issue_dea",
+                "name": "Оформление договоров по заявкам"
+            },
+            "file_name": "template/loanapp_issue_dea.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "24b68f3d-9184-4c6d-b151-426f6f1fc872",
+            "object_name": "loanapp_jur_list",
+            "object_attrs": {
+                "code": "loanapp_jur_list",
+                "name": "Список заявок ЮЛ"
+            },
+            "file_name": "template/loanapp_jur_list.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "0e733cab-c32c-4de7-a26b-34a6fa46b1f5",
+            "object_name": "loanapp_om_application",
+            "object_attrs": {
+                "code": "loanapp_om_application",
+                "name": "Заявления онлайн микрозайма"
+            },
+            "file_name": "template/loanapp_om_application.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "2307beb1-8dec-4945-a0cd-cf2782a001be",
+            "object_name": "loanapp_om_conclusion",
+            "object_attrs": {
+                "code": "loanapp_om_conclusion",
+                "name": "Заключения онлайн микрозайма"
+            },
+            "file_name": "template/loanapp_om_conclusion.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "040d5e15-0c3d-4983-b047-c71dbfabeee1",
+            "object_name": "loanapp_om_oferta",
+            "object_attrs": {
+                "code": "loanapp_om_oferta",
+                "name": "Оферта"
+            },
+            "file_name": "template/loanapp_om_oferta.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "58ccd459-2082-4c8b-9b13-859547639495",
+            "object_name": "loanapp_registration_ext",
+            "object_attrs": {
+                "code": "loanapp_registration_ext",
+                "name": "Регистрация заявок во внешних системах"
+            },
+            "file_name": "template/loanapp_registration_ext.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "11b1d0f2-c5be-4b97-a68d-421f40bb19f5",
+            "object_name": "loanapp_review_results",
+            "object_attrs": {
+                "code": "loanapp_review_results",
+                "name": "Результаты рассмотрения заявок"
+            },
+            "file_name": "template/loanapp_review_results.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Шаблон",
+            "object_id": "5547e3d5-9b3d-4528-affd-bd0f203ac69e",
+            "object_name": "loanCalculatorFiz",
+            "object_attrs": {
+                "code": "loanCalculatorFiz",
+                "name": "Кредитный калькулятор физических лиц"
+            },
+            "file_name": "template/loanCalculatorFiz.html"
+        }
+    ]
+}

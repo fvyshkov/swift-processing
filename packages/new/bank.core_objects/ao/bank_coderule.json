@@ -1,0 +1,14 @@
+{
+    "lists": {},
+    "forms": {},
+    "methods": {
+        "newCode": {
+            "sql": {},
+            "script": {
+                "py": "#\n# Генерация нового кода по правилу\n#\nfrom django.conf import settings\nfrom django.db import transaction\n\ndef generateCode(rule, params):\n    con = initDbSession(application='bank')\n    \n    with transaction.atomic(using=settings.APPS_DB['bank']):\n        with con.cursor() as cursor:\n            p = {\n                'rule'  : rule,\n                'params': '=>'.join(params),\n                'code'  : cursor.var(str)\n            }\n            \n            cursor.execute(\"\"\"\n                declare\n                    sTmp varchar2(250);\n                    newCode varchar2(250);\n                begin\n                    bs_rules.Get4MaskEditByRuleCode (:rule, :params, sTmp, newCode);\n                    :code := newCode;\n                end;\n            /\"\"\", p)\n        \n            code = p['code'].getvalue()\n    return code\n    \ndata = generateCode(parameters.get('rule'), parameters.get('params'))\n"
+            }
+        }
+    },
+    "references": {},
+    "js": {}
+}

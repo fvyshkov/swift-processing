@@ -1,0 +1,272 @@
+<workflow id="APP_SCORING" name="Скоринг по заявке">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = pv.get('objectKey')
+
+   
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser() as au:
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+]]>
+    </event>
+    <script id="init" name="Инициализация">
+        <![CDATA[
+ok = pv.get('objectKey')
+if not ok:
+    # Если запустили без параметров, то обрабатываем тестовую заявку
+    ok = 'loanapp:1855,1287412'
+    pv['objectKey'] = ok
+    #raise Exception('Не задан ключ объекта для запуска сценария, objectKey');
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+
+pv['needEditAltAmount'] = True
+]]>
+    </script>
+    <script id="9178674f-d467-46b3-b318-304b68026308" name="Стадия рассмотрения">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser() as au:
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id' : pv['dep_id'],
+            'id' : pv['id'],
+            'stage': 'SCORING',
+        }
+    })
+]]>
+    </script>
+    <timer id="0c830520-a6ca-4951-bae0-dbd3f3a02e34" name="Расчет скоринга" description="Расчет скоринга, заявка {{po.app.code}}, {{po.client.name}}" duration="00:00:00" action="continue"/>
+    <script id="afs_scoring" name="Расчет скорингового балла">
+        <![CDATA[import traceback
+from apng_core.csl import Csl
+
+def ensureIsoDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return d
+    return val
+
+pv['last_error'] = None
+
+try:
+    method = po['afs'].get('method')
+    if not method:
+        method = 'FSA'
+        
+    with Csl('CSL_APP_URL') as csl:
+    
+        response = csl.request(
+            '/ESProcessor/GetResults',
+            {
+                'path': 'MTH=>{},SHT=>SR'.format(method),
+                'key': {
+                    'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                    'DOP': ensureIsoDate(po['app']['registrationDate'])
+                }
+            }
+        )
+        
+        if response.status_code != 200:
+            raise UserException(csl.extractLastError())
+        else:
+            r = json.loads(response.content)
+            
+            pv['scoring_result'] = r
+            
+            if r['RESULT'].get('error'):
+                msg = r['RESULT'].get('error')
+                del r['RESULT']
+                raise UserException({
+                    'message': 'Ошибка расчета скоринга, заявка %s\n%s' % (po['app']['code'], msg),
+                    'trace': json.dumps(r, indent=4, ensure_ascii=False)
+                })
+    
+            try:
+                score_value = float(r['RESULT']['sql_value'])
+            except Exception as e:
+                raise UserException({
+                    'message': 'Неправильное значение скорингового балла, заявка %s: %s' % (po['app']['code'], r['RESULT']['sql_value'])
+                })
+    
+    
+            pv['scoring'] = {
+                'score': score_value,
+                'text': '{}: {}'.format(r['RESULT']['hint'], r['RESULT']['sql_value']),
+                'altAmount': None,
+                'passed': r['REFUSE']['sql_value'] == 'Нет',
+            }
+            
+            if r.get('SCRG_AMOUNT'):
+                if r['SCRG_AMOUNT'].get('sql_value'):
+                    pv['scoring']['altAmount'] = float(r['SCRG_AMOUNT']['sql_value'])
+                elif r['SCRG_AMOUNT'].get('error'):
+                    raise UserException({
+                        'message': 'Ошибка альтернативной суммы, заявка %s\n%s' % (po['app']['code'], r['SCRG_AMOUNT']['error'])
+                    })
+    
+    
+            response = csl.request(
+                '/ESProcessor/GetResults',
+                {
+                    'path': 'MTH=>FSA,SHT=>SA',
+                    'key': {
+                        'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                        'DOP': ensureIsoDate(po['app']['registrationDate'])
+                    }
+                }
+            )
+                
+except UserException as e:
+    raise e
+    
+except Exception as e:
+    raise UserException({
+        'message': 'Ошибка расчета скоринга, заявка %s\n%s' % (po['app']['code'], e),
+        'trace': traceback.format_exc()
+    })
+
+]]>
+    </script>
+    <timer id="753fb190-8ed6-4b4e-b82d-60b364cb4230" name="Получение отчета по скорингу" description="Получение отчета по скорингу, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:03:00" action="continue"/>
+    <script id="d440f540-c82e-42ab-a408-cf766c7e8c77" name="Получение отчета по скорингу">
+        <journal time="leave">
+            <![CDATA[Расчет скорингового балла: {{pv.scoring.score}}/// {{pv.reportUrl}}]]>
+        </journal>
+        <![CDATA[from apng_core.csl import Csl
+import base64
+
+with Csl('CSL_APP_URL') as csl:
+
+    mis_mth = po['afs']['method']
+    mis_rpt = 'SCRG_R'
+
+    pv['reportRequest'] = {
+        'path': 'MTH=>%s,RPT=>%s' % (mis_mth, mis_rpt),
+        'parameters': {
+            'OBJ': '%s,%s' % (pv['dep_id'], pv['id']),
+            'DOP': po['app']['registrationDate']
+        } 
+    }
+
+    response = csl.request('/ESProcessor/GetReport', pv['reportRequest'])
+
+    if response.status_code != 200:
+        raise UserException({
+            'description': json.dumps(pv['reportRequest'], indent=4),
+        }).withError(csl.extractLastError())
+        
+
+    pv['reportData'] = base64.b64encode(response.content).decode('ascii')
+    
+import urllib
+pv['reportUrl'] = '/aoa/execObjectMethod?'+urllib.parse.urlencode({
+    'object': 'easyflow',
+    'method': 'downloadAttribute',
+    'params': json.dumps({
+        'tokenId': token.process.id.__str__(),
+        'attribute': 'reportData',
+        'content-type': 'application/pdf',
+        'filename': 'app-%s-scoring.pdf' % po['app']['code']
+    })
+})
+]]>
+    </script>
+    <split id="test_score_service" name="Результат сервиса скоринга">
+        <condition id="40922902-e060-48df-a275-dec5676769a2" name="Альтернативная сумма" expression="pv[&apos;scoring&apos;][&apos;passed&apos;] and pv[&apos;scoring&apos;].get(&apos;altAmount&apos;) is not None and pv[&apos;scoring&apos;][&apos;altAmount&apos;] &gt; 0">
+            <script id="6acdc51f-7dc1-478f-9dc6-bced28dd0ab5" name="Журнализация альтернативной суммы">
+                <journal time="leave">
+                    <![CDATA[{%load wfj%}
+Расчитана альтернативная сумма {{pv.scoring.altAmount | currency}}]]>
+                </journal>
+                <![CDATA[
+                
+            ]]>
+            </script>
+            <split id="18a5ee58-8249-4de1-a0e8-08b199134040" name="Предлагать альтернативную сумму">
+                <condition id="7cc53583-209f-4910-ac50-2d25184e0cbc" name="Да" expression="po.get(&apos;government&apos;, {}).get(&apos;hasDecision&apos;, False) == False">
+                    <call id="ce642e88-e6b9-4bf5-82a4-bde6d267a787" name="Подтверждение альтернативной суммы" call="&apos;APP_ALTERNATIVE_AMOUNT&apos;" result_from="RESULT" result_to="ALT_RESULT">
+                        <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+                        <p name="altAmount" expression="pv[&apos;scoring&apos;][&apos;altAmount&apos;]"/>
+                        <p name="updateExternalRegistration" expression="pv.get(&apos;updateExternalRegistration&apos;)"/>
+                        <p name="canReview" expression="pv.get(&apos;canReview&apos;)"/>
+                    </call>
+                    <split id="d3a15f18-1838-4ca5-9b17-18a3be3b85b0" name="Решение клиента">
+                        <condition id="b4c8fc0d-62c3-4ddf-a965-acd3f1b8bf19" name="Альтернативная сумма согласована" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;accept&apos;">
+                            <script id="b1365a8d-de9a-45e0-8cf6-123e7784d76a" name="Установка результата">
+                                <![CDATA[pv['SCORE_RESULT'] = {
+    'status': 'accept',
+    'value': pv['scoring']['score'],
+    'altAmount': pv['scoring']['altAmount'],
+}
+
+]]>
+                            </script>
+                        </condition>
+                        <condition id="810c7900-5da7-4013-a715-1354dbf77368" name="Сумма не согласована" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;decline&apos;">
+                            <script id="16445760-94bc-492c-879f-2633588fd102" name="Установка отказа">
+                                <![CDATA[pv['SCORE_RESULT'] = {
+    'status': 'decline',
+    'value': pv['scoring']['score'],
+    'altAmount': pv['scoring']['altAmount'],
+}
+
+]]>
+                            </script>
+                        </condition>
+                        <condition id="402a5a14-c465-47b0-ac7e-8ed59b4fbd43" name="Повторное рассмотрение заявки с изменениями" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+                            <script id="862551d7-aa7f-49b8-a762-3a4357faff37" name="Установка &quot;повторное рассмотрение&quot;">
+                                <![CDATA[pv['SCORE_RESULT'] = {
+    'status': 'review',
+    'value': pv['scoring']['score'],
+    'altAmount': pv['scoring']['altAmount'],
+}
+
+]]>
+                            </script>
+                        </condition>
+                    </split>
+                </condition>
+                <condition id="fde6d34c-9510-4bbb-9b65-e55bccbd8b09" name="Нет" expression="po.get(&apos;government&apos;, {}).get(&apos;hasDecision&apos;, False) == True">
+                    <script id="c8ea987c-2708-415f-89ca-248321b76057" name="Журнализация исключения">
+                        <journal time="leave">
+                            <![CDATA[Альтернативная сумма не предлагается для кредитов по решению Правительства]]>
+                        </journal>
+                        <![CDATA[pv['SCORE_RESULT'] = {
+    'status': 'accept',
+    'value': pv['scoring']['score'],
+}
+
+]]>
+                    </script>
+                </condition>
+            </split>
+        </condition>
+        <condition id="test_service_success" name="Выполнен">
+            <script id="12a74e89-2df1-4e27-8cc2-3ddc575b40f7" name="Установка результата">
+                <![CDATA[pv['SCORE_RESULT'] = {
+    'status': 'accept' if pv['scoring']['passed'] else 'decline',
+    'value': pv['scoring']['score'],
+}]]>
+            </script>
+        </condition>
+    </split>
+</workflow>

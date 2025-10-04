@@ -1,0 +1,323 @@
+<workflow id="APP_STOP_FACTORS_2" name="Расчет стоп факторов 2">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = pv.get('objectKey')
+if not ok:
+    raise Exception('Не задан ключ объекта для запуска сценария, objectKey');
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <script id="init" name="Инициализация">
+        <![CDATA[ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+# Зачитывание настроек
+from apng_core.aoa.services import execObjectMethod
+pv['settings'] = execObjectMethod({
+    'object': 'settings',
+    'method': 'get'
+})['loanapp']
+]]>
+    </script>
+    <script id="c3487409-815c-4e77-afc6-633a49f045c9" name="Стадия рассмотрения">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'stage': 'STOPFACTORS2',
+    }
+})
+]]>
+    </script>
+    <call id="katm_client_report" name="Запрос отчетов в АСОКИ" call="lv[&apos;SCORING_WORKFLOW&apos;]" condition="pv[&apos;settings&apos;].get(&apos;katm&apos;, {}).get(&apos;emulator&apos;, False) == False" result_from="last_error" result_to="last_error">
+        <event name="beforeExecute">
+            <![CDATA[lv['SCORING_WORKFLOW'] = next(filter(lambda x: x['code']=='AsokiScoringWorkflow', pv['settings'].get('parameters', [])), {'value': 'APP_ASOKI_REPORT'})['value']]]>
+        </event>
+        <p name="req" expression="pv.get(&apos;req&apos;)"/>
+    </call>
+    <split id="920d4f74-27e7-4dc4-a2f2-62f752b36bf6" name="Ошибки получения отчетов АСОКИ">
+        <condition id="bd986b3f-85a2-48b3-a657-15ec297a4d87" name="Отказать в выдаче" expression=" pv.get(&apos;last_error&apos;) is not None">
+            <script id="787a971e-502b-4fbb-af98-fe0dbf1802f5" name="Установка результата">
+                <![CDATA[pv['SF2_status'] = {
+    'status': 'decline',
+    'statusName': 'Отказано банком'
+}
+]]>
+            </script>
+            <terminate id="70cc9513-199c-4ad2-a403-af0d4ad59e14" name="Конец"/>
+        </condition>
+        <condition id="be518937-1dba-48af-802c-51c2b9f1fc0d" name="Нет"/>
+    </split>
+    <timer id="0f974b95-e55e-483e-8d12-1f79995fb320" name="Расчет стоп факторов 2" description="Расчет стоп факторов 2, заявка {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:03:00" action="continue"/>
+    <script id="afs_stop_factors" name="Стоп факторы 2">
+        <![CDATA[import traceback
+from apng_core.csl import Csl
+
+def ensureDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return '%02d.%02d.%04d' % (d.day, d.month, d.year)
+    return val
+
+def ensureIsoDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return d
+    return val
+
+pv['last_error'] = None
+
+try:
+    with Csl('CSL_APP_URL') as csl:
+        method = po['afs'].get('method')
+        if not method:
+            method = 'FSA'
+            
+        response = csl.request(
+            '/ESProcessor/GetResults',
+            {
+                'path': 'MTH=>{},SHT=>SF2'.format(method),
+                'key': {
+                    'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                    'DOP': ensureIsoDate(po['app']['registrationDate'])
+                }
+            }
+        )
+        
+        if response.status_code != 200:
+            raise UserException(csl.extractLastError())
+        else:
+            r = json.loads(response.content)
+            pv['service_result'] = r
+            
+            pv['SF2_status'] = {
+                'status': r['RESULT_CODE']['sql_value'],
+                'statusName': r['RESULT'].get('sql_value'),
+            }
+            
+            #print('STOP FACTORS RESULT', r)
+            if not r.get('RESULT') or not r['RESULT'].get('hint') or not r['RESULT'].get('sql_value'):
+                pv['last_error'] = {
+                    'message': 'Ошибка сервиса расчета стопфакторов 2',
+                    'description': 'Сервис не вернул правильный ответ',
+                    'trace': '%s' % r
+                }
+                raise StopScriptExecution()
+            
+    
+            if r.get('SCRG_AMOUNT'):
+                pv['SF2_status']['altAmount'] = r['SCRG_AMOUNT'].get('value')
+                    
+            if pv['SF2_status']['status'] == 'altAmount' and pv['SF2_status'].get('altAmount') is None:
+                pv['last_error'] = {
+                    'message': 'Не расчитана альтернативная сумма'
+                }
+                raise StopScriptExecution()
+    
+            #
+            # Вызов подготовки отчета
+            #
+            response = csl.request(
+                '/ESProcessor/GetResults',
+                {
+                    'path': 'MTH=>{},SHT=>SA'.format(method),
+                    'key': {
+                        'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                        'DOP': ensureIsoDate(po['app']['registrationDate'])
+                    }
+                }
+            )
+
+except UserException as e:
+    raise e
+    
+except StopScriptExecution:
+    pass
+
+except Exception as e:
+    raise UserException({
+        'message': '%s' % e,
+        'trace': traceback.format_exc()
+    })
+]]>
+    </script>
+    <split id="test_sf" name="Результат сервиса">
+        <condition id="test_sf_fail" name="Ошибка сервиса" expression=" pv.get(&apos;last_error&apos;) is not None">
+            <task id="display_sf_error" name="Ошибка сервиса расчета стоп факторов 2" autoStart="true" description="Ошибка сервиса расчета стоп факторов 2, заявка {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/easyflow/error-dialog" taskName="{{task.description}}">
+                    <p name="caption" expression="&apos;Ошибка сервиса расчета стоп факторов 2, заявка %s&apos; % (po[&apos;app&apos;][&apos;code&apos;])"/>
+                    <p name="error" expression="pv[&apos;last_error&apos;]"/>
+                    <p name="actionVar" expression="&apos;action&apos;"/>
+                    <p name="actions" expression="[  { &apos;name&apos;: &apos;Повторить запрос&apos;, &apos;value&apos;: &apos;repeat&apos;},   { &apos;name&apos;: &apos;Отклонить заявку&apos;, &apos;value&apos;: &apos;reject&apos;},  ]"/>
+                    <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+                </clientTask>
+            </task>
+            <split id="user_decision" name="Выбор пользователя">
+                <condition id="user_decision_repeat" name="Повторить расчет" expression=" pv.get(&apos;action&apos;) == &apos;repeat&apos; ">
+                    <jump id="repeat_sf" name="Переход к повторному расчету" target_id="afs_stop_factors"/>
+                </condition>
+                <condition id="user_decision_reject" name="Отказать в выдаче" expression=" pv.get(&apos;action&apos;) == &apos;reject&apos; ">
+                    <script id="set_result_reject" name="Установка результата">
+                        <journal time="leave">
+                            <![CDATA[Стоп факторы 2, отказ по решению специалиста]]>
+                        </journal>
+                        <![CDATA[pv['SF2_status'] = {
+    'status': 'decline',
+    'statusName': 'Отказано пользователем'
+}
+
+# Это мусор ниже, надо удалять
+pv['Factor_2'] = 'Отказать'                        
+pv['SF2'] = 'Отказано пользователем'                        
+                    ]]>
+                    </script>
+                </condition>
+            </split>
+        </condition>
+        <condition id="test_service_success" name="Обработка результата сервиса">
+            <script id="5f7fe64a-9e22-41ef-ac0e-c9cdd53da496" name="Сохранение результата расчета в заявку">
+                <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser():
+    r = execObjectMethod({
+        'object': 'app', 'method': 'getApplicationJson',
+        'params': {'dep_id': pv['dep_id'], 'id': pv['id'],}
+    })
+
+    r['afs']['results'] = {
+        **r['afs'].get('results', {}),
+        'SF2': pv['service_result']
+    }
+    execObjectMethod({
+        'object': 'app', 'method': 'saveApplicationJson',
+        'params': {'dep_id': pv['dep_id'], 'id': pv['id'], 'json': r}
+    })
+]]>
+            </script>
+            <timer id="8679ce6e-8f64-44c3-b754-163e4df74e2c" name="Получение отчета стоп факторы 2" description="Получение отчета стоп факторы 2, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:03:00" action="continue"/>
+            <script id="7e2904f9-bd80-4f58-b110-5b05688763c4" name="Получение отчета по стоп факторам">
+                <journal time="leave">
+                    <![CDATA[Стоп факторы 2: {{pv.SF2_status.statusName}}/// {{pv.reportUrl}}]]>
+                </journal>
+                <![CDATA[from apng_core.csl import Csl
+import base64
+
+with Csl('CSL_APP_URL') as csl:
+
+    mis_mth = po['afs']['method']
+    mis_rpt = 'SCRG_F2'
+
+    pv['reportRequest'] = {
+        'path': 'MTH=>%s,RPT=>%s' % (mis_mth, mis_rpt),
+        'parameters': {
+            'OBJ': '%s,%s' % (pv['dep_id'], pv['id']),
+            'DOP': po['app']['registrationDate']
+        } 
+    }
+
+    response = csl.request('/ESProcessor/GetReport', pv['reportRequest'])
+
+    if response.status_code != 200:
+        raise UserException({
+            'description': json.dumps(pv['reportRequest'], indent=4),
+        }).withError(csl.extractLastError())
+        
+
+    pv['reportData'] = base64.b64encode(response.content).decode('ascii')
+    
+import urllib
+pv['reportUrl'] = '/aoa/execObjectMethod?'+urllib.parse.urlencode({
+    'object': 'easyflow',
+    'method': 'downloadAttribute',
+    'params': json.dumps({
+        'tokenId': token.process.id.__str__(),
+        'attribute': 'reportData',
+        'content-type': 'application/pdf',
+        'filename': 'app-%s-stopfactors-2.pdf' % po['app']['code']
+    })
+})
+]]>
+            </script>
+            <split id="check_result_for_alt_amount" name="Предложена альтернативная сумма?">
+                <condition id="test_advice_alt_amount" name="Да" expression="pv[&apos;SF2_status&apos;][&apos;status&apos;] == &apos;altAmount&apos;">
+                    <call id="48f617f2-acdb-4d6c-a41e-b6df38f4beed" name="Подтверждение альтернативной суммы" call="&apos;APP_ALTERNATIVE_AMOUNT&apos;" result_from="RESULT" result_to="ALT_RESULT">
+                        <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+                        <p name="altAmount" expression="pv[&apos;SF2_status&apos;][&apos;altAmount&apos;]"/>
+                        <p name="updateExternalRegistration" expression="pv.get(&apos;updateExternalRegistration&apos;)"/>
+                        <p name="canReview" expression="pv.get(&apos;canReview&apos;)"/>
+                    </call>
+                    <split id="alt_user_decision" name="Результат подтверждения">
+                        <condition id="alt_user_accept" name="Альтернативная сумма согласована" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;accept&apos;"/>
+                        <condition id="alt_user_decline" name="Сумма не согласована" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;decline&apos;">
+                            <script id="set_decline" name="Установка отказа">
+                                <![CDATA[pv['SF2_status'] = {
+    'status': 'decline',
+    'statusName': 'Отказать, альтернативная сумма не согласована'
+}
+
+# Мусор
+pv['SERVICE_RESULT'] = 'Отказать'
+pv['RESULT'] = {
+    'status': 'decline',
+    'text': 'Отказать, альтернативная сумма не согласована',
+}
+
+]]>
+                            </script>
+                        </condition>
+                        <condition id="7c300908-e2ea-446a-a18a-c320051fcaa0" name="Повторное рассмотрение заявки с изменениями" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+                            <script id="4a55d5a0-1bc5-4af5-9211-0bfbd2d26175" name="Установка &quot;повторное рассмотрение&quot;">
+                                <![CDATA[pv['SF2_status'] = {
+    'status': 'review',
+    'statusName': 'Направлена на повторное рассмотрение после изменений'
+}
+
+# Мусор
+pv['SERVICE_RESULT'] = 'Направлена на повторное рассмотрение после изменений'
+pv['RESULT'] = {
+    'status': 'review',
+    'text': 'Направлена на повторное рассмотрение после изменений',
+}
+
+]]>
+                            </script>
+                        </condition>
+                    </split>
+                </condition>
+                <condition id="no_alt_amount" name="Без альтернативной суммы"/>
+            </split>
+        </condition>
+    </split>
+    <timer id="6def9279-e5dd-4619-9d1a-f8b8707314a0" name="Стоп факторы 2 расчитаны" description="" duration="00:00:00" errorDuration="00:02:00" action="continue"/>
+</workflow>

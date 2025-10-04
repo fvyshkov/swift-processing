@@ -1,0 +1,145 @@
+<workflow id="REQUEST_ApplicationStatus" name="API. Состояние заявки">
+    <script id="6d117cff-c724-4178-8d86-9214adfffb42" name="Инициализация">
+        <![CDATA[request = process_vars.get('request')
+
+if not request:
+    raise Exception('No request provided')
+    
+if not request.get('applicationId'):
+    raise Exception('No applicationId')
+
+
+pk = request.get('applicationId').split(',')
+if len(pk) != 2:
+    raise Exception('Неправильный формат applicationId, используйте NNN,NNNNN')
+process_vars['DEP_ID'] = pk[0]
+process_vars['ID'] = pk[1]
+]]>
+    </script>
+    <script id="fb490627-8cdd-4582-8683-be1b71e8cd04" name="Получение состояния заявки">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from apng_core.db import fetchall
+from apng_core.easyflow.services import RunTimeService
+
+import logging
+logger = logging.getLogger('loanapp.api')
+
+with AuthenticatedUser() as au:
+    with au.getConnection().cursor() as cursor:
+        r = None
+        
+        params = {
+            'DEP_ID' : process_vars['DEP_ID'], 
+            'ID'     : process_vars['ID'], 
+        }
+            
+        cursor.execute("""
+            SELECT 
+                r.DEP_ID, r.ID, 
+                o.DORD, o.CODE,
+                v.CODE CURRENCY_CODE,
+                r.REQ_SUM APPLICATION_AMOUNT,
+                r.RATE_REQ,
+                re.STATE STATE_CODE,
+                re.REVIEWSTAGE
+            FROM T_ORD o, L_REQDEA r, L_REQDEA_EXT re,
+                T_DEACLS cls,
+                T_VAL v
+            WHERE o.DEP_ID=r.DEP_ID and o.ID=r.ID
+                and re.dep_id=r.dep_id and re.id=r.id
+                and cls.ID=r.DCL_ID
+                and v.ID=o.VAL_ID
+                and r.DEP_ID = :DEP_ID and r.ID = :ID
+            """,
+            params
+        )
+
+        data = fetchall(cursor)
+        if len(data)!=1 :
+            #raise Exception('Заявка не найдена: %s' % len(data)) from None
+            process_vars['error'] = {
+                'error_code': 1,
+                'error_text': 'Заявка %s,%s не найдена' % (process_vars['DEP_ID'], process_vars['ID']),
+                
+            }
+        else:
+            process_vars['req'] = data[0]
+
+]]>
+    </script>
+    <split id="f18144b5-ec66-45ba-9c6f-ff4312a3ab28" name="Успешно">
+        <condition id="3240c10d-fa76-4a3c-aee6-f0db7ea048f8" name="Да" expression="process_vars.get(&apos;error&apos;) is None"/>
+        <condition id="65f1405b-fc9f-48f3-975d-2cf8842f5600" name="Ошибка" expression="process_vars.get(&apos;error&apos;) is not None">
+            <terminate id="db660b91-05da-4715-a541-e1788ade0705" name="Завершение"/>
+        </condition>
+    </split>
+    <script id="9756e38c-6007-4b9e-8c77-5b60cdd67189" name="Формирование ответа">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from apng_core.db import fetchall
+
+
+process_vars['response'] = {
+    'applicationNo': process_vars['req']['CODE'],
+    'applicationState': process_vars['req']['STATE_CODE'],
+    'reviewStage': process_vars['req']['REVIEWSTAGE'],
+}
+
+if process_vars['req']['STATE_CODE'] == 'CREDEA':
+    with AuthenticatedUser() as au:
+        with au.getConnection().cursor() as cursor:
+
+            params = {
+                'DEP_ID' : process_vars['DEP_ID'], 
+                'ID'     : process_vars['ID'], 
+            }
+                
+            cursor.execute("""
+                select 
+                    o.CODE,
+                    T_PkgProcess.fGetStatCodeByMainOrd(o.DEP_ID, o.ID) STATE_CODE,
+                    T_PkgProcess.fGetStatNameByMainOrd(o.DEP_ID, o.ID) STATE_NAME
+                from t_ord o, t_procmem dea_mem, t_procmem app_mem
+                where app_mem.dep_id=:DEP_ID and app_mem.ord_id=:ID and app_mem.mainfl='1'
+                  and dea_mem.id=app_mem.id and dea_mem.mainfl='0'
+                  and o.dep_id=dea_mem.dep_id and o.id=dea_mem.ord_id 
+                """,
+                params
+            )
+    
+            data = fetchall(cursor)
+            if len(data)!=1:
+                raise Exception('Не найден договор')
+            r = data[0]
+    
+    process_vars['response']['loanNo'] = r['CODE']
+    process_vars['response']['loanState'] = r['STATE_CODE']
+    process_vars['response']['loanStateName'] = r['STATE_NAME']
+
+#
+# Задачи процесса рассмотрения
+#
+if process_vars['req']['STATE_CODE'] == 'ON_REVIEW':
+    from apng_core.easyflow.services import RuntimeService as rs
+    state = rs.getStateByObjectKey('loanapp:{},{}'.format(process_vars['DEP_ID'], process_vars['ID']))
+    
+    ws = []
+    
+    for s in state:
+        if s.type != 'timer':
+            ws.append({
+                'tokenId': s.id.__str__(),
+                'type': s.type,
+                'state': s.state,
+                'flowId': s.flow_id,
+                'flowName': s.flow.name if s.flow else '?'
+            })
+        
+    process_vars['response']['workflow'] = ws
+        
+
+
+
+
+]]>
+    </script>
+</workflow>

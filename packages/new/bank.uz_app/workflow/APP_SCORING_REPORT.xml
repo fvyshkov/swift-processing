@@ -1,0 +1,230 @@
+<workflow id="APP_SCORING_REPORT" name="Получение скоринга клиентов">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser() as au:
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+]]>
+    </event>
+    <script id="c31341f4-8710-454c-bfb6-fcebe5c3b3b0" name="Инициализация">
+        <![CDATA[ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+
+]]>
+    </script>
+    <timer id="ce94dd99-ffa7-44ca-aa69-e418b47facdd" name="Таймер, 0сек" description="Получение скоринга, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <script id="48b74c3a-6a8f-46c4-84bf-929fa53cc817" name="Подготовка списка запросов">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from colvir_cbs import oracle
+
+# Список запросов которые нужно обработать
+pv['requests'] = []
+
+schema = 'Z_ALOQA_R022'
+
+# Заёмщик, заявка
+pv['requests'].append({
+    'afs': {
+        'method': po['afs']['method'],
+        'sheet': po['afs']['sheet'],
+        'schema': schema,
+        'key': '%s,%s' % (pv['dep_id'], pv['id']),
+    },
+    'type': 'borrower',
+    'client': {
+        'code': po['client']['code'],
+        'name': po['client']['name'],
+        'inn': po['client'].get('inn'),
+        'pinfl': po['client'].get('pinfl'),
+    },
+})
+
+
+# Созаёмщики
+if po.get('coborrowers'):
+    for coborrower in po['coborrowers']:
+        if 'nord' in coborrower:
+            # Старый способ сохранения созаёмщиков
+            afs_key = '{},{},{}'.format(pv['dep_id'], pv['id'], coborrower['nord'])
+        else:
+            afs_key = '{},{},{}'.format(pv['dep_id'], pv['id'], coborrower['customer']['code'])
+            
+        pv['requests'].append({
+            'afs': {
+                'method': coborrower['afs']['method'],
+                'sheet': coborrower['afs']['sheet'],
+                'schema': schema,
+                'key': afs_key,
+            },
+            'type': 'coborrower',
+            'client': {
+                'code': coborrower['customer']['code'],
+                'name': coborrower['customer']['name'],
+                'inn': coborrower['customer'].get('inn'),
+                'pinfl': coborrower['customer'].get('pinfl')
+            },
+        })
+        
+# Поручители и залогодатели
+if False and po.get('pledges'):
+    for pledge in po['pledges']:
+        if pledge['JSON'].get('owner').get('code'):
+            ctype = 'surerer' if pledge['JSON']['type'] == 'SURETY' else 'pledger'
+            pv['requests'].append({
+                'type': ctype,
+                'client': {
+                    'code': pledge['JSON']['owner']['code'],
+                    'name': pledge['JSON']['owner']['name'],
+                    'inn': pledge['JSON']['owner'].get('inn'),
+                    'pinfl': pledge['JSON']['owner'].get('pinfl')
+                },
+            })
+        
+process_vars['index'] = 0
+        
+#raise Exception(json.dumps(process_vars['requests'], ensure_ascii=False, indent=4))
+
+#
+# Исключение запросов, выполненных ранее
+#
+reviewProcess = token.getTopProcess()
+asokiRequests = reviewProcess.vars_dict.get('asoki_requests')
+if asokiRequests is not None:
+    found = []
+    for r in asokiRequests:
+        for r2 in pv['requests']:
+            if r.get('clientCode') == r2['client']['code']:
+                found.append(r2)
+
+    for f in found:
+        pv['requests'].remove(f)
+
+]]>
+    </script>
+    <split id="4bb8397c-46d6-49d2-b48e-0cdf5d22fdf8" name="Следующий запрос">
+        <condition id="bafafce7-23f0-4fb8-bdb7-2c5b46f6e07d" name="Да" expression="len(process_vars[&apos;requests&apos;]) &gt; process_vars[&apos;index&apos;]">
+            <call id="8228cf58-3569-4e50-b405-d9d6e28ce10c" name="Выполнение запроса в АСОКИ" call="&apos;ASOKI_REPORT_REQUEST&apos;" result_from="response" result_to="response">
+                <event name="beforeExecute">
+                    <![CDATA[lv['request'] = pv['requests'][pv['index']]]]>
+                </event>
+                <p name="request" expression="lv[&apos;request&apos;]"/>
+                <p name="reportId" expression="&apos;22&apos;"/>
+                <p name="reportFormat" expression="&apos;1&apos;"/>
+            </call>
+            <split id="1be4e085-9dcc-4123-add9-65d7a9bea5b2" name="Есть ли ошибка истечения срока рассмотрения">
+                <condition id="a8a72529-d962-4e59-b93f-24fd4b542196" name="Ошибка 05003" expression="process_vars.get(&apos;response&apos;,{}).get(&apos;result&apos;) == &apos;05003&apos;">
+                    <script id="8f9c276b-da62-408c-9b83-38ee174cf13d" name="Установка результата">
+                        <![CDATA[pv['last_error'] = {
+                    'message': 'Ошибка получения отчетов АСОКИ',
+                    'description': process_vars['response']['resultMessage'],
+                }]]>
+                    </script>
+                    <terminate id="da403132-3d9a-4bd2-9ff5-a36dd032b881" name="Конец"/>
+                </condition>
+                <condition id="b7b66972-9644-479c-a115-e49398983984" name="Нет"/>
+            </split>
+            <script id="7c1e6e1b-5811-4144-8bd3-94dcf5c4108e" name="Выбор следующего запроса">
+                <![CDATA[# Сохранение результата
+process_vars['requests'][process_vars['index']]['response'] = process_vars['response']
+
+# Следующий
+process_vars['index'] = process_vars['index'] + 1]]>
+            </script>
+            <jump id="db973346-73bb-4d88-a88f-45f2185dd09a" name="Переход к Следующий запрос" target_id="4bb8397c-46d6-49d2-b48e-0cdf5d22fdf8"/>
+        </condition>
+        <condition id="e544aba6-c0bf-43cd-8f18-0e33286c4274" name="Нет"/>
+    </split>
+    <split id="ca352bc0-fea5-46fc-86e3-9f2b57a2ec3a" name="Есть отчеты для передачи в АФС">
+        <condition id="043b4292-d6ee-4f4e-aa3c-eb269b694980" name="Да" expression="len(process_vars[&apos;requests&apos;]) &gt; 0">
+            <timer id="f52e773c-b5f2-4db7-89b4-aef74211fa57" name="Передача отчетов в АФС" description="Передача отчетов в АФС" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+            <script id="fea2ba3e-e99d-4b25-9aa2-e982e9f5c63c" name="Передача отчетов в АФС">
+                <journal time="leave">
+                    <![CDATA[Отчеты АСОКИ переданы в АФС]]>
+                </journal>
+                <![CDATA[import traceback
+import json
+import base64
+from apng_core.csl import Csl
+
+
+for r in pv['requests']:
+    # Если не было ответа, то ничего не отправляем. Иначе АФС падает с ошибкой
+    if r.get('response') is None or r['response'].get('result') in ('unknown', '-2', '05002', '05003', '05329', '05503'):
+        continue
+        
+    reportJson = json.loads(base64.b64decode(r['response']['reportBase64']).decode('utf8'))
+    
+    method = r['afs']['method'] if r.get('afs') else pv['afs']['method']
+    sheet = r['afs']['sheet'] if r.get('afs') else pv['afs']['sheet']
+    if r.get('afs') : 
+        key = r['afs']['key']  
+    else :
+        pv['afs']['key']
+        if r['type'] == 'coborrower': 
+            key = '%s,%s' % (key, r['nord'])
+
+    with Csl('CSL_APP_URL') as csl:
+        request = {
+            'header': {
+                'path'      : 'MTH=>%s,SHT=>%s' % (method, sheet), 
+                'key'       : key,
+            },
+            'data': {'KATM': reportJson},
+        }
+        response = csl.request(
+            '/ESInputData/UpdateRow',
+            request        
+        )
+        if response.status_code != 200:
+            raise UserException({
+                'message': 'Ошибка передачи отчета в АФС, заявка {appNo}, {clientName} ({clientRole})'.format(
+                    appNo=po['app']['code'],
+                    clientName=r['client']['name'],
+                    clientRole=r['type'],
+                ),
+                'description': 'Запрос %s:\n%s' % (csl.last_url['path'] , json.dumps(request, indent=4, ensure_ascii=False))
+            }).withError(csl.extractLastError())
+            
+]]>
+            </script>
+        </condition>
+        <condition id="f283334a-dd7a-4f36-ba53-4bc67f401e42" name="Нет" expression="len(process_vars[&apos;requests&apos;]) == 0"/>
+    </split>
+    <script id="a28ecfc7-3ced-43f3-a01f-0cfb4a4a25eb" name="Сохранение запросов при основном процессе">
+        <![CDATA[
+reviewProcess = token.getTopProcess()
+asokiRequests = reviewProcess.vars_dict.get('asoki_requests')
+
+if asokiRequests is None:
+    raise StopScriptExecution()
+    
+for r in process_vars['requests']:
+    asokiRequests.append({
+        'clientCode': r['client']['code']
+    })
+
+reviewProcess.save_vars({
+    'asoki_requests': asokiRequests,
+})
+
+]]>
+    </script>
+</workflow>

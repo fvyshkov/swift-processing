@@ -1,0 +1,48 @@
+{
+    "forms": {},
+    "methods": {},
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 320
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "fastFilter": false,
+                "id": "code",
+                "primaryKey": "code",
+                "parentKey": "parentCode",
+                "isGroup": "item.groupFl=='1'",
+                "isSelectable": "node.data.groupFl!='1'"
+            },
+            "method": {
+                "sql": {
+                    "params": [
+                        "productCode",
+                        "parentCode"
+                    ],
+                    "sqlType": "query",
+                    "database": "bank",
+                    "sql": "select\r\n    t.id,\r\n    t.id_hi, \r\n    t.groupfl \"groupFl\", \r\n    t.code \"code\", \r\n    t.longname \"name\",\r\n    p.code \"parentCode\"\r\nfrom \r\n    (\r\n        select distinct id, id_hi, groupfl, code, longname, arcfl, arestfl \r\n        from U_UZ_PURPCRED_112 t \r\n        start with t.ID=nvl(l_Pkgdeauniref.fGetClsRefValID(T_pkgDea.fDclId(:productCode,0), u_Pkguniref.fRefCode2Id('UZ_PURPCRED_112',0)),t.ID)\r\n        connect by ID = PRIOR ID_HI\r\n    ) t,\r\n    U_UZ_PURPCRED_112 p\r\nwhere t.id_hi=p.id(+)\r\n    and t.arcfl='0' and t.arestfl='0'\r\n    and (\r\n        :parentCode is null and p.code is null\r\n        or\r\n        :parentCode is not null and p.code = :parentCode\r\n    )\r\norder by t.code"
+                },
+                "script": {
+                    "params": []
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

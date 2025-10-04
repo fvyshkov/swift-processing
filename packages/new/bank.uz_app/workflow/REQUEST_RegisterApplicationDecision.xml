@@ -1,0 +1,118 @@
+<workflow id="REQUEST_RegisterApplicationDecision" name="API. Регистрация решения по заявке">
+    <script id="750d2e48-bc67-420c-82ef-5c6556b0f000" name="Инициализация">
+        <![CDATA[
+req = process_vars.get('request')
+if not req:
+    process_vars['error'] = {
+        'error_text': 'Не описан запрос к методу'
+    }
+    raise StopScriptExecution()
+
+if not req.get('applicationId'):
+    process_vars['error'] = {
+        'error_text': 'Не передан applicationId'
+    }
+    raise StopScriptExecution()
+
+if not req.get('decision'):
+    process_vars['error'] = {
+        'error_text': 'Отсутствует раздел решения, decision: {}'
+    }
+    raise StopScriptExecution()
+    
+decision = req['decision']
+if not decision.get('type'):
+    process_vars['error'] = {
+        'error_text': 'Отсутствует вид решения, decision.type (approved/rejected)'
+    }
+    raise StopScriptExecution()
+    
+if not decision['type'] in ['approved', 'rejected']:
+    process_vars['error'] = {
+        'error_text': 'Не верное значение decision.type: %s, допустимые занчения approved/rejected' % decision['type']
+    }
+    raise StopScriptExecution()
+    
+if not decision.get('number'):
+    process_vars['error'] = {
+        'error_text': 'Отсутствует номер решения, decision.number'
+    }
+    raise StopScriptExecution()
+    
+if not decision.get('date'):
+    process_vars['error'] = {
+        'error_text': 'Отсутствует дата решения, decision.date'
+    }
+    raise StopScriptExecution()
+
+if not decision.get('departmentCode'):
+    process_vars['error'] = {
+        'error_text': 'Отсутствует код органа, принявшего решение, decision.departmentCode'
+    }
+    raise StopScriptExecution()
+    
+if decision['type'] == 'rejected' and decision.get('declineReasonCode') is None:
+    process_vars['error'] = {
+        'error_text': 'Отсутствует код причины отказа, decision.declineReasonCode'
+    }
+    raise StopScriptExecution()
+
+pk = req.get('applicationId').split(',')
+process_vars['dep_id'] = int(pk[0])
+process_vars['id'] = int(pk[1])
+
+
+
+]]>
+    </script>
+    <split id="929b5750-0faf-4cf4-a0d5-d7e87a80ec10" name="Контроль атрибутов">
+        <condition id="525f203e-650b-4823-a7f6-e688b95b388a" name="Пройден" expression="process_vars.get(&apos;error&apos;) is None"/>
+        <condition id="369b8e14-75e9-41ac-83f0-ea2b1685aa04" name="Ошибка">
+            <terminate id="4725f24b-fc7f-4ac4-b8a8-2b6918d27b95" name="Завершение"/>
+        </condition>
+    </split>
+    <script id="97cd0204-d215-4c41-aa00-fe84e06b337d" name="Проверка заявки">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from colvir_cbs.services.application import getApplication
+
+with AuthenticatedUser(user='COLVIR') as au:
+    r = getApplication({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+    })
+
+    if not r:
+        process_vars['error'] = {
+            'error_text': 'Заявка не существует'
+        }
+        raise StopScriptExecution()
+        
+        ]]>
+    </script>
+    <script id="8e61e78d-4ec4-4036-a9dc-eb5e4200d483" name="Подготовка решения">
+        <![CDATA[
+request = process_vars['request']
+decision = request['decision']
+
+dt_map = {
+    'approved': 'ACCEPT',
+    'rejected': 'DECLINE',
+}
+
+process_vars['decision'] = {
+    'app_result': dt_map[decision['type']],
+    'agency_code': decision['departmentCode'],
+    'agency_decision_code': '0',
+    'num': decision['number'],
+    'date': decision['date'],
+    'text': decision.get('text'),
+    'decline_reason_code': decision.get('declineReasonCode'),
+    'show_dialog': False,
+}
+]]>
+    </script>
+    <script id="ca742023-4001-4c6d-a8aa-ced9f14523b2" name="Формирование ответа сервиса">
+        <![CDATA[process_vars['response'] = {
+}]]>
+    </script>
+</workflow>

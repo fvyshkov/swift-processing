@@ -1,0 +1,780 @@
+{
+    "forms": {
+        "dialogButtons": {
+            "className": "horizontal",
+            "style": {
+                "justifyContent": "end"
+            },
+            "$": {
+                "btnCancel": {
+                    "label": "Отменить",
+                    "control": "Button",
+                    "controlProps": {
+                        "variant": "outlined",
+                        "color": "primary"
+                    },
+                    "action": {
+                        "name": "closeDialog"
+                    }
+                },
+                "btnApply": {
+                    "label": "Сохранить",
+                    "control": "Button",
+                    "controlProps": {
+                        "variant": "contained",
+                        "color": "primary"
+                    },
+                    "action": {
+                        "name": "saveUser"
+                    }
+                }
+            }
+        },
+        "selectWorkplaceDialog": {
+            "title": "Рабочие места",
+            "className": "vertical",
+            "style": {
+                "width": "600px",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "overflowY": "auto",
+                        "flexGrow": 1
+                    },
+                    "$": {
+                        "|workplaces": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "code": {
+                                        "label": "Код",
+                                        "width": 200
+                                    },
+                                    "name": {
+                                        "label": "Наименование",
+                                        "flex": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "selectWorkplace",
+                                    "params": {
+                                        "workplace$": "context.selectedWorkplace"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ],
+                            "readOnly$": "!context.selectedWorkplace"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onDialogCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'workplace', method: 'getList'}).then((r)=>{mem.workplaces=r; forceUpdate();})"
+                },
+                "onSelectionChanged": {
+                    "js": "context.selectedWorkplace = selectedRow;"
+                },
+                "onRowDoubleClicked": [
+                    {
+                        "name": "selectWorkplace",
+                        "params": {
+                            "workplace$": "context.selectedWorkplace"
+                        }
+                    },
+                    {
+                        "js": "actions.close();",
+                        "disableUpdate": true
+                    }
+                ]
+            }
+        },
+        "editWorkplaceTask": {
+            "title": "Редактирование рабочего места",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Сохранить",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveWorkplace"
+                                        },
+                                        "disabled$": "!context.modified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "hidden",
+                        "flex": 1
+                    },
+                    "form": "editWorkplaceForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "task.params.workplaceId && backend.post('/aoa/execObjectMethod', {object: 'workplace', method: 'get', params: {id: task.params.workplaceId}}).then((r)=>{mem.workplace=r; forceUpdate()})"
+                },
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "saveWorkplace": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'workplace', method: 'save', params: mem.workplace}).then((r)=>{mem.workplace.id=r.id; context.modified = false;})"
+                }
+            }
+        },
+        "editWorkplaceForm": {
+            "title": "Форма редактирования рабочего места",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "workplace": {
+                    "className": "vertical",
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@name": {
+                            "className": "horizontal",
+                            "$": {
+                                "code": {
+                                    "label": "Код",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "TextEdit",
+                                    "required": true,
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "name": {
+                                    "label": "Наименование",
+                                    "style": {
+                                        "width": "460px"
+                                    },
+                                    "control": "TextEdit",
+                                    "required": true,
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@menu": {
+                            "style": {
+                                "flex": 1,
+                                "display": "flex",
+                                "flexDirection": "column"
+                            },
+                            "$": {
+                                ".ap": {
+                                    "control": "ActionPanel",
+                                    "controlOpts": {
+                                        "actions": [
+                                            {
+                                                "title": "Создать",
+                                                "icon": "add",
+                                                "mini": true,
+                                                "action": [
+                                                    {
+                                                        "js": "const newId=uuidv4(); context.newItem = {id: newId, path: context.selectedItem?.path?.slice(0,context.selectedItem?.path.length-1)?.concat(newId)||[newId], name: `Меню ${mem.menu.length+1}`}"
+                                                    },
+                                                    {
+                                                        "js": "frontend.dialog({object: 'workplace', form: 'editMenuItemDialog', mem: context.newItem, params: {currentItem: context.selectedItem}})"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "title": "Создать внутри",
+                                                "icon": "accountTree",
+                                                "mini": true,
+                                                "disabled$": "!context.selectedItem",
+                                                "action": [
+                                                    {
+                                                        "js": "const newId=uuidv4(); context.newItem = {path: context.selectedItem?.path?.concat(newId)||[newId], name: `Меню ${mem.menu.length+1}`}"
+                                                    },
+                                                    {
+                                                        "js": "frontend.dialog({object: 'workplace', form: 'editMenuItemDialog', mem: context.newItem, params: {currentItem: context.selectedItem}})"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "title": "Просмотреть",
+                                                "icon": "view",
+                                                "mini": true,
+                                                "disabled$": "!context.selectedItem",
+                                                "action": [
+                                                    {
+                                                        "js": "context.modifyItem=context.selectedItem;"
+                                                    },
+                                                    {
+                                                        "js": "frontend.dialog({object: 'workplace', form: 'editMenuItemDialog', mem: {...context.selectedItem}})"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "title": "Удалить",
+                                                "icon": "delete",
+                                                "mini": true,
+                                                "disabled$": "!context.selectedItem",
+                                                "action": {
+                                                    "name": "deleteItem",
+                                                    "confirm": {
+                                                        "title": "Удаление",
+                                                        "message$": "`Удалить меню ${context.selectedItem.name}?`",
+                                                        "yes": "Да",
+                                                        "no": "Нет"
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                "@menu": {
+                                    "style": {
+                                        "flex": 1
+                                    },
+                                    "$": {
+                                        "|menu": {
+                                            "style": {
+                                                "height": "100%"
+                                            },
+                                            "control": "ListTable",
+                                            "controlOpts": {
+                                                "rowDrag": true,
+                                                "columns!": {},
+                                                "groupColumns!": {
+                                                    "name": {
+                                                        "label": "Наименование",
+                                                        "width": 280,
+                                                        "flex": 1
+                                                    }
+                                                },
+                                                "getDataPath": "data.path",
+                                                "getRowStyle": "overNode==node && {color: 'rgba(0,0,0,0.40)'} || {color: 'inherit'}"
+                                            },
+                                            "controlProps": {
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "gridOptions": {
+                                                    "domLayout": "normal",
+                                                    "treeData": true,
+                                                    "groupDefaultExpanded": -1
+                                                }
+                                            },
+                                            "actions": {
+                                                "onRowDragEnd": [
+                                                    {
+                                                        "js": "mem.menu.splice(mem.menu.indexOf(params.movingNode.data), 1)"
+                                                    },
+                                                    {
+                                                        "js": "mem.menu.splice(mem.menu.indexOf(params.overNode?.data), 0, params.movingNode.data)"
+                                                    },
+                                                    {
+                                                        "js": "params.movingNode.data.path = [...params.overNode?.parent?.data?.path||[], params.movingNode.data.id]"
+                                                    },
+                                                    {
+                                                        "js": "mem.menu = [...mem.menu]"
+                                                    },
+                                                    {
+                                                        "name": "onModified"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": {
+                                    "js": "context.selectedItem=selectedRow"
+                                },
+                                "deleteItem": [
+                                    {
+                                        "js": "const k= context.selectedItem.path.join(','); mem.menu = mem.menu.reduce((a,v)=>{if(k!=v.path.slice(0,context.selectedItem.path.length).join(','))a.push(v); return a;}, []); context.selectedItem=null;"
+                                    },
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ],
+                                "saveItem": [
+                                    {
+                                        "js": "if(context.modifyItem){mem.menu.splice(mem.menu.indexOf(context.modifyItem), 1, params.item); mem.menu=[...mem.menu];}; "
+                                    },
+                                    {
+                                        "js": "if(!context.modifyItem){console.log('addItem', params.item); mem.menu.push(params.item); mem.menu=[...mem.menu];}"
+                                    },
+                                    {
+                                        "js": "context.modifyItem=null;"
+                                    },
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "editMenuItemDialog": {
+            "title$": "`Элемент меню: ${mem.name||'Новое'}`",
+            "className": "vertical",
+            "style": {
+                "width": "600px",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "overflowY": "auto",
+                        "flexGrow": 1
+                    },
+                    "$": {
+                        "name": {
+                            "label": "Наименование",
+                            "style": {
+                                "width": "460px",
+                                "marginTop": "4px"
+                            },
+                            "control": "TextEdit"
+                        },
+                        "call": {
+                            "label": "Действие",
+                            "style": {
+                                "width": "460px"
+                            },
+                            "control": "TextEdit"
+                        },
+                        "@params": {
+                            "title": "Параметры действия",
+                            "classname": "vertical",
+                            "$": {
+                                ".ap": {
+                                    "control": "ActionPanel",
+                                    "controlOpts": {
+                                        "actions": [
+                                            {
+                                                "title": "Добавить",
+                                                "icon": "add",
+                                                "mini": true,
+                                                "action": {
+                                                    "name": "addParam"
+                                                }
+                                            },
+                                            {
+                                                "title": "Удалить",
+                                                "icon": "delete",
+                                                "mini": true,
+                                                "disabled$": "!context.selectedItem",
+                                                "action": {
+                                                    "name": "deleteParam",
+                                                    "confirm": {
+                                                        "title": "Удаление",
+                                                        "message$": "`Удалить параметр ${context.selectedItem.name}?`",
+                                                        "yes": "Да",
+                                                        "no": "Нет"
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                "|parameters": {
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "rowDrag": true,
+                                        "gridApi": "paramsGridApi",
+                                        "columns!": {
+                                            "name": {
+                                                "label": "Наименование",
+                                                "width": 280,
+                                                "editable": true
+                                            },
+                                            "value": {
+                                                "label": "Значение",
+                                                "flex": 1,
+                                                "editable": true
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": {
+                                    "js": "context.selectedItem=selectedRow"
+                                },
+                                "deleteParam": {
+                                    "js": "mem.parameters.splice(mem.parameters.indexOf(context.selectedItem), 1); mem.parameters=[...mem.parameters];"
+                                },
+                                "addParam": [
+                                    {
+                                        "js": "mem.parameters.push({name: `Параметр ${mem.parameters.length+1}`}); mem.parameters=[...mem.parameters]; "
+                                    },
+                                    {
+                                        "js": "setTimeout(()=>{task.events.fireEvent('paramsGridApi', {call: 'startEditingCell', params: [{rowIndex: mem.parameters.length-1, colKey: 'name'}]})}, 200)"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnApply": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "saveItem",
+                                    "params": {
+                                        "item$": "mem"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.workplace.models import Workplace\nfrom apng_core.aoa.services.filter import applyFilterModel2\n\nquery = Workplace.objects\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    \n    filterModel2 = parameters['request'].get('filterModel2') if parameters.get('request') else None\n        \n    if filterModel2:\n        query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    query = query.order_by('code')\n    \n    if parameters.get('request'):\n        query = query[parameters['request']['startRow']:parameters['request']['endRow']]\n        \ndata = []\nfor u in query:\n    d = {\n        'id': u.id.__str__(),\n        'code': u.code,\n        'name': u.name,\n    }\n    \n    data.append(d)\n    \n    "
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from django.db import transaction\nfrom django.conf import settings\nfrom apng_core.workplace.models import Workplace\n\nwith transaction.atomic(using=settings.APPS_DB[Workplace._meta.app_label]):\n    workplace = Workplace.objects.get(id=parameters.get('id')) \n    Workplace.objects.filter(code=workplace.code).delete()\n    workplace.delete()\n"
+            }
+        },
+        "getUserMenu": {
+            "sql": {},
+            "script": {
+                "py": "import json\nfrom apng_core.auth import getUser\n\nfrom django.core.serializers.json import DjangoJSONEncoder\n\nfrom apng_core.workplace.models import UserWorkplace\nfrom apng_core.workplace.models import Menu \nfrom apng_core.workplace.models import Widget\n\nclass WorkplaceJSONEncoder(DjangoJSONEncoder):\n    def default(self, o):\n        if isinstance(o, Menu):\n            \n            if hasattr(o, 'name'):\n                r = {'m': o.name}\n                if hasattr(o, 'call') and o.call:\n                    r['t'] = o.call\n                if hasattr(o, 'params') and o.params:\n                    r['p'] = o.params\n                if len(o.children)>0:\n                    r['c'] = o.children\n                if len(o.parameters)>0:\n                    r['parameters'] = o.parameters\n                return r\n            else:\n                r = [c for c in o.children]\n                if o.widgets:\n                    r.extend([w for w in o.widgets])\n                return r\n        \n        elif isinstance(o, Widget):\n            return {'w': o.name}    \n        else:\n            return super().default(o)\n\nuser_workplaces = UserWorkplace.objects.filter(username=getUser().code)\n\nmenu = Menu()\nfor uw in user_workplaces:\n    menu.merge(uw.workplace.menu)\n    \ndata = json.loads(json.dumps(menu, cls=WorkplaceJSONEncoder))\n\n\n"
+            }
+        },
+        "get": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.workplace.models import Workplace\n\ndef item_dict(item):\n    parameters = [{'id': str(id(x)), **x} for x in item.parameters]\n    res = {'name': item.name, 'parameters': parameters}\n    if item.call:\n        res['call'] = item.call\n    if item.params:\n        res['params'] = item.params\n    return res\n\n\ndef prepare_menu(items, tree, path_hi):\n    for i, item in enumerate(items, 1):\n        id_item = str(id(item))\n        path = path_hi + [id_item]\n        d = {**item_dict(item), 'id': id_item, 'npp': i * 2, 'path': path}\n        tree.append(d)\n        if item.children:\n            prepare_menu(item.children, tree, path)\n\n\n\nw = Workplace.objects.get(id=parameters.get('id'))\n\nmenu = []\nprepare_menu(w.menu.children, menu, [])\n\n\ndata = {\n    'id': w.id.__str__(),\n    'code': w.code,\n    'name': w.name,\n    'menu': menu,\n}"
+            }
+        },
+        "save": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.workplace.models import Workplace\nfrom lxml import etree as ET\n\n\nif parameters.get('id'):\n    workplace = Workplace.objects.get(id=parameters['id'])\nelse:\n    workplace = Workplace()\n\nroot = ET.Element('workplace', {\n    'code': parameters.get('code'), \n    'name': parameters.get('name')\n})\n\ndef add_menu_item(item, parent):\n    me = ET.Element('menu', {\n        'name': item.get('name'),\n    })\n    if item.get('call'):\n        me.set('call', item['call'])\n    \n    # параметры меню\n    for p in item.get('parameters', []):\n        pe = ET.Element('p', {\n            'name': p.get('name'),\n        })\n        if p.get('value'):\n            pe.set('value', p['value'])\n\n        me.append(pe)\n    \n    # Дочерние элементы\n    pk = ','.join(item['path'])\n    for m in filter(lambda x: pk==','.join(x['path'][:len(item['path'])]) and len(x['path'])-len(item['path'])==1,parameters['menu']):\n        add_menu_item(m, me)\n    \n    parent.append(me)\n    return me\n    \n\n# По корневым элементам\nfor m in filter(lambda x: len(x['path'])==1,parameters['menu']):\n    add_menu_item(m, root)\n\n\nworkplace.data = ET.tostring(root, pretty_print=True, encoding='unicode')\n\n#raise UserException(workplace.data)\n\nworkplace.save()\n\ndata = {\n    'id': workplace.id.__str__()\n}\n"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "code": {
+                    "title": "Код",
+                    "width": 300
+                },
+                "name": {
+                    "title": "Наименование",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Создать",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/workplace/workplace-edit2",
+                        "title": "Новое рабочее место",
+                        "data": {
+                            "obj": {
+                                "id": null,
+                                "name": "Новое рабочее место",
+                                "menu": []
+                            },
+                            "loaded": true
+                        }
+                    },
+                    "visible": false
+                },
+                {
+                    "title": "Создать",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "Новое рабочее место",
+                        "params": {
+                            "object": "workplace",
+                            "form": "editWorkplaceTask"
+                        }
+                    },
+                    "visible": true
+                },
+                {
+                    "title": "Открыть",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/workplace/workplace-edit2",
+                        "data": {
+                            "obj": {
+                                "id$": "$listRow.id"
+                            },
+                            "loaded": false
+                        },
+                        "params": {
+                            "title$": "`Рабочее место ${$listRow.code}`"
+                        }
+                    },
+                    "disabled": "!$listRow",
+                    "visible": false
+                },
+                {
+                    "title": "Открыть",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Рабочее место ${$listRow.code}`",
+                        "params": {
+                            "object": "workplace",
+                            "form": "editWorkplaceTask",
+                            "workplaceId$": "$listRow.id"
+                        }
+                    },
+                    "visible": true,
+                    "disabled": "!$listRow"
+                },
+                {
+                    "title": "Удалить",
+                    "icon": "delete",
+                    "mini": "true",
+                    "confirm": {
+                        "message$": "`Удалить рабочее место ${$listRow.code}, ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "disabled": "!$listRow"
+                },
+                {
+                    "title": "Инструменты",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Пакеты",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.id, model: 'workplace.Workplace'}, context: {}})"
+                            },
+                            "disabled": "!$listRow"
+                        },
+                        {
+                            "title": "История",
+                            "command": {
+                                "type": "task",
+                                "title$": "`История объекта: ${$listRow.code}`",
+                                "call": "/aoa/ObjectTask",
+                                "params": {
+                                    "object": "aos.ModifiedObjects",
+                                    "form": "historyTask",
+                                    "model": "workplace.Workplace",
+                                    "objectId$": "$listRow.id"
+                                }
+                            },
+                            "disabled": "!$listRow"
+                        }
+                    ]
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Фильтр",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Код",
+                                    "control": "TextEdit"
+                                },
+                                "name": {
+                                    "label": "Нименование",
+                                    "control": "TextEdit"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Очистить",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Применить",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            },
+            "events": {
+                "onRowDoubleClicked": {
+                    "js": "tm.newTask({path: '/aoa/ObjectTask', title: `Рабочее место ${$listRow.code}`, params: {object: 'workplace', form: 'editWorkplaceTask', workplaceId: $listRow.id}})"
+                }
+            }
+        }
+    },
+    "references": {},
+    "js": {}
+}

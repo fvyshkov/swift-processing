@@ -1,0 +1,122 @@
+{
+    "forms": {
+        "pipelinesForm": {
+            "title": "Сборки проекта",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@c": {
+                    "title": "Сборки приложения",
+                    "className": "vertical",
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Обновить",
+                                        "icon": "refresh",
+                                        "mini": true,
+                                        "action": {
+                                            "js": "task.events.fireEvent('onRefreshPipelines');"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        ".pipelines": {
+                            "style": {
+                                "flexGrow": 1
+                            },
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "rowModelType": "infinite",
+                                "id": "id",
+                                "refreshEvent": "onRefreshPipelines",
+                                "columns!": {
+                                    "id": {
+                                        "label": "идентификатор",
+                                        "width": 140
+                                    },
+                                    "created_at": {
+                                        "label": "Дата",
+                                        "format": "datetime",
+                                        "width": 150
+                                    },
+                                    "version": {
+                                        "label": "Версия",
+                                        "width": 100,
+                                        "getter": "data?.variables?.find((v)=>v.key=='TAG')?.value"
+                                    },
+                                    "status": {
+                                        "label": "Состояние"
+                                    }
+                                }
+                            },
+                            "controlProps": {
+                                "style": {
+                                    "height": "100%"
+                                },
+                                "gridOptions": {
+                                    "domLayout": "normal"
+                                }
+                            },
+                            "actions": {
+                                "onGetRows": {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'gitlab', method: 'pipelines', params: {}}).then((r)=>{onSuccess(r)})"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getProjects": {
+            "sql": {
+                "params": [],
+                "sql": ""
+            },
+            "script": {
+                "params": [],
+                "py": "TOKEN = 'glpat-XspBQJfy-131jLyNzJys'\ngitlab_url = 'https://gitlab.colvir.ru/api/v4'\nprojectId = 679\n\nimport requests\n\n\n\nresponse = requests.get(\n    gitlab_url+'/projects',\n    headers = {\n        'PRIVATE-TOKEN': TOKEN\n    },\n   verify=False\n)\n\nif response.status_code != 200:\n    raise Exception(response.error)\n    \ndata = json.loads(response.content)\n\n"
+            }
+        },
+        "gitlab": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "import requests\nimport urllib\n\nclass Gitlab:\n    def __init__(self, **kwargs):\n        if kwargs.get('url') is None:\n            raise Exception('Не задана ссылка для gitlab')\n        if kwargs.get('token') is None:\n            raise Exception('Не задат токен авторизации gitlab')\n            \n        self.url = kwargs['url']+'/api/v4'\n        self.token = kwargs['token']\n        self.project = kwargs.get('project')\n    \n    def __enter__(self):\n        return self\n    \n    def __exit__(self, type, value, traceback):\n        pass    \n    \n    def get(self, url):\n        response = requests.get(\n            url,\n            headers = {\n                'PRIVATE-TOKEN': self.token\n            },\n           verify=False\n        )\n        \n        if response.status_code != 200:\n            raise UserException({\n                'message': 'Ошибка вызова сервиса %s\\n%s' % (url, response.text)\n            })\n            \n        return json.loads(response.content)\n        \n    def post(self, url, params):\n        request_url = url\n\n        response = requests.post(\n            request_url,\n            headers = {\n                'PRIVATE-TOKEN': self.token,\n                'Content-Type': 'application/json',\n            },\n            data=json.dumps(params),\n            verify=False\n        )\n        if response.status_code not in (200, 201):\n            raise UserException({\n                'message': 'Ошибка вызова сервиса %s\\n%s\\n%s' % (response.status_code, request_url, response.text),\n                'description': json.dumps(params, indent=4, ensure_ascii=False)\n            })\n            \n        return json.loads(response.content)\n        \n    \n    def getPipelines(self):\n        if self.project is None:\n            raise Exception('Не задан проект gitlab')\n        request_url = self.url+'/projects/%s/pipelines' % urllib.parse.quote_plus(self.project)\n        return self.get(request_url)\n        \n    def getPipelineVariables(self, pipeline_id):\n        request_url = self.url+'/projects/{project}/pipelines/{pipeline_id}/variables'.format(\n            project=urllib.parse.quote_plus(self.project),\n            pipeline_id=pipeline_id\n        )\n        return self.get(request_url)\n        \n        \n    def runPipeline(self, params):\n        request_url = self.url+'/projects/%s/pipeline' % urllib.parse.quote_plus(self.project)\n        return self.post(request_url, {'ref': 'master', **params})\n        \ndata = Gitlab(**parameters)\n"
+            }
+        },
+        "pipelines": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from django.conf import settings\nfrom apng_core.aoa.services import execObjectMethod\n\nif not hasattr(settings, 'CIDI') or settings.CIDI.get('GITLAB') is None:\n    raise UserException('Не настроена интеграция с GITLAB, CIDI.GITLAB')\n    \ngitlab = settings.CIDI['GITLAB']\n\n\nif not gitlab.get('project'):\n    raise UserException('Не задан проект gitlab: project')\n\nwith execObjectMethod({'object': 'gitlab', 'method': 'gitlab', 'params': gitlab}) as g:\n    pipelines = g.getPipelines()\n\n    if len(pipelines)>0:\n        for p in pipelines[:3]:\n            p['variables'] = g.getPipelineVariables(p['id'])\n    data = pipelines\n\n"
+            }
+        },
+        "runPipeline": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from django.conf import settings\nfrom apng_core.aoa.services import execObjectMethod\n\nif not hasattr(settings, 'CIDI') or settings.CIDI.get('GITLAB') is None:\n    raise UserException('Не настроена интеграция с GITLAB, CIDI.GITLAB')\n    \ngitlab = settings.CIDI['GITLAB']\n\n\nif not gitlab.get('project'):\n    raise UserException('Не задан проект gitlab: project')\n\nwith execObjectMethod({'object': 'gitlab', 'method': 'gitlab', 'params': gitlab}) as g:\n    p = g.runPipeline({'variables': [{'key': x, 'value': parameters[x]} for x in parameters]})\n    \n    data = p\n\n"
+            }
+        }
+    },
+    "reference": {
+        "method": {}
+    }
+}

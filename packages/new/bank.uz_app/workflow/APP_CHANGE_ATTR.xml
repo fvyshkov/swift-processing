@@ -1,0 +1,287 @@
+<workflow id="APP_CHANGE_ATTR" name="Коррекция атрибутов заявки">
+    <event name="onGetProcessObject">
+        <![CDATA[
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <script id="2b45aad2-f87a-467b-8fb0-579753e0ca7f" name="Инициализация">
+        <![CDATA[
+ok = process_vars.get('objectKey')
+if not ok:
+    # Если запустили без параметров, то обрабатываем тестовую заявку
+    ok = 'loanapp:2247,20957503'
+    process_vars['objectKey'] = ok
+    process_vars['altAmount'] = 100
+    #raise Exception('Не задан ключ объекта для запуска сценария, objectKey');
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+process_vars['dep_id'] = int(pk[0])
+process_vars['id'] = int(pk[1])
+
+if not process_vars.get('req'):
+    #
+    # Загружаем общую информацию по заявке
+    #
+    from colvir_cbs.auth import AuthenticatedUser
+    with AuthenticatedUser():
+        from loanapp.services.application import getApplication
+        process_vars['req'] = getApplication({
+            'dep_id': process_vars['dep_id'],
+            'id'    : process_vars['id'],
+        })
+
+]]>
+    </script>
+    <script id="d1783662-cea6-4cbe-aaf9-e49f6ccecc5d" name="Проверка возможности запуска">
+        <![CDATA[#
+# Наличие запущенных процессов
+#
+from apng_core.easyflow.models import TokenVar
+from apng_core.easyflow.services import RuntimeService as rs
+
+filter = {
+    'name': 'objectKey',
+    'value': json.dumps(process_vars['objectKey']),
+    'token__parent': None,
+    'token__flow_id': 'APP_CHANGE_ATTR',
+    'token__state__in': ['active', 'suspended']
+}
+
+processes = [tv.token for tv in TokenVar.objects.filter(**filter).exclude(token__id=token.process.id)]
+if len(processes) > 0:
+    raise UserException({
+        'message': 'Процесс изменения атрибутов по заявке {appNo} уже выполняется, закончите предыдущую коррекцию'.format(
+            appNo = process_vars['req']['app']['code']
+        )
+    }) from None
+
+]]>
+    </script>
+    <timer id="0d95b0a7-4cef-45ea-be30-08dbd933d795" name="Изменение атрибутов" description="Изменение атрибутов заявки {{process_vars.req.app.code}}" duration="00:00:00" errorDuration="00:00:30" action="continue"/>
+    <task id="9331005c-ed41-4876-b2ad-720c188ec267" name="Коррекция атрибутов" autoStart="true" description="Коррекция атрибутов по заявке {{process_vars.req.app.code}}, {{process_vars.req.client.name}}  с повторной регистрацией во внешних системах (НИКИ, ГРКИ, АСОКИ)">
+        <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+            <p name="caption" expression="task[&apos;description&apos;]"/>
+            <p name="object" expression="&apos;loanapp&apos;"/>
+            <p name="form" expression="&apos;changeAttr&apos;"/>
+            <p name="mem" expression="{&apos;productCode&apos;: pv[&apos;req&apos;][&apos;product&apos;][&apos;code&apos;], &apos;appId&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;appId&apos;], &apos;legalAct&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;legalAct&apos;], &apos;legalActName&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;legalActName&apos;], &apos;purposeOfLoan&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;purposeOfLoan&apos;], &apos;purposeOfLoanName&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;purposeOfLoanName&apos;], &apos;typeOfLending&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;typeOfLending&apos;], &apos;typeOfLendingName&apos;: pv[&apos;req&apos;][&apos;app&apos;][&apos;typeOfLendingName&apos;], &apos;errorTxt&apos;: pv.get(&quot;errorTxt&quot;)}"/>
+            <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+            <p name="newAttr" expression="{}"/>
+        </clientTask>
+    </task>
+    <script id="fa33def6-17cb-4010-96c0-c8950b3bbaf4" name="Изменение атрибутов">
+        <![CDATA[import json
+from django.db import transaction
+from colvir_cbs.auth import AuthenticatedUser
+
+
+pv['newAttr']['legalActModify'] = pv['newAttr'].get('legalAct') != po['app']['legalAct'] if pv['newAttr'].get('legalAct') else False
+pv['newAttr']['purposeOfLoanModify'] = pv['newAttr'].get('purposeOfLoan') != po['app']['purposeOfLoan'] if pv['newAttr'].get('purposeOfLoan') else False
+pv['newAttr']['typeOfLendingModify'] = pv['newAttr'].get('typeOfLending') != po['app']['typeOfLending'] if pv['newAttr'].get('typeOfLending') else False 
+
+if not pv['newAttr']['legalActModify'] and not pv['newAttr']['purposeOfLoanModify'] and not pv['newAttr']['typeOfLendingModify']:
+    pv['statuses'] = {
+        'noChanges': True,
+        'errorMsg': 'Ни один атрибут не изменился'
+    }
+else:
+    if  po.get('dea') and po['dea'].get('code') :
+        with transaction.atomic(using='cbs'):
+            newDeaAttr = {}
+            if pv['newAttr']['legalActModify']:
+                newDeaAttr = {**newDeaAttr,
+                    'legalAct': process_vars['newAttr'].get('legalAct')
+                } 
+            if pv['newAttr']['purposeOfLoanModify']:
+                newDeaAttr = {**newDeaAttr,
+                    'purposeOfLoan': process_vars['newAttr'].get('purposeOfLoan')
+                }
+            if pv['newAttr']['typeOfLendingModify']:
+                newDeaAttr = {**newDeaAttr,
+                    'typeOfLending': pv['newAttr'].get('typeOfLending')
+                } 
+            
+            with AuthenticatedUser() as au:
+                from apng_core.aoa.services import execObjectMethod
+                # Изменение атрибутов в договоре
+                
+                updDeaAttrResult = execObjectMethod({
+                    'object': 'loanapp',
+                    'method': 'updateDeaAttr',
+                    'params': {
+                        'dea_dep_id': po['dea']['dep_id'],
+                        'dea_id': po['dea']['id'],
+                        'isLeasing': True if po.get('leasing') else False,
+                        'newDeaAttr': newDeaAttr
+                    }
+                })
+                if updDeaAttrResult.get('log'):
+                    token.save_vars({'updDeaAttrResultLog': updDeaAttrResult['log']})
+                
+                pv['statuses'] = {
+                    'statusLegalAct': updDeaAttrResult.get('statusLegalAct'),
+                    'statusPurposeOfLoan': updDeaAttrResult.get('statusPurposeOfLoan'),
+                    'statusTypeOfLending': updDeaAttrResult.get('statusTypeOfLending'),
+                    'errorMsg': updDeaAttrResult.get('errorMsg')
+                }
+            
+]]>
+    </script>
+    <split id="991d82a8-b83f-40fe-946b-a4ec25426eea" name="Проверка ошибок обновления">
+        <condition id="6319427c-1924-4009-bea5-d9599571a9e2" name="Есть ошибки" expression="pv[&apos;statuses&apos;].get(&apos;statusTypeOfLending&apos;) == &apos;error&apos; or pv[&apos;statuses&apos;].get(&apos;statusPurposeOfLoan&apos;) == &apos;error&apos; or pv[&apos;statuses&apos;].get(&apos;statusLegalAct&apos;) == &apos;error&apos; or pv[&apos;statuses&apos;].get(&apos;noChanges&apos;)">
+            <script id="d36f4cd6-5fe3-40f4-bea0-ad22fa61eca6" name="Текст ошибки">
+                <![CDATA[process_vars['errorTxt'] = 'Ошибка сохранения изменений: \n'
+if pv['statuses'].get('statusLegalAct') == 'error' :
+    process_vars['errorTxt'] += 'НПА. \n'   
+if pv['statuses'].get('statusPurposeOfLoan') == 'error' :
+    process_vars['errorTxt'] += 'Цели кредита. \n'   
+if pv['statuses'].get('statusTypeOfLending') == 'error' :
+    process_vars['errorTxt'] += 'Виду кредитования. \n'    
+process_vars['errorTxt'] += pv['statuses'].get('errorMsg')   ]]>
+            </script>
+            <jump id="58988405-34fe-4cb2-8233-7c233da6051d" name="Переход к Изменение атрибутов" target_id="0d95b0a7-4cef-45ea-be30-08dbd933d795"/>
+        </condition>
+        <condition id="4080c5ca-6736-4198-bccb-21655020cd86" name="Нет">
+            <script id="330abff3-08ec-4170-a2cc-4648cdf49283" name="Изменение атрибутов в заявке">
+                <journal time="leave">
+                    <![CDATA[{%load wfj%}
+Изменены атрибуты:
+{% if process_vars.newAttr.legalActModify %} 
+НПА с {{process_vars.req.app.legalAct }} на {{process_vars.newAttr.legalAct}}. 
+{% endif %}
+{% if process_vars.newAttr.typeOfLendingModify %} 
+Вид кредитования с {{process_vars.req.app.typeOfLending}} на {{process_vars.newAttr.typeOfLending}}. 
+{% endif %}
+{% if process_vars.newAttr.purposeOfLoanModify %} 
+Цель кредита с {{process_vars.req.app.purposeOfLoan}} на {{process_vars.newAttr.purposeOfLoan}}. 
+{% endif %}]]>
+                </journal>
+                <![CDATA[import json
+from django.db import transaction
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser() as au:
+    with transaction.atomic(using='cbs'):
+        j = execObjectMethod({
+            'object': 'app', 'method': 'getApplicationJson',
+            'params': {'dep_id': po['dep_id'], 'id': po['id'],}
+        })
+
+        if pv['newAttr']['legalActModify']:
+            j['app']['legalAct'] = pv['newAttr'].get('legalAct')
+            j['app']['legalActName'] = pv['newAttr'].get('legalActName')
+            
+            
+        if pv['newAttr']['purposeOfLoanModify']:
+            j['app']['purposeOfLoan'] = pv['newAttr'].get('purposeOfLoan')
+            j['app']['purposeOfLoanName'] = pv['newAttr'].get('purposeOfLoanName')
+            
+        if pv['newAttr']['typeOfLendingModify']:
+            j['app']['typeOfLending'] = pv['newAttr'].get('typeOfLending')
+            j['app']['typeOfLendingName'] = pv['newAttr'].get('typeOfLendingName')
+        
+        j = execObjectMethod({
+            'object': 'app', 'method': 'saveApplicationJson',
+            'params': {'dep_id': po['dep_id'], 'id': po['id'], 'json': j}
+        })
+
+]]>
+            </script>
+        </condition>
+    </split>
+    <script id="b372dedf-ff9f-419c-9b5d-1beb154430a0" name="Подготовка к регистрации во внешних системах">
+        <![CDATA[
+from apng_core.aoa.services import execObjectMethod
+
+process_vars['appSettings'] = execObjectMethod({
+    'object': 'settings',
+    'method': 'get'
+})['loanapp']
+
+#raise Exception('Регистрация заявок во внешних системах запрещена')
+
+]]>
+    </script>
+    <split id="a1f7cf9d-a987-446a-8ae4-18f36477474e" name="Регистрация во внешних системах. Эмуляция ГРКИ">
+        <condition id="2289416d-06ab-4909-a040-89f15852e1e9" name="Да" expression="process_vars[&apos;appSettings&apos;][&apos;grki&apos;][&apos;emulator&apos;]">
+            <script id="c532ff91-17a9-487e-ad2d-48f7108f470f" name="Результат регистрации в ГРКИ">
+                <journal time="leave">
+                    <![CDATA[Связь с ГРКИ отключена]]>
+                </journal>
+                <![CDATA[
+process_vars['niki_result'] = {
+    'status': 'success',
+    'state': 'CONFIRMED',
+}
+
+process_vars['nikiStatusOnline'] = {
+    'status': 'success',
+    'state': 'CONFIRMED',
+}
+]]>
+            </script>
+        </condition>
+        <condition id="0c19f385-7d2e-442e-9b08-78aa8add1289" name="Нет" expression="not process_vars[&apos;appSettings&apos;][&apos;grki&apos;][&apos;emulator&apos;]">
+            <split id="8b483302-c856-4d1f-a8f0-6859221e8ce5" name="Нужна перерегистрация ГРКИ оффлайн">
+                <condition id="1dbcd739-a16d-4692-bd84-bba9e7e75574" name="Да" expression="process_vars[&apos;newAttr&apos;].get(&apos;legalActModify&apos;, False) or process_vars[&apos;newAttr&apos;].get(&apos;purposeOfLoanModify&apos;, False) or process_vars[&apos;newAttr&apos;].get(&apos;typeOfLendingModify&apos;, False)">
+                    <call id="d5f88741-a6fb-4fca-b34e-9a6a83e45929" name="Регистрация заявки в ГРКИ офлайн" call="&apos;NIKI_REGISTER&apos;" result_from="niki_result" result_to="niki_result">
+                        <p name="objectKey" expression="process_vars[&apos;objectKey&apos;]"/>
+                        <p name="req" expression="process_vars.get(&apos;req&apos;)"/>
+                        <p name="updateClient" expression="False"/>
+                        <p name="localReview" expression="False"/>
+                    </call>
+                </condition>
+                <condition id="780ecad3-b62a-4c2d-8334-e46db2b136ff" name="Нет" expression="process_vars[&apos;newAttr&apos;].get(&apos;legalActModify&apos;, False) == False and process_vars[&apos;newAttr&apos;].get(&apos;purposeOfLoanModify&apos;, False) == False and process_vars[&apos;newAttr&apos;].get(&apos;typeOfLendingModify&apos;, False) == False"/>
+            </split>
+        </condition>
+    </split>
+    <split id="ccad5615-6584-4f7e-8c2e-4be1752b3300" name="Эмуляция регистрации в КАТМ">
+        <condition id="2458bf2c-48ff-4571-85e2-c31aae42c8f0" name="Да" expression="pv[&apos;appSettings&apos;][&apos;katm&apos;].get(&apos;emulator&apos;, False) == True if pv[&apos;appSettings&apos;].get(&apos;katm&apos;) else False">
+            <script id="b529e1a8-b072-4dd1-a110-25de63257f74" name="Результат регистрации в КАТМ">
+                <journal time="leave">
+                    <![CDATA[Связь с КАТМ отключена]]>
+                </journal>
+                <![CDATA[
+process_vars['katm_result'] = {
+    'status': 'success',
+    'text': 'Успешно',
+}
+
+]]>
+            </script>
+        </condition>
+        <condition id="64237dd0-280e-4cc3-b8aa-8568527f611a" name="Нет" expression="pv[&apos;appSettings&apos;][&apos;katm&apos;].get(&apos;emulator&apos;, False) == False if pv[&apos;appSettings&apos;].get(&apos;katm&apos;) else True">
+            <split id="514bcac5-a86a-48c1-8ddb-11d4f40da2e9" name="Нужна перерегистрация КАТМ">
+                <condition id="61e73740-db9d-4a8a-80e8-53419bf326e3" name="Да" expression="process_vars[&apos;newAttr&apos;].get(&apos;typeOfLendingModify&apos;, False)">
+                    <call id="425a94db-e61b-4d19-8df2-dfb8296d1cc8" name="Регистрация заявки в КАТМ" call="&apos;KATM_REGISTER&apos;" result_from="katm_result" result_to="katm_result">
+                        <p name="req" expression="process_vars.get(&apos;req&apos;)"/>
+                        <p name="updateClient" expression="False"/>
+                        <p name="localReview" expression="False"/>
+                    </call>
+                </condition>
+                <condition id="6bc9cd10-d824-4376-91d3-1a14ff6b5a6f" name="Нет" expression="process_vars[&apos;newAttr&apos;].get(&apos;typeOfLendingModify&apos;, False) == False"/>
+            </split>
+        </condition>
+    </split>
+</workflow>

@@ -1,0 +1,292 @@
+{
+    "packageId": "74818b4e-8585-432e-8f3f-7bc3f2ce6038",
+    "packageName": "core",
+    "configs": [
+        {
+            "id": "56954d1e-cf24-49b4-bc3f-32cd3492f808",
+            "name": "Описание объекта",
+            "model_name": "aos.ObjectConfig"
+        },
+        {
+            "id": "7769dfd9-2cb1-409a-8f81-1f1b927c354d",
+            "name": "Пользователь",
+            "model_name": "workplace.User"
+        },
+        {
+            "id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "name": "Прикладной объект",
+            "model_name": "aoa.Object"
+        },
+        {
+            "id": "58d15866-38cd-483d-990d-7f99201822d3",
+            "name": "Рабочее место",
+            "model_name": "workplace.Workplace"
+        }
+    ],
+    "content": [
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "56954d1e-cf24-49b4-bc3f-32cd3492f808",
+            "object_name": "Описание объекта",
+            "object_attrs": null,
+            "file_name": "configuration/aos.ObjectConfig.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "7769dfd9-2cb1-409a-8f81-1f1b927c354d",
+            "object_name": "Пользователь",
+            "object_attrs": null,
+            "file_name": "configuration/workplace.User.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "1b050d46-3cca-4dde-b86d-1ce70589186a",
+            "object_name": "Правила",
+            "object_attrs": null,
+            "file_name": "configuration/rule.Rule.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "object_name": "Прикладной объект",
+            "object_attrs": null,
+            "file_name": "configuration/aoa.Object.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "ff0e56f9-e0a5-45d4-90ea-688d34678dde",
+            "object_name": "Прикладные данные",
+            "object_attrs": null,
+            "file_name": "configuration/aoa.DataObject.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "58d15866-38cd-483d-990d-7f99201822d3",
+            "object_name": "Рабочее место",
+            "object_attrs": null,
+            "file_name": "configuration/workplace.Workplace.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "d0d0ef2f-5ab4-440e-83e3-ccb6aaef08f8",
+            "object_name": "Сценарий Workflow",
+            "object_attrs": null,
+            "file_name": "configuration/easyflow.Deployment.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "292a0886-cc15-4a98-8b58-d6bed5d8d8b6",
+            "object_name": "Шаблон",
+            "object_attrs": null,
+            "file_name": "configuration/template.Template.xml"
+        },
+        {
+            "model_name": "workplace.User",
+            "model_title": "Пользователь",
+            "object_id": "COLVIR",
+            "object_name": "Администратор системы",
+            "object_attrs": null,
+            "file_name": "users/COLVIR.xml"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "c56004b1-eef0-4cf7-8379-0850eb6a492a",
+            "object_name": "gitlab",
+            "object_attrs": {
+                "code": "gitlab",
+                "name": "gitlab"
+            },
+            "file_name": "ao/gitlab.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "55ef28c1-3f27-49ab-98c4-339597549091",
+            "object_name": "Kubernetes",
+            "object_attrs": {
+                "code": "kube",
+                "name": "Kubernetes"
+            },
+            "file_name": "ao/kube.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "081de17d-4a6d-4908-a5a8-b9896f14feee",
+            "object_name": "nexus",
+            "object_attrs": {
+                "code": "nexus",
+                "name": "nexus"
+            },
+            "file_name": "ao/nexus.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "cddeec14-f51c-4392-b3b5-7b6941b3ddcb",
+            "object_name": "uwsgi",
+            "object_attrs": {
+                "code": "uwsgi",
+                "name": "uwsgi"
+            },
+            "file_name": "ao/uwsgi.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "b7c8c20d-fe09-4b2b-9547-c2888a0801f7",
+            "object_name": "workplace",
+            "object_attrs": {
+                "code": "workplace",
+                "name": "workplace"
+            },
+            "file_name": "ao/workplace.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "948e7ffa-2cec-4e2c-b7e6-2018d2c14b97",
+            "object_name": "Вычисление правил",
+            "object_attrs": {
+                "code": "rule",
+                "name": "Вычисление правил"
+            },
+            "file_name": "ao/rule.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "75ea1c07-e9f8-47f7-8ebc-86266550a164",
+            "object_name": "Измененные объекты",
+            "object_attrs": {
+                "code": "aos.ModifiedObjects",
+                "name": "Измененные объекты"
+            },
+            "file_name": "ao/aos.ModifiedObjects.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "977ccadb-a676-4a40-ab2d-9cd381925f0c",
+            "object_name": "Конфигурация объектов",
+            "object_attrs": {
+                "code": "aos.ObjectConfig",
+                "name": "Конфигурация объектов"
+            },
+            "file_name": "ao/aos.ObjectConfig.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "44d9a372-d826-481c-b994-f341a0439d9b",
+            "object_name": "Логи",
+            "object_attrs": {
+                "code": "logs",
+                "name": "Логи"
+            },
+            "file_name": "ao/logs.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "1cc26126-a355-4cdc-8b24-69f9ea26616d",
+            "object_name": "Настройки",
+            "object_attrs": {
+                "code": "settings",
+                "name": "Настройки"
+            },
+            "file_name": "ao/settings.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "e2325382-b6cb-41ce-a852-9489e82677c9",
+            "object_name": "Обновление системы",
+            "object_attrs": {
+                "code": "update",
+                "name": "Обновление системы"
+            },
+            "file_name": "ao/update.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "023f72cf-c910-4d36-a1d9-673a28f95d76",
+            "object_name": "Пакеты",
+            "object_attrs": {
+                "code": "package",
+                "name": "Пакеты"
+            },
+            "file_name": "ao/package.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "02b85b85-778e-4b41-8e33-f060063a9f80",
+            "object_name": "Планировщик заданий",
+            "object_attrs": {
+                "code": "cron",
+                "name": "Планировщик заданий"
+            },
+            "file_name": "ao/cron.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "cc7a256a-7143-459f-9477-c25290e663a5",
+            "object_name": "Пользователь",
+            "object_attrs": {
+                "code": "user",
+                "name": "Пользователь"
+            },
+            "file_name": "ao/user.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "20757b91-a105-465c-9c4b-b78aef95ce32",
+            "object_name": "Прикладные объекты",
+            "object_attrs": {
+                "code": "aoa",
+                "name": "Прикладные объекты"
+            },
+            "file_name": "ao/aoa.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "6e2069a1-4492-49df-b957-6d4435c232db",
+            "object_name": "Шаблон",
+            "object_attrs": {
+                "code": "template",
+                "name": "Шаблон"
+            },
+            "file_name": "ao/template.json"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Рабочее место",
+            "object_id": "bb697095-b824-40fe-991c-7fa1c16d7bfc",
+            "object_name": "Администрирование",
+            "object_attrs": null,
+            "file_name": "workplace/admin.xml"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Рабочее место",
+            "object_id": "9d9e1872-a1ab-48e1-90f5-fce024bd8cb1",
+            "object_name": "Разработчик",
+            "object_attrs": null,
+            "file_name": "workplace/developer.xml"
+        }
+    ]
+}

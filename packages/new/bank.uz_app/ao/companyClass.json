@@ -1,0 +1,19 @@
+{
+    "forms": {},
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": [],
+                "sqlType": "query",
+                "database": "bank",
+                "sql": "select \n    code \"code\",\n    longname \"name\"\nfrom U_UZ_TYPEORG_EBP \nwhere arcfl='0'"
+            },
+            "script": {
+                "params": []
+            }
+        }
+    },
+    "lists": {},
+    "js": {},
+    "references": {}
+}

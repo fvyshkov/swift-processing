@@ -1,0 +1,406 @@
+{
+    "forms": {
+        "clientInternalInfoTask": {
+            "title": "Техничекая информация по клиенту",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "height": "100%",
+                        "overflow": "hidden",
+                        "margin": "4px"
+                    },
+                    "$": {
+                        "@lookup": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "4px",
+                                "width": "280px"
+                            },
+                            "$": {
+                                "lookup": {
+                                    "className": "vertical",
+                                    "$": {
+                                        "code": {
+                                            "label": "Код карточки",
+                                            "control": "TextEdit",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "refresh"
+                                                }
+                                            }
+                                        },
+                                        "inn": {
+                                            "label": "ИНН",
+                                            "control": "TextEdit",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "refresh"
+                                                }
+                                            }
+                                        },
+                                        "pinfl": {
+                                            "label": "ПИНФЛ",
+                                            "control": "TextEdit",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "refresh"
+                                                }
+                                            }
+                                        },
+                                        "nibbd": {
+                                            "label": "НИББД",
+                                            "control": "TextEdit",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "refresh"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "@buttons": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "btnIdentify": {
+                                            "label": "Идентифицировать",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "text",
+                                                "color": "primary",
+                                                "style": {
+                                                    "textTransform": "none"
+                                                }
+                                            },
+                                            "readOnly$": "!(mem.lookup.code || mem.lookup.inn || mem.lookup.pinfl || mem.lookup.nibbd)",
+                                            "action": [
+                                                {
+                                                    "js": "context.lookupOpt = {withIdentDocType: null, withRegistrationAddress: true, withClosed: true}"
+                                                },
+                                                {
+                                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'client', method: 'identifyClient', params:{...mem.lookup, ...context.lookupOpt}}).then((r)=>{context.client=r;})"
+                                                },
+                                                {
+                                                    "js": "mem.client = context.client;"
+                                                },
+                                                {
+                                                    "name": "refresh"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@client": {
+                            "style": {
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "client": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "height": "100%"
+                                    },
+                                    "$": {
+                                        ".name": {
+                                            "control": "Text",
+                                            "getter": "mem.name"
+                                        },
+                                        "@text": {
+                                            "style": {
+                                                "flexGrow": 1
+                                            },
+                                            "$": {
+                                                ".asJson": {
+                                                    "style": {
+                                                        "height": "100%",
+                                                        "overflow": "hidden"
+                                                    },
+                                                    "control": "AceEditor",
+                                                    "getter": "JSON.stringify(mem, null, 4)",
+                                                    "controlProps": {
+                                                        "editorId": "clientJson",
+                                                        "mode": "json"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "visible$": "!!mem.client?.code"
+                        },
+                        "@noIdent": {
+                            "$": {
+                                ".noIdent": {
+                                    "control": "Text",
+                                    "getter": "`Клиент не идентифицирован`"
+                                }
+                            },
+                            "visible$": "!mem.client?.code"
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                }
+            }
+        },
+        "identifyClientJurDialog": {
+            "title": "Идентификация клиента",
+            "className": "vertical",
+            "style": {
+                "width": "400px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "4px"
+                    },
+                    "$": {
+                        "inn": {
+                            "label": "ИНН",
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "refresh"
+                                }
+                            }
+                        },
+                        "nibbd": {
+                            "label": "НИББД",
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "refresh"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnIdentify": {
+                                    "label": "Идентифицировать",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "variant": "text",
+                                        "color": "primary",
+                                        "style": {
+                                            "textTransform": "none"
+                                        }
+                                    },
+                                    "readOnly$": "!(mem.inn || mem.nibbd)",
+                                    "action": [
+                                        {
+                                            "js": "return backend.post('/aoa/execObjectMethod', {object: 'client', method: 'identifyClient', params:{inn: mem.inn, nibbd: mem.nibbd, ...context.identifyClientOptions}}).then((r)=>{context.client=r;})"
+                                        },
+                                        {
+                                            "name": "setClient",
+                                            "params": {
+                                                "client$": "context.client"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "@client": {
+                            "$": {
+                                "client": {
+                                    "className": "vertical",
+                                    "$": {
+                                        ".category": {
+                                            "control": "Text",
+                                            "getter": "mem.categoryName"
+                                        },
+                                        ".name": {
+                                            "control": "Text",
+                                            "getter": "mem.name"
+                                        }
+                                    }
+                                }
+                            },
+                            "visible$": "!!mem.client?.code"
+                        },
+                        "@noIdent": {
+                            "$": {
+                                ".noIdent": {
+                                    "control": "Text",
+                                    "getter": "`Клиент не идентифицирован`"
+                                }
+                            },
+                            "visible$": "!mem.client?.code"
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        "cancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "style": {
+                                    "textTransform": "none"
+                                },
+                                "variant": "text",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "apply": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "style": {
+                                    "textTransform": "none"
+                                },
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!mem.client?.code",
+                            "action": [
+                                {
+                                    "name": "onClientIdentified",
+                                    "params": {
+                                        "client$": "mem.client"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "setClient": {
+                    "js": "mem.client=params.client;"
+                },
+                "onElementCreated": {
+                    "js": "context.identifyClientOptions = params.identifyClientOptions;"
+                }
+            }
+        }
+    },
+    "methods": {
+        "saveIdn": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "con = initDbSession(application='bank')\nwith con.cursor() as cursor:\n    p = {\n        'clientCode': parameters['clientCode'],\n        'idnCode': parameters['idnCode'],\n        'value': parameters['value']\n    }\n    \n    SQL = \"\"\"\n        declare\n            rCli G_CLI%%rowtype;\n        begin\n            select * into rCli from G_CLI where code=:clientCode;\n            G_PkgCliIdn.pSave(\n                p_DEP_ID => rCli.dep_id,\n                P_ID => rCli.id,\n                p_IDN_ID => G_PkgIdn.fId(:idnCode),\n                p_IDN_NUM => :value\n            );\n        end;\n    \"\"\"\n    \n    cursor.execute(SQL, p)\n\n"
+            }
+        },
+        "checkRule": {
+            "script": {
+                "py": "\ndef checkRule(params):\n    con = initDbSession(application='bank')\n    \n    if not params.get('code'):\n        raise Exception('Client code required')\n    \n    if not params.get('rule'):\n        raise Exception('Check rule required')\n    \n    with con.cursor() as cursor:\n        p = {\n            'CODE'  : params.get('code'),\n            'DEP_ID'    : cursor.var(int),\n            'ORD_ID'    : cursor.var(int),\n        }\n        cursor.execute(\"\"\"\n            begin\n                select\n                    DEP_ID, ORD_ID\n                into :DEP_ID, :ORD_ID\n                from G_CLI where CODE=:CODE\n                ;\n            end; \n        /\"\"\", p)\n        \n        cli_dep_id = p['DEP_ID'].getvalue()\n        cli_ord_id = p['ORD_ID'].getvalue()\n    \n    checkPrm = {\n        'dep_id': cli_dep_id,\n        'id'    : cli_ord_id,\n        'rule'  : params.get('rule')\n    }\n    \n    AO.bank_ordcheck.runCheckRule(checkPrm)\n    \n    r = AO.bank_ordcheck.getCheckResultByRule(checkPrm)\n    \n    return r\n    \ndata = checkRule(parameters)\n"
+            },
+            "sql": {}
+        },
+        "identifyClient": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.db import fetchone\n\n\n\n\ndef identify(params):\n    #raise UserException(json.dumps(params))\n    with initDbSession(application='bank').cursor() as cursor:\n\n        SQL = '''\n            select\n                g.id, g.dep_id,\n                g.CODE,\n                gh.NAME, gh.LONGNAME, gh.LLONGNAME,\n                gh.pname1, gh.pname2, gh.pname3,\n                gh.plname1, gh.plname2, gh.plname3,\n                g.birdate,\n                gh.psex,\n                \n                gh.residfl,\n                g.JURFL,\n                g.pboyulfl,\n        \n                \n                gh.taxcode,\n                G_PkgCliIdn.fCliIDNbyType(g.DEP_ID, g.ID, 'PN') PINFL,\n                g_pkgcliidn.fcliidn(g.dep_id, g.id, g_pkgidn.fid('IDN_PN_UZ')) INPS,\n                \n                (select d.code from G_IDENTDOCDSC_STD d where d.ID=gh.passtyp_id) passtyp_code,\n        \n                \n                G_PkgNibbdUtl.fGetNIBBDCode(g.dep_id, g.id) NIBBD,\n                \n                -- Группа обслуживания клиента\n                (select code from T_ACCGRP where id=gh.aut_id) \"maintenanceGroup\",\n\n                \n                -- ОКЭД\n                G_PKGDBLCLI.fOneVal(g.dep_id, g.id, 'UZ_OKED') \"oked\",\n                U_PkgUniRef.fLongNameByRefer('UZ_OKED', G_PKGDBLCLI.fOneVal(g.dep_id, g.id, 'UZ_OKED'), 0) \"okedName\",\n                \n                -- Карточка физлица для ИП\n                f.code fiz_code,\n                \n                -- Связанное лицо\n                G_PKGCLIAFF.fExistsAffilBkn(g.DEP_ID, g.ID) RLP_FL,\n                \n                -- Сотрудник банка\n                G_PkgCliRole.fChkRole2(g.DEP_ID, g.ID, 'PRS', '1') IS_BANK_EMPLOYEE,\n                \n                -- Родственник сотрудника, пока не реализована\n                g_pkgclifamily.fFamWrkOurBnkFl(g.DEP_ID, g.ID) IS_REL_BANK_EMPLOYEE,\n                \n                -- Входит в группу\n                (\n                    select '1' from G_AFFGRPMEM \n                    where clidep_id=g.dep_id and cli_id=g.id\n                        and p_operday between fromdate and nvl(todate, p_maxdate)\n                        and rownum=1\n                ) IS_IN_AFFILATED_GROUP,\n        \n                '' dummy\n            from g_cli f, G_CLI g, G_CLIHST gh\n            where g.ID=gh.ID and g.DEP_ID=gh.DEP_ID \n                and P_OPERDAY between gh.FROMDATE and gh.TODATE \n                and f.dep_id(+)=gh.CLIFIZ_DEP_ID and f.id(+)=gh.CLIFIZ_ID \n                and rownum=1\n        '''\n\n        p = {}\n        \n        if not params.get('withClosed', False):\n            SQL += '''\n                and gh.arcfl=0\n            '''\n        \n        \n        # По коду клиента\n        if params.get('code'):\n            SQL += '''\n                and g.code = :cli_code\n            '''\n            p['CLI_CODE'] = params['code']\n        \n        # По ИНН\n        inn = params.get('taxcode')\n        if not inn: \n            inn = params.get('inn') \n        \n        if inn:\n            SQL += '''\n                and (g.dep_id, g.id)=any(SELECT DEP_ID, ID from G_CLIHST \n                WHERE P_OPERDAY between FROMDATE and TODATE and TAXCODE=:TAXCODE)\n            '''\n            p['TAXCODE'] = inn\n            \n        # По НИББД\n        if params.get('nibbd'):\n            SQL += \"\"\"\n                and (g.dep_id, g.id)=any(select cli.dep_id, cli.id \n                from g_cliidn cli, G_IDNDSC_STD i \n                where cli.idn_id = i.id and i.cliidntyp ='BD'\n                    and p_operday between cli.fromdate and cli.todate\n                    and cli.idn_num = :NIBBD)\n            \"\"\"\n            p['NIBBD'] = params.get('nibbd')\n            \n        # По ПИНФЛ\n        if params.get('pinfl'):\n            SQL += \"\"\"\n                and (g.dep_id, g.id) = any(select DEP_ID,ID from G_CLIIDN i \n                where i.idn_num = :PINFL\n                    and p_operday between i.fromdate and i.todate\n                    and IDN_ID=G_pkgIdn.fId('IDN_PRS_UZ'))\n            \"\"\"\n            p['PINFL'] = params.get('pinfl') \n\n        # По номеру карты\n        if params.get('cardCode'):\n            SQL += '''\n                and (G.DEP_ID, G.ID) = any(select crd.holder_dep_id, crd.holder_id \n                from  N_CRD crd where crd.CARDCODE =:CARDCODE)\n            '''\n            p['CARDCODE'] = params.get('cardCode')\n            \n        # Искать только среди юридических лиц и ИП\n        if params.get('forceJur'):\n            SQL += \"\"\"\n                and (g.jurfl='1' or g.pboyulfl='1')\n            \"\"\"\n        \n        # Искать только среди физических лиц\n        if params.get('forceFiz'):\n            SQL += \"\"\"\n                and (g.jurfl='0' and g.pboyulfl='0')\n            \"\"\"\n            \n        if len(p.keys())==0:\n            raise Exception('Не заданы атрибуты для идентификации клиента')\n        \n        #print(SQL)\n            \n        cursor.execute(SQL, p)\n        d = fetchone(cursor)\n        \n        if not d:\n            return None\n        \n        \n        client = {\n            'dep_id': d['DEP_ID'],\n            'id': d['ID'],\n            'code': d['CODE'],\n            'name': d['NAME'],\n            \n            'inn': d['TAXCODE'],\n            'pinfl': d['PINFL'],\n            'nibbd': d['NIBBD'],\n            \n            # Группа обслуживания\n            'maintenanceGroup': d.get('maintenanceGroup'),\n\n            # Признак резидента\n            'isResident': d['RESIDFL'] == 1,\n            \n            # Признак юридического лица\n            'isJur': d.get('JURFL') == '1',\n            \n            # Признак индивидуального предпринимателя\n            'isIE': d.get('PBOYULFL') == '1',\n\n            'isRelatedPerson': d['RLP_FL'] > 0,\n            'isBankEmployee': d['IS_BANK_EMPLOYEE'] > 0,\n            'isRelativeBankEmployee': d['IS_REL_BANK_EMPLOYEE'] > 0,\n            'isInAffilatedGroup': d['IS_IN_AFFILATED_GROUP'] == '1',\n        }\n\n        \n        if client['isJur'] == False:\n            #\n            # Для ИП подтягиваем информацию по физлицу\n            #\n            if client['isIE']:\n                fiz = execObjectMethod({\n                    'object': 'client', 'method': 'getClient',\n                    'params': {\n                        'code': d['FIZ_CODE'],\n                        'withIdentDocType': None,\n                    }\n                })\n\n                if not fiz:\n                    raise Exception(\n                        'Для карточки клиента ИП {clientCode} не найдена карточка физического лица с кодом {clientFizCode}'.format(\n                            clientCode=client['code'],\n                            clientFizCode=d['FIZ_CODE']\n                        )\n                    )\n                client['pinfl'] = fiz.get('pinfl')\n                client['birthday'] = fiz.get('birthday')\n                client['lastname'] = fiz.get('lastname')\n                client['firstname'] = fiz.get('firstname')\n                client['secondname'] = fiz.get('secondname')\n                client['sex'] = fiz.get('sex') \n        \n                client['lastnameLat'] = fiz.get('lastnameLat')\n                client['firstnameLat'] = fiz.get('firstnameLat')\n                client['secondnameLat'] = fiz.get('secondnameLat')\n                \n                client['idDocument'] = fiz.get('idDocument')\n            else:\n                # Атрибуты для физлица\n                client['lastname'] = d['PNAME1']\n                client['firstname'] = d['PNAME2']\n                client['secondname'] = d['PNAME3']\n    \n                client['lastnameLat'] = d['PLNAME1']\n                client['firstnameLat'] = d['PLNAME2']\n                client['secondnameLat'] = d['PLNAME3']\n                \n                client['birthday'] = d['BIRDATE']\n                client['sex'] = d['PSEX']\n                client['retirementAccount'] = d['INPS']\n            \n        if client['isJur']:\n            client['fullName'] = d['LONGNAME']\n            client['fullNameLat'] = d['LLONGNAME']\n            \n            client['oked'] = d['oked']\n            client['okedName'] = d['okedName']\n\n\n        #fillCategory(client)\n        \n        \n\n    if 'withIdentDocType' in params:\n        docType = params.get('withIdentDocType')\n        if docType is None:\n            docType = d['PASSTYP_CODE']\n\n        doc = execObjectMethod({\n            'object': 'client', 'method': 'getIdentDocByType',\n            'params': {\n                'dep_id': client['dep_id'],\n                'id': client['id'],\n                'doctype': docType\n            }\n        })\n\n        client['idDocument'] = doc\n        \n    #\n    # Контактный телефон\n    #\n    cont = execObjectMethod({\n        'object': 'client', 'method': 'getContactByType',\n        'params': {\n            'dep_id': client['dep_id'],\n            'id': client['id'],\n            'conttype': 'MOB'\n        }\n    })\n\n\n    if cont:\n        client['phone'] = cont['CONT']\n      \n    #\n    # Электронная почта\n    #  \n    cont = execObjectMethod({\n        'object': 'client', 'method': 'getContactByType',\n        'params': {\n            'dep_id': client['dep_id'],\n            'id': client['id'],\n            'conttype': 'EML'\n        }\n    })\n\n    if cont:\n        client['email'] = cont['CONT']\n        \n    #\n    # Адрес регистраци\n    #\n    registrationAddress = None\n    if params.get('withRegistrationAddress'):\n        registrationAddress = execObjectMethod({\n            'object': 'client', 'method': 'getAddressByType',\n            'params': {\n                'dep_id': client['dep_id'],\n                'id': client['id'],\n                'adrtype': '002',\n            }\n        })\n        \n        if registrationAddress:\n            client['registrationAddress'] = registrationAddress\n\n    # Адрес места жительства - \n    # Адрес временной регистрации - 011\n    liveAddress = None\n    if params.get('withLiveAddress'):\n        liveAddress = execObjectMethod({\n            'object': 'client', 'method': 'getAddressByType',\n            'params': {\n                'dep_id': client['dep_id'],\n                'id': client['id'],\n                'adrtype': '011',\n            }\n        })\n        \n        if liveAddress is None and registrationAddress is not None:\n            liveAddress = registrationAddress\n            \n        if liveAddress:\n            client['liveAddress'] = liveAddress\n        \n    #\n    # Заполнение категории\n    #\n    if not client['isJur'] and not client['isIE']:\n        client['categoryName'] = 'Физическое лицо'\n    elif not client['isIE']:\n        client['categoryName'] = 'Юридическое лицо'\n    else:\n        client['categoryName'] = 'Индивидуальный предприниматель'\n\n    return client\n\ndata = identify(parameters)\n"
+            }
+        },
+        "getClient": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getClient(params):\n    \n    con = initDbSession(application='bank')\n    with con.cursor() as cursor:\n        p = {\n            'CLI_CODE'    : params.get('code'),\n        }\n        \n        try:\n            cursor.execute(\"\"\"\n                select\n                    c.DEP_ID,\n                    c.ID,\n                    c.CODE,\n                    ch.LONGNAME,\n                    ch.LLONGNAME,\n                    \n                    ch.PNAME1,\n                    ch.PNAME2,\n                    ch.PNAME3,\n                    \n                    ch.PLNAME1,\n                    ch.PLNAME2,\n                    ch.PLNAME3,\n                    \n                    ch.PSEX,\n                    \n                    c.BIRDATE,\n                    c.JURFL,\n                    c.PBOYULFL,\n                    ch.RESIDFL,\n                    \n                    c.dreg \"registrationDate\",\n                    ch.arcfl,\n                    \n                    (select d.code from G_IDENTDOCDSC_STD d where d.ID=ch.passtyp_id) as passtyp_code,\n                    \n                    -- Идентификационные данные\n                    (select i.idn_num from G_CLIIDN i \n                     where i.dep_id=c.dep_id and i.id=c.id and i.IDN_ID=G_pkgIdn.fId('IDN_PRS_UZ')\n                        and P_MAXDATE between i.fromdate and i.todate\n                    ) PINFL,\n                    \n                    -- НИББД\n                    G_PkgNibbdUtl.fGetNIBBDCode(c.dep_id, c.id) NIBBD,\n                    \n                    -- ОКЭД\n                    U_PkgUniRef.fOneVal(c.dep_id, c.id, 'UZ_OKED') \"oked\",\n                    U_PkgUniRef.fLongNameByRefer('UZ_OKED', G_PKGDBLCLI.fOneVal(c.dep_id, c.id, 'UZ_OKED'), 0) \"okedName\",\n                    \n                    ch.taxcode,\n                    \n                    -- Группа обслуживания клиента\n                    (select code from T_ACCGRP where id=ch.aut_id) maintenanceGroup, \n                    \n                    \n                    g_pkgcliidn.fcliidn(c.dep_id, c.id, g_pkgidn.fid('IDN_PN_UZ')) RETIREMENT_ACCOUNT,                \n                    \n                    -- Карточка физлица для ИП\n                    f.dep_id fiz_dep_id,\n                    f.id fiz_id,\n                    f.code fiz_code,\n                    \n                    -- Связанное лицо\n                    G_PKGCLIAFF.fExistsAffilBkn(c.DEP_ID, c.ID) RLP_FL,\n                    \n                    -- Сотрудник банка\n                    G_PkgCliRole.fChkRole2(c.DEP_ID, c.ID, 'PRS', '1') IS_BANK_EMPLOYEE,\n                    \n                    -- Родственник сотрудника, пока не реализована\n                    g_pkgclifamily.fFamWrkOurBnkFl(c.DEP_ID, c.ID) IS_REL_BANK_EMPLOYEE,\n                    \n                    -- Входит в группу\n                    (\n                        select '1' from G_AFFGRPMEM \n                        where clidep_id=c.dep_id and cli_id=c.id\n                            and p_operday between fromdate and nvl(todate, p_maxdate)\n                            and rownum=1\n                    ) IS_IN_AFFILATED_GROUP,\n                    \n                    g_pkgclirole.fCliRoleList(c.dep_id, c.id) \"roleList\"\n                    \n                from\n                    g_cli f,\n                    G_CLIHST ch, G_CLI c\n                where c.CODE = :CLI_CODE\n                    and ch.DEP_ID=c.DEP_ID and ch.ID=c.ID and P_OPERDAY between ch.FROMDATE and ch.TODATE\n                    and f.dep_id(+)=ch.CLIFIZ_DEP_ID and f.id(+)=ch.CLIFIZ_ID\n            \"\"\", p)\n    \n            data = fetchone(cursor)\n        except Exception as e:\n            raise Exception('Ошибка чтения карточки клиента {}\\n{}'.format(\n                params.get('code'), e\n            ))\n        \n        if data is None:\n            return None\n        \n        cli_dep_id = data['DEP_ID']\n        cli_id = data['ID']\n        \n        fiz_dep_id = data['FIZ_DEP_ID']\n        fiz_id = data['FIZ_ID']\n        \n        client = {\n            'code': data['CODE'],\n            'name': data['LONGNAME'],\n            # ИНН\n            'inn': data['TAXCODE'],\n            \n            # НИББД\n            'nibbd': data['NIBBD'],\n            \n            # Признак юридического лица\n            'isJur': data.get('JURFL') == '1',\n            \n            # Признак индивидуального предпринимателя\n            'isIE': data.get('PBOYULFL') == '1',\n            \n            # Признак резидента\n            'isResident': data.get('RESIDFL') == 1,\n            \n            # Группа обслуживания\n            'maintenanceGroup': data.get('MAINTENANCEGROUP'),\n            \n            'isRelatedPerson': data['RLP_FL'] > 0,\n            'isBankEmployee': data['IS_BANK_EMPLOYEE'] > 0,\n            'isRelativeBankEmployee': data['IS_REL_BANK_EMPLOYEE'] > 0,\n            'isInAffilatedGroup': data['IS_IN_AFFILATED_GROUP'] == '1',\n            \n        }\n        \n        if client['isJur'] == False:\n            if client['isIE'] == False:\n                client = {\n                    **client,\n                    \n                    # ПИНФЛ\n                    'pinfl': data['PINFL'],\n                    \n                    # Фамилия\n                    'lastname': data.get('PNAME1'),\n                    'lastnameLat': data.get('PLNAME1'),\n                    # Имя\n                    'firstname': data.get('PNAME2'),\n                    'firstnameLat': data.get('PLNAME2'),\n                    # Отчество\n                    'secondname': data.get('PNAME3'),\n                    'secondnameLat': data.get('PLNAME3'),\n                    \n                    'sex': data.get('PSEX'),\n                    'birthday': data.get('BIRDATE'),\n                    \n                    'retirementAccount': data['RETIREMENT_ACCOUNT'],\n                }\n                \n                if 'withIdentDocType' in params:\n                    docType = params.get('withIdentDocType')\n                    if docType is None:\n                        docType = data['PASSTYP_CODE']\n\n                    client['idDocument'] = execObjectMethod({\n                        'object': 'client', 'method': 'getIdentDocByType',\n                        'params': {\n                            'dep_id': cli_dep_id,\n                            'id': cli_id,\n                            'doctype': docType \n                        }\n                    })\n            else:\n                \n                #\n                # ИП\n                #\n                fiz = getClient({\n                    'code': data['FIZ_CODE'],\n                    'withIdentDocType': None,\n                })\n                client = {\n                    **client,\n                    \n                    'pinfl': fiz.get('pinfl'),\n                    \n                    # Фамилия\n                    'lastname': fiz.get('lastname'),\n                    'lastnameLat': fiz.get('lastnameLat'),\n                    # Имя\n                    'firstname': fiz.get('firstname'),\n                    'firstnameLat': fiz.get('firstnameLat'),\n                    # Отчество\n                    'secondname': fiz.get('secondname'),\n                    'secondnameLat': fiz.get('secondnameLat'),\n                    \n                    'birthday': fiz.get('birthday'),\n                    'sex': fiz.get('sex'),\n                    \n                    'idDocument': fiz.get('idDocument'),\n                }\n       \n        else:\n            client['fullName'] = data['LONGNAME']\n            client['fullNameLat'] = data['LLONGNAME']\n            client['oked'] = data['oked']\n            client['okedName'] = data['okedName']\n\n    #\n    # Контактный телефон\n    #\n    cont = execObjectMethod({\n        'object': 'client', 'method': 'getContactByType',\n        'params': {\n            'dep_id': cli_dep_id,\n            'id': cli_id,\n            'conttype': 'MOB'\n        }\n    })\n\n    if cont:\n        client['phone'] = cont['CONT']\n\n\n    #\n    # Электронная почта\n    #  \n    cont = execObjectMethod({\n        'object': 'client', 'method': 'getContactByType',\n        'params': {\n            'dep_id': cli_dep_id,\n            'id': cli_id,\n            'conttype': 'EML'\n        }\n    })\n\n    if cont:\n        client['email'] = cont['CONT']\n\n\n    #\n    # Адрес регистрации\n    #\n    registrationAddress = execObjectMethod({\n        'object': 'client', 'method': 'getAddressByType',\n        'params': {\n            'dep_id': cli_dep_id,\n            'id': cli_id,\n            'adrtype': '002',\n        }\n    })\n    if registrationAddress is not None:\n        client['registrationAddress'] = registrationAddress\n    else:\n        client['registrationAddress'] = {}\n        \n        \n    if params.get('withLiveAddress'):\n        liveAddress = execObjectMethod({\n            'object': 'client', 'method': 'getAddressByType',\n            'params': {\n                'dep_id': cli_dep_id,\n                'id': cli_id,\n                'adrtype': '011',\n            }\n        })\n        if liveAddress:\n            client['liveAddress'] = liveAddress\n        elif registrationAddress:\n            client['liveAddress'] = registrationAddress\n        else:\n            client['liveAddress'] = {}\n            \n    if params.get('withClassifiers'):\n        client['classifiers'] = execObjectMethod({\n            'object': 'client', 'method': 'getClientClassifiers',\n            'params': {\n                'dep_id': cli_dep_id, 'id': cli_id,\n                'typefl': '0' if client['isJur'] else '1' if client['isIE'] else '2',\n                'rolemask': data['roleList'],\n            }\n        })\n            \n    if params.get('withState'):\n        client['registrationDate'] = data['registrationDate']\n        # Признак закрытой карточки\n        client['isClosed'] = data.get('ARCFL') == 1\n        \n    #\n    # Заполнение категории\n    #\n    if not client['isJur'] and not client['isIE']:\n        client['categoryName'] = 'Физическое лицо'\n    elif not client['isIE']:\n        client['categoryName'] = 'Юридическое лицо'\n    else:\n        client['categoryName'] = 'Индивидуальный предприниматель'\n        \n        \n    return client\n\ndata = getClient(parameters)"
+            },
+            "sql": {}
+        },
+        "resolveClientDepartment": {
+            "script": {
+                "py": "#\n# Определение подразделения клиента для создания документов\n#\nimport re\n\nclient = parameters['client']\nclientDepCode = re.search(r'[0-9]*', client['maintenanceGroup'] or '').group()\nif len(clientDepCode)==0 and parameters.get('default') is not None:\n    clientDepCode = parameters['default']\n    \nif len(clientDepCode)==0:\n    raise UserException('Не задана группа обслуживания клиента %s (неправильное значение)' % client['code'])\n    \nclientDep = execObjectMethod({\n    'object': 'cbs.bank', 'method': 'getDepartmentCardInfo',\n    'params': {\n        'code': clientDepCode\n    }\n})\nif clientDep is None:\n    raise UserException({'message': 'Не найдено подразделение %s, проверьте группу обслуживания клиента' % clientDepCode})\n    \nif clientDep['virtualBalanceDep'] and clientDep['virtualBalanceDep'] != clientDepCode:\n    # Скорее всего это касса, учитываем подразделение виртуального баланса\n    clientDep = execObjectMethod({\n        'object': 'cbs.bank', 'method': 'getDepartmentCardInfo',\n        'params': {\n            'code': clientDep['virtualBalanceDep']\n        }\n    })\n    if clientDep is None:\n        raise UserException({'message': 'Не найдено подразделение %s, проверьте настройку виртуального баланса для подразделения %s' % (clientDep['virtualBalanceDep'], clientDepCode)})\n\ndata = clientDep"
+            },
+            "sql": {}
+        },
+        "getClientClassifiers": {
+            "script": {
+                "py": "#\n# Получение данных классификации клиента\n#\n\nfor r in data:\n    d = {\n        'name': r['LONGNAME'],\n        'value': r['VALUE'],\n        'valueName': r['VALUE_NAME']\n    }\n    r.update(d)\n"
+            },
+            "sql": {
+                "sql": "select * from\n(\n    select  ---по умолчанию\n        '0' as ARCFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'STATUS') as OBFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'MULTYFL') as MULTYFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'NPP') as NPP,\n        r.CODE as CODE,\n        r.LONGNAME as LONGNAME,\n        null as VALUE,\n        null as VALUE_NAME,\n        null as FROMDATE,\n        null as TODATE,\n        null as DEP_ID,\n        null as ID,\n        null as NORD,\n        '0' as BASFL,\n        r.ID as REF_ID,\n        null as JRN_ID,\n        null as OPER\n    from U_UNIREF r, C_BRN b\n    where\n        U_PKGUNIREF.fChkSetURefEnbl(r.ID,:TYPEFL,:ROLEMASK) = 1\n        and r.ARCFL<>'1'\n        and not exists(select 1 from G_CLIREFVAL v where v.DEP_ID=:DEP_ID and v.ID=:ID and r.ID=v.REF_ID+0)\n        and not exists(select 1 from G_DBLJRN J, G_CLIREFVALDBL vd \n               where vd.DEP_ID=:DEP_ID and vd.ID=:ID and r.CODE=vd.REF_CODE\n                 and J.ID=vd.jrn_id and J.State in ('10','20') and J.Oper_Usid=p_IDUS\n               )\n        and b.id = r.BRN_ID\n        and C_PKGLOCAL.fChkUseLocal(b.CODE, '') = 1\n    union all\n    select   ---заданные\n        decode(v.TODATE,null,'0','1') as ARCFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'STATUS') as OBFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'MULTYFL') as MULTYFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'NPP') as NPP,\n        r.CODE as CODE,\n        r.LONGNAME as LONGNAME,\n        v.VALUE as VALUE,\n        U_PKGUNIREF.FLONGNAMEBYREFER(r.CODE,v.VALUE,0 ) as VALUE_NAME,\n        v.FROMDATE as FROMDATE,\n        v.TODATE as TODATE,\n        v.DEP_ID as DEP_ID,\n        v.ID as ID,\n        v.NORD as NORD,\n        nvl(v.BASFL,'0') as BASFL,\n        r.ID as REF_ID,\n        null as JRN_ID,\n        null as OPER\n    from U_UNIREF r, G_CLIREFVAL v, C_BRN b\n    where\n        U_PKGUNIREF.fChkSetURefEnbl(r.ID,:TYPEFL,:ROLEMASK) = 1\n        and v.DEP_ID=:DEP_ID and v.ID=:ID and r.ID=v.REF_ID+0\n        and not exists(select 1 from G_DBLJRN J, G_CLIREFVALDBL vd \n               where vd.DEP_ID=:DEP_ID and vd.ID=:ID and vd.nord=v.nord and r.ID=(select id from U_UNIREF_STD where code=vd.REF_CODE)\n                 and J.ID=vd.jrn_id and J.State in ('10','20') and J.Oper_Usid=p_IDUS\n               )\n        and not exists(select 1 from G_DBLJRN J, G_DBLJRNDTL JD \n               where JD.DEP_ID=:DEP_ID and JD.ID=:ID and JD.NORD=v.nord\n                 and J.ID=JD.jrn_id and J.State in ('10','20') and JD.OPER='31' and J.Oper_Usid=p_IDUS\n               )\n        and b.id = r.BRN_ID\n        and C_PKGLOCAL.fChkUseLocal(b.CODE, '') = 1\n    union all\n    select   ---заявка на изменение\n        decode(v.TODATE,null,'0','1') as ARCFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'STATUS') as OBFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'MULTYFL') as MULTYFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'NPP') as NPP,\n        r.CODE as CODE,\n        r.LONGNAME as LONGNAME,\n        v.VALUE as VALUE,\n        U_PKGUNIREF.FLONGNAMEBYREFER(r.CODE,v.VALUE,0 ) as VALUE_NAME,\n        v.FROMDATE as FROMDATE,\n        v.TODATE as TODATE,\n        v.DEP_ID as DEP_ID,\n        v.ID as ID,\n        v.NORD as NORD,\n        nvl(v.BASFL,'0') as BASFL,\n        r.ID as REF_ID,\n        JD.JRN_ID,\n        JD.OPER\n    from U_UNIREF r, G_DBLJRN J, G_DBLJRNDTL JD, G_CLIREFVALDBL v, C_BRN b\n    where\n        U_PKGUNIREF.fChkSetURefEnbl(r.ID,:TYPEFL,:ROLEMASK) = 1\n        and v.DEP_ID=:DEP_ID and v.ID=:ID\n        and JD.DEP_ID=v.dep_id and JD.ID=v.id and JD.Nord=v.nord and JD.CODE like 'G_CLIREFVALDBL%%'\n        and J.ID=v.JRN_ID and J.ID=JD.JRN_ID and J.State in ('10','20') and J.Oper_Usid=p_IDUS\n        and r.CODE=v.REF_CODE\n        and b.id = r.BRN_ID\n        and C_PKGLOCAL.fChkUseLocal(b.CODE, '') = 1\n    union all\n    select   ---заявка на удаление\n        decode(v.TODATE,null,'0','1') as ARCFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'STATUS') as OBFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'MULTYFL') as MULTYFL,\n        U_PKGUNIREF.fGetRoleRefAttr(r.ID,:TYPEFL,:ROLEMASK,'NPP') as NPP,\n        r.CODE as CODE,\n        r.LONGNAME as LONGNAME,\n        v.VALUE as VALUE,\n        U_PKGUNIREF.FLONGNAMEBYREFER(r.CODE,v.VALUE,0 ) as VALUE_NAME,\n        v.FROMDATE as FROMDATE,\n        v.TODATE as TODATE,\n        v.DEP_ID as DEP_ID,\n        v.ID as ID,\n        v.NORD as NORD,\n        nvl(v.BASFL,'0') as BASFL,\n        r.ID as REF_ID,\n        JD.JRN_ID,\n        JD.OPER\n    from U_UNIREF r, G_DBLJRN J, G_DBLJRNDTL JD, G_CLIREFVAL v, C_BRN b\n    where\n        U_PKGUNIREF.fChkSetURefEnbl(r.ID,:TYPEFL,:ROLEMASK) = 1\n        and v.DEP_ID=:DEP_ID and v.ID=:ID and r.ID=v.REF_ID+0\n        and JD.DEP_ID=v.dep_id and JD.ID=v.id and JD.Nord=v.nord and JD.CODE like 'G_CLIREFVALDBL%%'\n        and J.id=JD.JRN_ID\n        and G_PKGDBLCLI.fViewCliDbl(v.DEP_ID,v.ID,p_IDUS) = 1\n        and J.state in ('10','20')\n        and JD.Oper='31'\n        and b.id = r.BRN_ID\n        and C_PKGLOCAL.fChkUseLocal(b.CODE, '') = 1\n)\norder by NPP,OBFL,MULTYFL,BASFL desc,VALUE\n ",
+                "sqlType": "query",
+                "database": "colvir_cbs",
+                "params": [
+                    "typefl",
+                    "rolemask",
+                    "dep_id",
+                    "id"
+                ]
+            }
+        },
+        "getClientHeadName": {
+            "sql": {},
+            "script": {
+                "py": "def getClientHeadName(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'code': params.get('code'),\n            'clientHeadName': cursor.var(str),\n        }\n        \n        cursor.execute(\"\"\"\n            declare\n            begin\n                -- Получение данных по клиенту\n                select\n                    G_pkgCli.fRuk(g.DEP_ID, g.ID, 1) clientHeadName\n                into\n                    :clientHeadName\n                from G_CLI g\n                where g.code=:code\n                ;\n            end;\n        \"\"\", p)\n        \n    return p['clientHeadName'].getvalue()\n        \ndata = getClientHeadName(parameters)"
+            }
+        },
+        "getAddressByType": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\"\"\"\n    adrtype\n        002  - Адрес регистрации\n        014  - Временный\n\"\"\"\ndef getAddressByType(params):\n    cli_dep_id = params.get('dep_id')\n    cli_id = params.get('id')\n    cli_code = params.get('code')\n    adrtype = params.get('adrtype')\n        \n    con = initDbSession(application='bank')\n    \n    with con.cursor() as cursor:\n        \n        SQL_byid = \"\"\"\n            select \n                g_pkgaddress_uz.fgetObl(a.ID) \"region\",\n                U_PKGUNIREF_UZ.fgetOblNameByCode(g_pkgaddress_uz.fgetObl(a.ID)) \"regionName\",\n                g_pkgaddress_uz.fgetRn(a.ID) \"district\",\n                U_PKGUNIREF_UZ.fgetRnNameByCode(g_pkgaddress_uz.fgetRn(a.ID)) \"districtName\",\n                g_pkgaddress.fGetFullAddr(a.ID, G_ADDR_CNTR) \"address\",\n                g_pkgaddress.fAdrPostIndex(a.ID) \"postIndex\"\n            from G_ADDRESS a, G_CLIADDRESS ca\n            where ca.dep_id=:DEP_ID and ca.id=:ID\n              and ca.adrtype=:ADRTYPE\n              and a.id=ca.adr_id and ca.arcfl='0'\n        \"\"\"\n        \n        SQL_bycode = \"\"\"\n            select \n                g_pkgaddress_uz.fgetObl(a.ID) \"region\",\n                U_PKGUNIREF_UZ.fgetOblNameByCode(g_pkgaddress_uz.fgetObl(a.ID)) \"regionName\",\n                g_pkgaddress_uz.fgetRn(a.ID) \"district\",\n                U_PKGUNIREF_UZ.fgetRnNameByCode(g_pkgaddress_uz.fgetRn(a.ID)) \"districtName\",\n                g_pkgaddress.fGetFullAddr(a.ID, G_ADDR_CNTR) \"address\",\n                g_pkgaddress.fAdrPostIndex(a.ID) \"postIndex\"\n            from G_ADDRESS a, G_CLIADDRESS ca, G_CLI c\n            where ca.dep_id=c.dep_id and ca.id=c.id and c.code=:code\n              and ca.adrtype=:ADRTYPE\n              and a.id=ca.adr_id and ca.arcfl='0'\n        \"\"\"\n        \n        if cli_code:\n            p = {\n                'code'    : cli_code,\n                'ADRTYPE'   : adrtype\n            }\n            \n            cursor.execute(SQL_bycode, p)\n        else:\n            p = {\n                'DEP_ID'    : cli_dep_id,\n                'ID'        : cli_id,\n                'ADRTYPE'   : adrtype\n            }\n            \n            cursor.execute(SQL_byid, p)\n        \n        d = fetchall(cursor)\n    \n    if len(d)==1:\n        adr = d[0]\n        return adr\n    else:\n        return None\n\ndata = getAddressByType(parameters)"
+            },
+            "sql": {}
+        },
+        "getContactByType": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\ndef getContactByType(params):\n    cli_dep_id = params.get('dep_id')\n    cli_id = params.get('id')\n    conttype = params.get('conttype')\n        \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DEP_ID'    : cli_dep_id,\n            'ID'        : cli_id,\n            'CONTTYPE'   : conttype\n        }\n        \n        cursor.execute(\"\"\"\n            select \n                c.cont\n            from G_CLICONT C, CR_CONTTYPE_STD CT\n            where C.DEP_ID = :DEP_ID and C.ID = :ID \n                and C.ID_CONTTYPE=CT.ID\n                and CT.CODE=:CONTTYPE\n                and C.ARCFL='0'\n        \"\"\", p)\n        \n        d = fetchall(cursor)\n    \n    return d[0] if len(d)>0 else None\n\ndata = getContactByType(parameters)"
+            }
+        },
+        "getIdentDocByType": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getIdentDocByType(params):\n    cli_dep_id = params.get('dep_id')\n    cli_id = params.get('id')\n    doctype = params.get('doctype')\n        \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DEP_ID'    : cli_dep_id,\n            'ID'        : cli_id,\n            'DOCTYPE'   : doctype\n        }\n        \n        cursor.execute(\"\"\"\n            select\n                doc.*,\n                reg.LONGNAME DOC_REGION_NAME,\n                dis.LONGNAME DOC_DISTRICT_NAME\n            from (\n                select\n                    dd.CODE DOC_TYPE,\n                    dd.NAME DOC_TYPE_NAME,\n                    d.PASSSER DOC_SER,\n                    d.PASSNUM DOC_NUM,\n                    d.PASSDAT DOC_DATE,\n                    d.passfin DOC_EXPDATE,\n                    d.PASSORG DOC_ORG,\n                    G_PkgCliIdentDoc.fGetDocAtr(d.DEP_ID, d.ID, d.NORD, 'CODE_REGION_REG') DOC_REGION,\n                    G_PkgCliIdentDoc.fGetDocAtr(d.DEP_ID, d.ID, d.NORD, 'CODE_DISTRICT_REG') DOC_DISTRICT\n                from G_IDENTDOCDSC dd, G_CLIDOC d, g_cli c\n                where d.dep_id=c.dep_id and d.id=c.id\n                    and dd.id=d.passtyp_id\n                    and d.ARCFL='0'\n                    and c.dep_id=:DEP_ID and c.id=:ID\n                    and dd.code=:DOCTYPE\n                ) doc,\n                U_UZ_OBL reg,\n                U_UZ_RN dis\n            where reg.CODE(+) = doc.DOC_REGION\n                and dis.CODE(+) = doc_DISTRICT\n                \n        \"\"\", p)\n        \n        d = fetchone(cursor)\n        if d:\n            return {\n                'type': d['DOC_TYPE'],\n                'typeName': d['DOC_TYPE_NAME'],\n                'serials': d['DOC_SER'],\n                'number': d['DOC_NUM'],\n                'date': d['DOC_DATE'],\n                'expirationDate': d['DOC_EXPDATE'],\n                'issuedBy': d['DOC_ORG'],\n                'region': d['DOC_REGION'],\n                'regionName': d['DOC_REGION_NAME'],\n                'district': d['DOC_DISTRICT'],\n                'districtName': d['DOC_DISTRICT_NAME'],\n            }\n    \n    return None\n\ndata = getIdentDocByType(parameters)\n"
+            }
+        },
+        "getIdentDocumentInfo": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getIdentDocumentInfo(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        \n        if params.get('code'):\n            p = {\n                'code': params.get('code'),\n            }\n            \n            cursor.execute(\"\"\"\n                select\n                    *\n                from G_IDENTDOCDSC d \n                where d.BRN_ID = P_LOCID\n                    and d.CODE = :code\n            \"\"\", p)\n        elif params.get('nibbd_code'):\n            p = {\n                'nibbd_code': params.get('nibbd_code'),\n            }\n            \n            cursor.execute(\"\"\"\n                select\n                    *\n                from G_IDENTDOCDSC d \n                where d.BRN_ID = P_LOCID\n                    and :nibbd_code = G_PKGCLIIDENTDOC.fCode2AltCode(d.code, 'NIBBD')\n            \"\"\", p)\n        else:\n            raise Exception('Не заданы параметри code или nibbd_code для поиска вида удостоверяющего документа')\n        \n        d = fetchone(cursor)\n        \n        if d:\n            return {\n                'code': d['CODE'],\n                'name': d['LONGNAME'],\n            }\n        \n        return None\n\ndata = getIdentDocumentInfo(parameters)\n"
+            }
+        },
+        "createClientByIdFiz": {
+            "sql": {},
+            "script": {
+                "py": "#\n# Создание карточки клиента по зппросу\n#\n# Входные параметры\n#   request - данные запроса\n#\nfrom apng_core.csl import Csl\nfrom apng_core.auth import getUser\n\nuser = getUser()\nposition = execObjectMethod({\n    'object': 'cbs.user', 'method': 'getDefaultUserPosition',\n    'params': {'code': user.code}\n})\nuserPos = execObjectMethod({\n    'object': 'cbs.user', 'method': 'getPositionInfo',\n    'params': {'position': position['code']}\n})\nif userPos is None:\n    raise UserException('Не найдена позиция пользователя %s' % user.position.code)\n\nclient = parameters['client']\n\nwith Csl('CSL_APP_URL') as csl:\n\n    request = {\n        'body': {\n            'agreement': '1',\n            'pin': client['pinfl'],\n            'inn': client['inn'],\n            #'date_birth': client['birthday'],\n        },\n        'cbs': {\n            'nibbdIdnFl': '1',\n            'saveCbsFl': '1',\n            'nibbdRegFl': '1'\n        }\n    }\n    r = csl.request('/uzclient/identification/individual/detail', \n        request,\n        headers = {\n            'X-CESB-Cli-Channel': 'KFO',\n        },\n    )\n    \n    if r.status_code == 200:\n        response = r.json()\n        \"\"\"\n            Коды ошибок: (домен G_NIBBDF_IDN_ERR)\n            0 Выполнение успешно\n            1 Карточка не найдена в АБ\n            2 Ошибка НИББД при getPhysical\n            3 Ошибка НИББД при выполнении setPhysicalByPin\n            4 Ошибка АМЛ\n            5 Система-отправитель не зарегистрирована в домене со списком систем-инициаторов запросов\n            6 В АБС отсутствуют данные о физ.лице и отсутствует требование по их получению из НИББД\n            7 ПИНФЛ не идентифицирован\n            8 Ошибка открытия карточки\n            100 Прочая ошибка\n        \"\"\"\n        if response.get('result', {}).get('code') not in ('0', '02000'):\n            raise UserException(json.dumps(response, indent=4, ensure_ascii=False))\n            \n\n        data = {\n            'code': response['response'][0]['cli_code'],\n        }\n    else:\n        raise UserException({\n            'message': 'Ошибка создания карточки клиента',\n            'description': 'Запрос\\n%s' % json.dumps(request, indent=4, ensure_ascii=False)\n        }).withError(csl.extractLastError())\n    \n    \n\"\"\"\n{\n    \"clientId\": \"120001405656\",\n    \"client_code\": \"62833401\"\n}\n\"\"\""
+            }
+        },
+        "createClientByIdFiz_2": {
+            "script": {
+                "py": "\n\"\"\"\npTYPEFL\n0\tЮридические лица\n1\tФизические лица\n2\tИП\n3\tИП совместное\n\n\"\"\"\nclient = parameters['client']\n\nSQL = \"\"\"\n    declare\n        idDep number;\n        idCli number;\n        code varchar2(30);\n        errCode varchar2(30);\n        errMsg varchar2(4000);\n    begin\n        G_PKGNIBBDJ_IDN.pGetClifromIdn(\n            pNIBBD      => :nibbd,\n            pINN        => :inn,\n            pPINFL      => :pinfl,\n            pTYPEFL     => '1',  -- 0 - ЮЛ, 1 - ФЛ, 2 -ИП, 3 - ????\n            pDepID      => idDep,\n            pID         => idCli,\n            pCODE       => code,\n            pErrCode    => errCode,\n            pErrMsg     => errMsg\n        );\n        \n        :code       := code;\n        :errCode    := errCode;\n        :errMsg     := errMsg;\n    end;\n\"\"\"\n\nwith initDbSession(application='bank').cursor() as c:\n    p = {\n        'nibbd': client.get('nibbd'),\n        'inn': client.get('inn'),\n        'pinfl': client.get('pinfl'),\n        'code': c.var(str),\n        'errCode': c.var(str),\n        'errMsg': c.var(str)\n    }\n    \n    try:\n        c.execute(SQL, p)\n    except Exception as e:\n        raise UserException({\n            'message': 'Ошибка создания карточки клиента\\nИНН: {inn}, НИББД: {nibbd}'.format(\n                inn=client.get('inn'), nibbd=client.get('nibbd')\n            )\n        }).withError(e)\n\ndata = {\n    'code': p['code'].getvalue(),\n    'errCode': p['errCode'].getvalue(),\n    'errMsg': p['errMsg'].getvalue(),\n}\n"
+            }
+        },
+        "createClientByIdJur": {
+            "sql": {},
+            "script": {
+                "py": "\n\"\"\"\npTYPEFL\n0\tЮридические лица\n1\tФизические лица\n2\tИП\n3\tИП совместное\n\n\"\"\"\nclient = parameters['client']\n\nSQL = \"\"\"\n    declare\n        idDep number;\n        idCli number;\n        code varchar2(30);\n        errCode varchar2(30);\n        errMsg varchar2(4000);\n    begin\n        G_PKGNIBBDJ_IDN.pGetClifromIdn(\n            pNIBBD      => :nibbd,\n            pINN        => :inn,\n            pPINFL      => :pinfl,\n            pTYPEFL     => :clientType,\n            pDepID      => idDep,\n            pID         => idCli,\n            pCODE       => code,\n            pErrCode    => errCode,\n            pErrMsg     => errMsg\n        );\n        \n        :code       := code;\n        :errCode    := errCode;\n        :errMsg     := errMsg;\n    end;\n\"\"\"\n\nclientTypes = {\n    'jur': '0',\n    'ie': '2'\n}\n\nwith initDbSession(application='bank').cursor() as c:\n    p = {\n        'nibbd': client.get('nibbd'),\n        'inn': client.get('inn'),\n        'pinfl': client.get('pinfl'),\n        'clientType': clientTypes[client['clientType']],\n        'code': c.var(str),\n        'errCode': c.var(str),\n        'errMsg': c.var(str)\n    }\n    \n    try:\n        c.execute(SQL, p)\n    except Exception as e:\n        raise UserException({\n            'message': 'Ошибка создания карточки клиента\\nИНН: {inn}, НИББД: {nibbd}'.format(\n                inn=client.get('inn'), nibbd=client.get('nibbd')\n            )\n        }).withError(e)\n\ndata = {\n    'code': p['code'].getvalue(),\n    'errCode': p['errCode'].getvalue(),\n    'errMsg': p['errMsg'].getvalue(),\n}\n"
+            }
+        }
+    },
+    "lists": {},
+    "references": {},
+    "js": {}
+}

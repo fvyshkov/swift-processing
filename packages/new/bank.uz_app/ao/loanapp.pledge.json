@@ -1,0 +1,238 @@
+{
+    "forms": {
+        "pledge-SURETY-Form": {
+            "title": "Гарант/Поручитель",
+            "className": "vertical",
+            "$": {
+                "mortgage_value": {
+                    "label": "Залоговая стоимость",
+                    "control": "CurrencyField",
+                    "controlOpts": {
+                        "currencyAttr": "mortgage_value_currency"
+                    },
+                    "required": true
+                },
+                "owner": {
+                    "$": {
+                        "name": {
+                            "label": "Гарант/Поручитель",
+                            "control": "ButtonTextEdit",
+                            "action": {
+                                "js": "frontend.dialog({object: 'loanapp.pledge', form: 'clientIdentDialog', mem: {}, params: {borrower: params.client}})"
+                            },
+                            "required": true,
+                            "actions": {
+                                "onClientIdentified": {
+                                    "name": "setOwner"
+                                }
+                            },
+                            "validate": [
+                                "mem.code == params.client.code && {helperText: 'Заемщик не может быть поручителем'} || undefined",
+                                "params.coborrowers?.find((c)=>c.customer.code==mem.code) && {helperText: 'Созаемщик не может быть поручителем'} || undefined"
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "setOwner": {
+                    "js": "mem.owner.code=params.client.code; mem.owner.name=params.client.name; mem.owner.myId=params.myId;"
+                }
+            }
+        },
+        "clientIdentDialog": {
+            "title": "Идентификация клиента",
+            "className": "vertical",
+            "style": {
+                "width": "400px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "4px"
+                    },
+                    "$": {
+                        "inn": {
+                            "label": "ИНН",
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "refresh"
+                                }
+                            },
+                            "readOnly$": "!(params.borrower?.isJur || params.borrower?.isIE) && context.myIdVisible && !params.enableIdentifyJur"
+                        },
+                        "pinfl": {
+                            "label": "ПИНФЛ",
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "refresh"
+                                }
+                            },
+                            "readOnly$": "!(context.identifyPin || user.superuser)",
+                            "visible$": "!(params.borrower?.isJur || params.borrower?.isIE)"
+                        },
+                        "nibbd": {
+                            "label": "НИББД",
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "refresh"
+                                }
+                            },
+                            "readOnly$": "!(params.borrower?.isJur || params.borrower?.isIE) && context.myIdVisible && !params.enableIdentifyJur"
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnIdentify": {
+                                    "label": "Идентифицировать",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "variant": "text",
+                                        "color": "primary",
+                                        "style": {
+                                            "textTransform": "none"
+                                        }
+                                    },
+                                    "readOnly$": "!(mem.inn || mem.pinfl || mem.nibbd)",
+                                    "action": [
+                                        {
+                                            "js": "if (!(params.borrower?.isJur || params.borrower?.isIE) && context.myIdVisible && params.enableIdentifyJur) return backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'identifyClient', params:{inn: mem.inn, pinfl: mem.pinfl, nibbd: mem.nibbd, forceJur: true}}).then((r)=>{context.client=r;}); return backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'identifyClient', params:{inn: mem.inn, pinfl: mem.pinfl, nibbd: mem.nibbd}}).then((r)=>{context.client=r;})"
+                                        },
+                                        {
+                                            "name": "setClient",
+                                            "params": {
+                                                "client$": "context.client",
+                                                "myId": null
+                                            }
+                                        }
+                                    ]
+                                },
+                                "btnMyId": {
+                                    "label": "MyId",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "variant": "text",
+                                        "color": "primary",
+                                        "style": {
+                                            "textTransform": "none"
+                                        }
+                                    },
+                                    "action": {
+                                        "js": "frontend.dialog({object: 'loanapp', form: 'lookupMyIdDialog', mem: {}, params: {enableLoadImage: user.superuser}});"
+                                    },
+                                    "readOnly$": "false",
+                                    "visible$": "!(params.borrower?.isJur || params.borrower?.isIE) && !!context.myIdVisible",
+                                    "actions": {
+                                        "onSelectClient": [
+                                            {
+                                                "xjs": "console.log('onSelectClient myID', arguments['0'])"
+                                            },
+                                            {
+                                                "name": "setClient"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "@client": {
+                            "$": {
+                                "client": {
+                                    "className": "vertical",
+                                    "$": {
+                                        ".category": {
+                                            "control": "Text",
+                                            "getter": "mem.categoryName"
+                                        },
+                                        ".name": {
+                                            "control": "Text",
+                                            "getter": "mem.name"
+                                        }
+                                    }
+                                }
+                            },
+                            "visible$": "!!mem.client?.code"
+                        },
+                        "@noIdent": {
+                            "$": {
+                                ".noIdent": {
+                                    "control": "Text",
+                                    "getter": "`Клиент не идентифицирован`"
+                                }
+                            },
+                            "visible$": "!mem.client?.code"
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        "cancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "style": {
+                                    "textTransform": "none"
+                                },
+                                "variant": "text",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "apply": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "style": {
+                                    "textTransform": "none"
+                                },
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!mem.client?.code",
+                            "action": [
+                                {
+                                    "name": "onClientIdentified",
+                                    "params": {
+                                        "client$": "mem.client",
+                                        "myId$": "mem.myId"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "setClient": {
+                    "js": "mem.client=params.client; mem.myId=params.myId;"
+                },
+                "onFormCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'settings', method: 'get'}, {useCache: true, silent: true}).then(r=>{context.myIdVisible = r?.loanapp?.identifyMyId; context.identifyPin = r?.loanapp?.identifyPin; forceUpdate();})"
+                }
+            }
+        }
+    },
+    "methods": {},
+    "lists": {},
+    "references": {}
+}

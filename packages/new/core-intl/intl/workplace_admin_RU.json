@@ -1,0 +1,112 @@
+[
+    {
+        "msgid": "Admin",
+        "msgstr": "Администрование",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Users",
+        "msgstr": "Пользователи",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Workplaces",
+        "msgstr": "Рабочие места",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Task profiles",
+        "msgstr": "Профили задач",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Objects",
+        "msgstr": "Объекты",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Modified objects",
+        "msgstr": "Измененные объекты",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Configs",
+        "msgstr": "Конфигурация объектов",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Packages",
+        "msgstr": "Пакеты",
+        "msgctxt": null
+    },
+    {
+        "msgid": "File storage",
+        "msgstr": null,
+        "msgctxt": null
+    },
+    {
+        "msgid": "Processes",
+        "msgstr": "Процессы",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Process manage",
+        "msgstr": "Управление процессами",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Timers manage",
+        "msgstr": "Управление таймерами",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Tasks execution time",
+        "msgstr": "Выремя выполнения задач",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Active timers",
+        "msgstr": "Активные таймеры",
+        "msgctxt": null
+    },
+    {
+        "msgid": "System",
+        "msgstr": "Система",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Logs",
+        "msgstr": "Журналы",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Rules",
+        "msgstr": "Правила",
+        "msgctxt": null
+    },
+    {
+        "msgid": "uwsgi",
+        "msgstr": "UWSGI",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Settings",
+        "msgstr": "Настройки",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Update",
+        "msgstr": "Обновление",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Scheduler",
+        "msgstr": "Фоновые задания",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Reset cache",
+        "msgstr": "Сброс кэша",
+        "msgctxt": null
+    }
+]

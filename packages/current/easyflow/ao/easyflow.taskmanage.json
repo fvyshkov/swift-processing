@@ -1,0 +1,1393 @@
+{
+    "forms": {
+        "managerListTask": {
+            "title": "Ведение профилей управления процессами"
+        },
+        "editProfileTask": {
+            "title": "Редактирование профиля управления задачами",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Сохранить",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveProfile"
+                                        },
+                                        "disabled$": "!context.modified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "auto"
+                    },
+                    "form": "editProfileForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "task.params.profileId && backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'get', params: {id: task.params.profileId}}).then((r)=>{mem.id=r.id; mem.profile=r.profile; forceUpdate()})"
+                },
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "saveProfile": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'save', params: {id: mem.id, profile: mem.profile}}).then(()=>{context.modified = false; forceUpdate();})"
+                }
+            }
+        },
+        "editProfileForm": {
+            "title": "Форма редактирования профиля",
+            "className": "vertical",
+            "$": {
+                "profile": {
+                    "className": "vertical",
+                    "$": {
+                        "code": {
+                            "label": "Код",
+                            "style": {
+                                "width": "200px"
+                            },
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "name": {
+                            "label": "Наименование профиля",
+                            "style": {
+                                "width": "450px"
+                            },
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "@workflows": {
+                            "title": "Сценарии",
+                            "className": "vertical",
+                            "$": {
+                                "allWorkflows": {
+                                    "label": "Все сценарии",
+                                    "control": "Checkbox",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "updateWorkflows"
+                                        }
+                                    }
+                                },
+                                "@list": {
+                                    "className": "vertical",
+                                    "$": {
+                                        ".ap": {
+                                            "control": "ActionPanel",
+                                            "controlOpts": {
+                                                "actions": [
+                                                    {
+                                                        "title": "Добавить",
+                                                        "icon": "add",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "js": "context.selectedWorkflow = null; frontend.dialog({object: 'easyflow.taskmanage', form: 'selectWorkflowDialog', mem: {}, params: {}})"
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Удалить",
+                                                        "icon": "delete",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "name": "deleteWorkflow",
+                                                            "confirm": {
+                                                                "title": "Удалить сценарий",
+                                                                "message$": "`Удалить сценарий ${context.selectedWorkflow.name}`",
+                                                                "yes": "Да",
+                                                                "no": "Нет"
+                                                            }
+                                                        },
+                                                        "disabled$": "!context.selectedWorkflow"
+                                                    }
+                                                ]
+                                            },
+                                            "actions": {
+                                                "onWorkflowSelected": {
+                                                    "name": "addWorkflow"
+                                                }
+                                            }
+                                        },
+                                        "|workflows": {
+                                            "control": "ListTable",
+                                            "controlOpts": {
+                                                "columns!": {
+                                                    "code": {
+                                                        "label": "Код",
+                                                        "width": 300
+                                                    },
+                                                    "name": {
+                                                        "label": "Наименование",
+                                                        "flex": 1
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "visible$": "!mem.allWorkflows",
+                                    "actions": {
+                                        "addWorkflow": {
+                                            "js": "mem.workflows.splice(0, 0, {code: params.workflow.code, name: params.workflow.name}); context.selectedWorkflow = null;"
+                                        },
+                                        "deleteWorkflow": {
+                                            "js": "mem.workflows.splice(mem.workflows.indexOf(context.selectedWorkflow), 1); context.selectedWorkflow=null"
+                                        },
+                                        "onSelectionChanged": {
+                                            "js": "context.selectedWorkflow = selectedRow;"
+                                        }
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "updateWorkflows": [
+                                    {
+                                        "js": "if(mem.allWorkflows){mem.workflows=[];}"
+                                    },
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        },
+                        "@users": {
+                            "title": "Пользователи",
+                            "className": "vertical",
+                            "$": {
+                                "allUsers": {
+                                    "label": "Все пользователи",
+                                    "control": "Checkbox",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "updateUsers"
+                                        }
+                                    }
+                                },
+                                "@list": {
+                                    "className": "vertical",
+                                    "$": {
+                                        ".ap": {
+                                            "control": "ActionPanel",
+                                            "controlOpts": {
+                                                "actions": [
+                                                    {
+                                                        "title": "Добавить",
+                                                        "icon": "add",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "js": "context.selectedUser = null; frontend.dialog({object: 'cbs.user', form: 'selectUserDialog', mem: {}, params: {}})"
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Удалить",
+                                                        "icon": "delete",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "name": "deleteUser",
+                                                            "confirm": {
+                                                                "title": "Удалить пользователя",
+                                                                "message$": "`Удалить пользователя ${context.selectedUser.name}`",
+                                                                "yes": "Да",
+                                                                "no": "Нет"
+                                                            }
+                                                        },
+                                                        "disabled$": "!context.selectedUser"
+                                                    }
+                                                ]
+                                            },
+                                            "actions": {
+                                                "onUserSelected": {
+                                                    "name": "addUser"
+                                                }
+                                            }
+                                        },
+                                        "|users": {
+                                            "control": "ListTable",
+                                            "controlOpts": {
+                                                "columns!": {
+                                                    "code": {
+                                                        "label": "Код",
+                                                        "width": 300
+                                                    },
+                                                    "type": {
+                                                        "label": "тип",
+                                                        "width": 150,
+                                                        "decode": {
+                                                            "user": {
+                                                                "value": "Пользователь"
+                                                            },
+                                                            "group": {
+                                                                "value": "Группа"
+                                                            }
+                                                        }
+                                                    },
+                                                    "name": {
+                                                        "label": "Наименование",
+                                                        "flex": 1
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "visible$": "!mem.allUsers",
+                                    "actions": {
+                                        "addUser": {
+                                            "js": "mem.users.splice(0, 0, {code: params.user.code, name: params.user.name, type: params.user.type||'user'}); mem.users = [...mem.users]; context.selectedUser = null;"
+                                        },
+                                        "deleteUser": {
+                                            "js": "mem.users.splice(mem.users.indexOf(context.selectedUser), 1); mem.users = [...mem.users]; context.selectedUser=null"
+                                        },
+                                        "onSelectionChanged": {
+                                            "js": "context.selectedUser = selectedRow;"
+                                        }
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "updateUsers": [
+                                    {
+                                        "js": "if (mem.allUsers){mem.users=[];}"
+                                    },
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "selectWorkflowDialog": {
+            "title": "Выбор сценария",
+            "className": "vertical",
+            "style": {
+                "overflowY": "hidden",
+                "width": "800px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "overflowY": "auto",
+                        "flex": 1
+                    },
+                    "$": {
+                        "|workflows": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "code": {
+                                        "label": "Код",
+                                        "fastFilter": true,
+                                        "width": 300
+                                    },
+                                    "name": {
+                                        "label": "Наименование",
+                                        "fastFilter": true,
+                                        "flex": 1
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "context.selectedWorkflow = selectedRow;"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnSelect": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!context.selectedWorkflow",
+                            "action": [
+                                {
+                                    "name": "onWorkflowSelected",
+                                    "params": {
+                                        "workflow$": "context.selectedWorkflow"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onFormCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow', method: 'getList'}).then((r)=>{mem.workflows=r; forceUpdate()})"
+                },
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "selectProfileDialog": {
+            "title": "Выбор профиля",
+            "className": "vertical",
+            "style": {
+                "overflowY": "hidden",
+                "width": "800px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "overflowY": "auto",
+                        "flex": 1
+                    },
+                    "$": {
+                        "|profiles": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "code": {
+                                        "label": "Код",
+                                        "fastFilter": true,
+                                        "width": 300
+                                    },
+                                    "name": {
+                                        "label": "Наименование",
+                                        "fastFilter": true,
+                                        "flex": 1
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "context.selectedProfile = selectedRow;"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnSelect": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!context.selectedProfile",
+                            "action": [
+                                {
+                                    "name": "onProfileSelected",
+                                    "params": {
+                                        "profile$": "context.selectedProfile"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onFormCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'getList'}).then((r)=>{mem.profiles=r; forceUpdate()})"
+                },
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "tasksByProfileTask": {
+            "title": "Задачи по профилю",
+            "className": "vertical task task-panel",
+            "$": {
+                "@form": {
+                    "style": {
+                        "height": "100%",
+                        "overflow": "hidden"
+                    },
+                    "className": "vertical",
+                    "$": {
+                        "@buttons": {
+                            "comment": "Кнопки",
+                            "className": "horizontal",
+                            "style": {
+                                "padding": "4px 4px 0px 0px"
+                            },
+                            "$": {
+                                ".ap": {
+                                    "control": "ActionPanel",
+                                    "controlOpts": {
+                                        "actions": [
+                                            {
+                                                "title": "Обновить",
+                                                "icon": "refresh",
+                                                "mini": true,
+                                                "action": {
+                                                    "js": "task.events.fireEvent('onRefreshTasks');"
+                                                }
+                                            },
+                                            {
+                                                "title$": "context?.selectedProfile?.name || 'Профиль не определен'",
+                                                "split": true,
+                                                "actions$": "mem.taskProfiles?.map((p)=>({title: p.name, command:()=>{context.selectedProfile=p; forceUpdate(); task.events.fireEvent('onRefreshTasks');}}))"
+                                            },
+                                            {
+                                                "title": "Исполнитель",
+                                                "actions": [
+                                                    {
+                                                        "title": "Назначить",
+                                                        "action": {
+                                                            "js": "frontend.dialog({object: 'easyflow.taskmanage', form: 'selectPerformerDialog', params: {task: context.selectedTask}})"
+                                                        },
+                                                        "disabled$": "!context.selectedTask"
+                                                    },
+                                                    {
+                                                        "title": "Освободить",
+                                                        "disabled$": "!context.selectedTask || !context.selectedTask.performer",
+                                                        "action": {
+                                                            "name": "setTaskPerformer",
+                                                            "params": {
+                                                                "performer": {
+                                                                    "code": null
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Изменить кандидатов",
+                                                        "disabled$": "!context.selectedTask",
+                                                        "action": {
+                                                            "js": "frontend.dialog({object: 'easyflow.taskmanage', form: 'taskCandidatesDialog', params: {task: context.selectedTask}})"
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "title": "Журнал",
+                                                "action": {
+                                                    "js": "tm.newTask({path: '/easyflow/state-task', title: 'Журнал процесса', params: {objectKey: context.selectedTask.objectKey}});",
+                                                    "disableUpdate": true
+                                                },
+                                                "disabled$": "!context.selectedTask?.objectKey"
+                                            }
+                                        ]
+                                    },
+                                    "actions": {
+                                        "onCandidateSelected": [
+                                            {
+                                                "name": "setTaskPerformer"
+                                            }
+                                        ],
+                                        "onApplyCandidates": [
+                                            {
+                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'setTaskCandidates', params: {tokenId: context.selectedTask.id, candidates: params.candidates}})"
+                                            },
+                                            {
+                                                "js": "task.events.fireEvent('onRefreshTasks', {mode: 'row', tokenId: context.selectedTask.id});"
+                                            }
+                                        ]
+                                    }
+                                },
+                                ".spacer": {
+                                    "style": {
+                                        "flexGrow": 1
+                                    }
+                                },
+                                ".btnFilter": {
+                                    "label": "Фильтр",
+                                    "control": "Button",
+                                    "controlOpts": {
+                                        "startIcon": "tune",
+                                        "badge": {
+                                            "content$": "Object.keys(mem.filter||{}).length"
+                                        }
+                                    },
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": [
+                                        {
+                                            "js": "context.filterVisible =  !context.filterVisible;"
+                                        },
+                                        {
+                                            "name": "refresh"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "@list": {
+                            "style": {
+                                "overflow": "hidden",
+                                "flex": 1,
+                                "display": "flex",
+                                "flexDirection": "column"
+                            },
+                            "$": {
+                                "@filterPortal": {
+                                    "style": {
+                                        "position": "relative"
+                                    },
+                                    "visible$": "context.filterVisible || false",
+                                    "$": {
+                                        "@filterForm": {
+                                            "style": {
+                                                "position": "absolute",
+                                                "minHeight": "100px",
+                                                "width": "320px",
+                                                "top": 0,
+                                                "right": 0,
+                                                "zIndex": 1,
+                                                "backgroundColor": "rgb(255, 255, 255)",
+                                                "borderRadius": "4px",
+                                                "boxShadow": "rgba(0, 0, 0, 0.32) 0px 3px 6px 0px",
+                                                "padding": "4px"
+                                            },
+                                            "form": "tasksByProfileFilterForm"
+                                        }
+                                    }
+                                },
+                                ".list": {
+                                    "style": {
+                                        "overflow": "hidden",
+                                        "flex": 1
+                                    },
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "rowModelType": "infinite",
+                                        "refreshEvent": "onRefreshTasks",
+                                        "id": "id",
+                                        "columns!": {
+                                            "taskName": {
+                                                "label": "Задача",
+                                                "flex": 1,
+                                                "cellStyle": {
+                                                    "whiteSpace": "normal !important",
+                                                    "lineHeight": 1.2,
+                                                    "display": "flex",
+                                                    "alignItems": "center"
+                                                }
+                                            },
+                                            "created": {
+                                                "label": "Создана",
+                                                "format": "datetime",
+                                                "width": 160
+                                            },
+                                            "performer": {
+                                                "label": "Исполнитель"
+                                            },
+                                            "candidates": {
+                                                "label": "Кандидаты"
+                                            }
+                                        }
+                                    },
+                                    "controlProps": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "gridOptions": {
+                                            "domLayout": "normal"
+                                        }
+                                    },
+                                    "actions": {
+                                        "onGetRows": [
+                                            {
+                                                "js": "if (!context.selectedProfile) throw 'Abort';",
+                                                "disableUpdate": true
+                                            },
+                                            {
+                                                "js": "context.taskRequest = {...params.request, filterModel2: mem.filter};"
+                                            },
+                                            {
+                                                "js": ";"
+                                            },
+                                            {
+                                                "js": "console.log('onGetRows', mem, params);"
+                                            },
+                                            {
+                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'getProfileTasks', params: {tokenId: params.tokenId, profile: context.selectedProfile.profile, request: context.taskRequest}}).then((r)=>{onSuccess(r); if (context.selectedTask?.id==params.tokenId){context.selectedTask=r[0];}})",
+                                                "disableUpdate": true
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ],
+                                        "onSelectionChanged": [
+                                            {
+                                                "js": "context.selectedTask=selectedRow;"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onApplyFilter": [
+                                    {
+                                        "js": "context.filterVisible = !context.filterVisible;"
+                                    },
+                                    {
+                                        "js": "task.events.fireEvent('onRefreshTasks');"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'getUserTaskProfiles', params: {user: user.code}}).then((r)=>{mem.taskProfiles=r; forceUpdate();})"
+                    }
+                ],
+                "setTaskPerformer": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'setTaskPerformer', params: {tokenId: context.selectedTask.id, code: params.performer.code}})"
+                    },
+                    {
+                        "js": "task.events.fireEvent('onRefreshTasks', {mode: 'row', tokenId: context.selectedTask.id});"
+                    }
+                ]
+            }
+        },
+        "selectPerformerDialog": {
+            "title": "Выбор исполнителя задачи",
+            "className": "vertical",
+            "style": {
+                "overflowY": "hidden",
+                "width": "800px",
+                "height": "600px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "overflowY": "hidden",
+                        "flexGrow": 1
+                    },
+                    "$": {
+                        "@mode": {
+                            "className": "horizontal",
+                            "$": {
+                                "viewMode": {
+                                    "label": "",
+                                    "control": "RadioGroup",
+                                    "controlProps": {
+                                        "row": true,
+                                        "list": [
+                                            {
+                                                "value": "candidates",
+                                                "name": "Кандидаты"
+                                            },
+                                            {
+                                                "value": "users",
+                                                "name": "Все пользователи"
+                                            }
+                                        ]
+                                    },
+                                    "actions": {
+                                        "onChange": [
+                                            {
+                                                "js": "context.selectedCandidate=null"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "@candidates": {
+                            "style": {
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "|candidates": {
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "columns!": {
+                                            "code": {
+                                                "label": "Код",
+                                                "fastFilter": true,
+                                                "width": 300
+                                            },
+                                            "name": {
+                                                "label": "Наименование",
+                                                "fastFilter": true,
+                                                "flex": 1
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "onSelectionChanged": [
+                                            {
+                                                "js": "context.selectedCandidate = selectedRow;"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "visible$": "mem.viewMode=='candidates'"
+                        },
+                        "@users": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "$": {
+                                "|users": {
+                                    "style": {
+                                        "height": "100%"
+                                    },
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "rowModelType": "infinite",
+                                        "columns!": {
+                                            "code": {
+                                                "label": "Код",
+                                                "fastFilter": true,
+                                                "width": 300
+                                            },
+                                            "name": {
+                                                "label": "Наименование",
+                                                "fastFilter": true,
+                                                "flex": 1
+                                            }
+                                        }
+                                    },
+                                    "controlProps": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "gridOptions": {
+                                            "domLayout": "normal"
+                                        }
+                                    },
+                                    "actions": {
+                                        "onSelectionChanged": [
+                                            {
+                                                "js": "context.selectedCandidate = selectedRow;"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ],
+                                        "onGetRows": {
+                                            "js": "return backend.post('/aoa/execObjectMethod', {object: 'user', method: 'getList', params: params}).then((r)=>{onSuccess(r);})"
+                                        }
+                                    }
+                                }
+                            },
+                            "visible$": "mem.viewMode=='users'"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnSelect": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!context.selectedCandidate",
+                            "action": [
+                                {
+                                    "name": "onCandidateSelected",
+                                    "params": {
+                                        "performer$": "context.selectedCandidate"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onFormCreated": [
+                    {
+                        "js": "mem.viewMode='candidates';"
+                    },
+                    {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'getTaskCandidates', params: {tokenId: params.task.id}}).then((r)=>{mem.candidates=r.filter((c)=>!!c.username).map((c)=>({code: c.username})); forceUpdate();});"
+                    }
+                ],
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "tasksByProfileFilterForm": {
+            "title": "Фильтр задач",
+            "className": "vertical",
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "$": {
+                        "filter": {
+                            "className": "vertical",
+                            "$": {
+                                "description": {
+                                    "label": "Описание",
+                                    "control": "TextEdit"
+                                },
+                                "performer": {
+                                    "label": "Исполнитель",
+                                    "control": "TextEdit"
+                                },
+                                "@created": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "created__date__gte": {
+                                            "label": "Создана с",
+                                            "style": {
+                                                "flexGrow": 1
+                                            },
+                                            "control": "DateEdit"
+                                        },
+                                        "created__date__lte": {
+                                            "label": "По",
+                                            "style": {
+                                                "flexGrow": 1
+                                            },
+                                            "control": "DateEdit"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "start"
+                    },
+                    "$": {
+                        "btnClean": {
+                            "label": "Очистить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "mem.filter = {}"
+                                },
+                                {
+                                    "name": "refresh"
+                                }
+                            ]
+                        },
+                        "btnApply": {
+                            "label": "Применить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "onApplyFilter"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "taskCandidatesDialog": {
+            "title": "Редкатирование кандидатов",
+            "className": "vertical",
+            "style": {
+                "overflowY": "hidden",
+                "width": "600px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "overflowY": "hidden",
+                        "flexGrow": 1
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Добавить",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "xjs": "context.selectedCandidate = null; frontend.dialog({object: 'easyflow.taskmanage', form: 'selectPerformerDialog', mem: {}, params: {}})"
+                                            },
+                                            {
+                                                "js": "mem.candidates.splice(0,0, {})"
+                                            },
+                                            {
+                                                "name": "refresh"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "Удалить",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "deleteCandidate",
+                                            "confirm": {
+                                                "title": "Удалить кандидата",
+                                                "message$": "`Удалить кандидата ${context.selectedCandidate.username||context.selectedCandidate.groupname}`",
+                                                "yes": "Да",
+                                                "no": "Нет"
+                                            }
+                                        },
+                                        "disabled$": "!context.selectedCandidate"
+                                    }
+                                ]
+                            },
+                            "actions": {
+                                "deleteCandidate": [
+                                    {
+                                        "js": "mem.candidates.splice(mem.candidates.indexOf(context.selectedCandidate), 1);"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        },
+                        "|candidates": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "username": {
+                                        "label": "Пользователь",
+                                        "fastFilter": true,
+                                        "editable": true,
+                                        "width": 300
+                                    },
+                                    "groupname": {
+                                        "label": "Группа",
+                                        "fastFilter": true,
+                                        "editable": true,
+                                        "flex": 1
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "context.selectedCandidate = selectedRow;"
+                                    },
+                                    {
+                                        "name": "refresh"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "onApplyCandidates",
+                                    "params": {
+                                        "candidates$": "mem.candidates"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onFormCreated": [
+                    {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'easyflow.taskmanage', method: 'getTaskCandidates', params: {tokenId: params.task.id}}).then((r)=>{mem.candidates=r; forceUpdate();})"
+                    }
+                ]
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\nfrom apng_core.aoa.services import applyFilterModel2\n\nquery = DataObject.objects\n\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    query = query.filter(type='easyflow_taskmanage')\n    \n    request = parameters.get('request', {})\n    filterModel2 = request.get('filterModel2') \n        \n    if filterModel2:\n        query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    query = query.order_by('code')\n    \n    if request.get('startRow') is not None:\n        query = query[parameters['request']['startRow']:parameters['request']['endRow']]\n        \ndata = []\nfor u in query:\n    d = {\n        'id': u.id.__str__(),\n        'code': u.code,\n        'name': u.name,\n    }\n    \n    data.append(d)\n\n\n"
+            }
+        },
+        "save": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\n\nif parameters.get('id'):\n    obj = DataObject.objects.get(id=parameters['id'])\nelse:\n    obj = DataObject()\n    obj.type = 'easyflow_taskmanage'\n\nobj.code = parameters['profile']['code']\nobj.name = parameters['profile']['name']\nobj.data = parameters['profile']\nobj.save()\n    \n\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\n\nif parameters.get('id'):\n    obj = DataObject.objects.get(id=parameters['id'])\nelif parameters.get('code'):\n    obj = DataObject.objects.get(code=parameters['code'])\n\ndata = {\n    'id': obj.id.__str__(),\n    'profile': obj.data,\n}"
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\n\nobj = DataObject.objects.get(id=parameters['id'])\nobj.delete()"
+            }
+        },
+        "getUserTaskProfiles": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.workplace.models import User\nfrom apng_core.aoa.services import execObjectMethod\n\nu = User.objects.get(code=parameters.get('user'))\n\ndata = u.data.get('taskProfiles')\n\nfor p in data:\n    p['profile'] = execObjectMethod({'object': 'easyflow.taskmanage', 'method': 'get', 'params': {'code': p['code']}})['profile']\n\n#raise UserException(json.dumps(data, indent=4, ensure_ascii=False))"
+            }
+        },
+        "getProfileTasks": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import Token\nfrom django.db.models.expressions import RawSQL, Case, When, F, Value\nfrom apng_core.aoa.services import applyFilterModel2\n\nq = Token.objects\n\nif parameters.get('tokenId'):\n    q = q.filter(id=parameters['tokenId'])\nelse:\n    if parameters['profile'].get('allUsers', False) == True and parameters['profile'].get('allWorkflows', False) == True:\n        q = q.filter(state='active', type='task')\n    else:\n        \n        q = q.filter(type='task').exclude(state='finished')\n        \n        if len(parameters['profile'].get('workflows', []))>0:\n            workflows = [x['code'] for x in parameters['profile']['workflows']]\n            #q = q.filter(deployment__code__in=workflows).exclude(state='finished')\n            \n            recursiveSql = \"\"\"\n                with recursive tp as (\n                \tselect \n                \t\tt.id,\n                \t\td.code workflow\n                \tfrom easyflow_token t, easyflow_deployment d \n                \twhere t.parent_id is null and t.deployment_id=d.id and d.code=any(%s) and t.state != 'finished'\n                \tunion all\n                \tselect\n                \t\tt.id,\n                \t\ttp.workflow\n                \tfrom easyflow_token t, tp\n                \twhere t.parent_id=tp.id and t.state != 'finished'\n                )\n                select \n                \tt.id\n                from easyflow_token t, tp\n                where t.type = 'task' and t.state != 'finished'\n                \tand t.id = tp.id\n\n            \"\"\"\n            \n            q = q.filter(id__in = RawSQL(recursiveSql, [workflows]))\n            \n        if len(parameters['profile'].get('users', []))>0:\n            \n            users = [x['code'] for x in parameters['profile']['users']]\n            \n            #\n            # Вообще этот вариант генерить left outer join для tokenaut\n            # что может привести к дублированию записей\n            # Надо попробовать перевести на подзапросы или как-то еще исключить дублирование\n            #\n            case = Case(\n                    When(candidates__username__isnull=False, then=F('candidates__username')),\n                    When(candidates__groupname__isnull=False, then=F('candidates__groupname'))\n                )\n            \n            q = q.annotate(user_or_group=case).filter(user_or_group__in=users)\n\n    \n    if parameters.get('request'):\n        \n        if parameters['request'].get('filterModel2'):\n            q = applyFilterModel2(q, parameters['request']['filterModel2'])\n        \n        q = q[parameters['request']['startRow']:parameters['request']['endRow']]\n\n        \n#raise UserException(q.query)\n\nfrom django.db.models import prefetch_related_objects\nprefetch_related_objects(q, 'candidates')\n\ndata = [\n    {\n        'id': x.id.__str__(),\n        'taskName': x.description or x.flow.name if x.flow else x.flow_id,\n        'created': x.created,\n        'performer': x.performer,\n        'candidates': ','.join([p.username or p.groupname for p in x.candidates.all()]),\n        'objectKey': x.processToken.objectKey,\n    }\n    for x in q\n]\n"
+            }
+        },
+        "getTaskCandidates": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import TokenAut\n\ncandidates = TokenAut.objects.filter(token_id=parameters.get('tokenId'))\n\n\"\"\"\n# Нужно подтянуть наименование пользователя, но тут надо исклюить группы, хотя в списке наверное их\n# придётся оставить. Пока не понятно что потребуется\nq = q.extra(\n    tables=['workplace_user'],\n    where=['easyflow_tokenaut.username=workplace_user.code'],\n    select={'name': 'workplace_user.name'}\n)\n\"\"\"\n\ndata = [\n    {\n        #'code': x.username or x.groupname,\n        'username': x.username,\n        'groupname': x.groupname,\n    }\n    for x in candidates\n]\n"
+            }
+        },
+        "setTaskPerformer": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.services import RuntimeService as rs\n\nrs.assignTaskById(parameters.get('tokenId'), parameters.get('code'))\n\n#raise UserException(json.dumps(parameters, indent=4, ensure_ascii=False))\n\n"
+            }
+        },
+        "setTaskCandidates": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from apng_core.easyflow.models import TokenAut\nfrom django.db import transaction\nfrom django.conf import settings\n\nwith transaction.atomic(using=settings.APPS_DB['easyflow']):\n    candidates = TokenAut.objects.filter(token_id=parameters['tokenId'])\n    candidates.delete()\n    \n    for candidate in parameters['candidates']:\n        c = TokenAut()\n        c.token_id = parameters['tokenId']\n        c.username = candidate.get('username')\n        c.groupname = candidate.get('groupname')\n        c.save()\n        "
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "code": {
+                    "title": "Код",
+                    "width": 120
+                },
+                "name": {
+                    "title": "Наименование",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Создать",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "Новый профиль",
+                        "params": {
+                            "object": "easyflow.taskmanage",
+                            "form": "editProfileTask"
+                        }
+                    }
+                },
+                {
+                    "title": "Открыть",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Профиль ${$listRow.code}`",
+                        "params": {
+                            "object": "easyflow.taskmanage",
+                            "form": "editProfileTask",
+                            "profileId$": "$listRow.id"
+                        }
+                    },
+                    "disabled": "!$listRow"
+                },
+                {
+                    "title": "Удалить",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Удалить пользователя ${$listRow.code}, ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled": "!$listRow"
+                },
+                {
+                    "title": "Пакеты",
+                    "command": {
+                        "type": "js",
+                        "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.id, model: 'aoa.DataObject'}, context: {}})"
+                    },
+                    "disabled": "!$listRow"
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Фильтр",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Код",
+                                    "control": "TextEdit"
+                                },
+                                "name": {
+                                    "label": "Нименование",
+                                    "control": "TextEdit"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Очистить",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Применить",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "references": {},
+    "js": {}
+}

@@ -1,0 +1,481 @@
+<workflow id="APP_REVIEW_JUR" name="Кредитная заявка юридических лиц">
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <event name="onGetProcessObject">
+        <![CDATA[ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+token._po = execObjectMethod({
+    'object': 'app', 'method': 'getApplication',
+    'params': {
+        'dep_id': int(pk[0]),
+        'id'    : int(pk[1]),
+    }
+})
+]]>
+    </event>
+    <context>
+        <![CDATA[{}]]>
+    </context>
+    <script id="init" name="Инициализация">
+        <journal time="leave">
+            <![CDATA[Начало обработки заявки {{po.app.code}}, {{po.client.name}}]]>
+        </journal>
+        <![CDATA[
+
+ok = process_vars.get('objectKey')
+if not ok:
+    # Если запустили без параметров, то обрабатываем тестовую заявку
+    ok = 'loanapp:1855,4971056'
+    process_vars['objectKey'] = ok
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+    
+        
+#
+# Формируем ключ объекта для обращения к аналитической платформе
+#
+pv['MIS_OBJ'] = 'Заявка №{};{}'.format(pv['dep_id'], pv['id'])
+pv['MIS_OBJ_URI'] = 'Заявка №{}%3B{}'.format(pv['dep_id'], pv['id'])
+
+
+pv['needReload'] = False
+
+#
+# Проверяем и устанавливаем инициатора заявки
+#
+if token.process.initiator != po['user']['code']:
+    #
+    # Процесс запустил не пользователь, который создал заявку, поменяем
+    #
+    user = po['user']['code']
+    token.process.initiator = user
+    token.process.save()
+
+    from apng_core.easyflow.auth import Authentication
+    from apng_core.auth import ColvirUser
+    Authentication.setAuthenticatedUser(ColvirUser(username=user))
+        
+# Зачитываание настроек
+from apng_core.aoa.services import execObjectMethod
+settings = execObjectMethod({'object': 'settings', 'method': 'get'})['loanapp']
+pv['decisionWorkflow'] = settings['workflow']['decision'] if settings.get('workflow') and settings['workflow'].get('decision') else None
+
+
+pv['skip_stop_factors'] = False
+pv['skip_rating'] = False
+
+pv['asoki_requests'] = []
+]]>
+    </script>
+    <script id="1bf0e7e2-ba43-4a9e-b260-d9ef5fd17884" name="Проверка возможности запуска">
+        <![CDATA[#
+# Наличие запущенных процессов
+#
+from apng_core.easyflow.models import Token
+
+filter = {
+    'objectKey': pv['objectKey'],
+    'parent': None,
+    'flow_id': po['app']['reviewWorkflow'],
+    'state__in': ['active', 'suspended']
+}
+
+processes = Token.objects.filter(**filter).exclude(id=token.process.id)
+if len(processes) > 0:
+    raise UserException({
+        'message': 'Заявка {appNo} уже отправлена на рассмотрении'.format(
+            appNo = po['app']['code']
+        )
+    }) from None
+
+class InvalidTmpTestException(Exception):
+    "Raised test Exception"
+    pass
+
+try:
+    if '0000000338' == po['app']['code']:
+        raise Exception('Test exception form!');
+
+except InvalidTmpTestException:
+    print("Exception occurred: Test error exception")]]>
+    </script>
+    <script id="da6a6f6e-96ce-4aa3-a271-b3e4f1c60e16" name="Состояние заявки: на рассмотрении">
+        <![CDATA[execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'state': 'ON_REVIEW',
+        'stage': 'START',
+    }
+})
+]]>
+    </script>
+    <timer id="d68d934a-73ee-4e02-9931-0a8a34a78709" name="Начало обработки заявки" description="Обработка заявки {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue">
+        <scriptBefore>
+            <![CDATA[import sys
+sys.setrecursionlimit(4000)]]>
+        </scriptBefore>
+    </timer>
+    <script id="client_email_REVIEW_BEGIN" name="Информирование клиента о начале рассмотрения заявки">
+        <journal time="leave">
+            <![CDATA[Информирование клиента, SMS: {{po.client.phone}}]]>
+        </journal>
+    </script>
+    <timer id="7265d30a-7d02-4193-9f8b-f14d65719ee5" name="Обработка заявки" description="Обработка заявки {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue">
+        <scriptBefore>
+            <![CDATA[import sys
+sys.setrecursionlimit(4000)]]>
+        </scriptBefore>
+    </timer>
+    <script id="979ac53d-12f9-4f2a-a710-26ae6c0e4fbf" name="Перезачитывание заявки">
+        <![CDATA[#
+# Определение небходимости анализа скоринга и рейтинга
+#
+pv['decisions'] = {}
+
+pv['decisions']['scoring'] = execObjectMethod({
+    'object': 'cbs.dectbl', 'method': 'evalByOrd',
+    'params': {
+        'idDep': pv['dep_id'],
+        'idOrd': pv['id'],
+        'tblName': 'L_LIM_SCORING',
+        'required': False,
+    }
+}) == '1'
+
+pv['decisions']['rating'] = execObjectMethod({
+    'object': 'cbs.dectbl', 'method': 'evalByOrd',
+    'params': {
+        'idDep': pv['dep_id'],
+        'idOrd': pv['id'],
+        'tblName': 'L_LIM_RATING',
+        'required': False,
+    }
+}) == '1'
+]]>
+    </script>
+    <call id="e43312c4-6091-4a88-aa69-1eef2d3899e7" name="Контроль ввода заявки" call="&apos;APP_CHECK_INPUT&apos;" result_from="result" result_to="app_check_result"/>
+    <split id="775b210a-d38b-4957-a2c4-5bb90c13420a" name="Результат контроля ввода заявки">
+        <condition id="8d9f3dd9-627d-490b-8625-15da1f01f662" name="В доработку" expression="pv[&apos;app_check_result&apos;][&apos;status&apos;] == &apos;review&apos;">
+            <task id="c6f77f30-7d12-49d7-8d0b-350c7c86e1db" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[{{task.description}}]]>
+                </journal>
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{  &apos;dep_id&apos;: process_vars[&apos;dep_id&apos;],   &apos;id&apos;: process_vars[&apos;id&apos;] }"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+            <jump id="b51a54c1-2dd0-4f08-a1ba-c4a260768cae" name="Переход к Таймер, 0 сек" target_id="7265d30a-7d02-4193-9f8b-f14d65719ee5"/>
+        </condition>
+        <condition id="10f5f389-8153-4c77-929f-ebaae358945d" name="Продолжить" expression="pv[&apos;app_check_result&apos;][&apos;status&apos;] == &apos;accept&apos;"/>
+        <condition id="b7bc4cd4-62d3-46ac-a0be-7d8048cd5db4" name="Отказать" expression="pv[&apos;app_check_result&apos;][&apos;status&apos;] == &apos;decline&apos;">
+            <timer id="af7158ab-a6f7-430c-9898-bb2f4cf5aa13" name="Таймер, регистрация во внешних системах" description="Обработка заявки {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue">
+                <scriptBefore>
+                    <![CDATA[import sys
+sys.setrecursionlimit(4000)]]>
+                </scriptBefore>
+            </timer>
+            <call id="bb358dcf-35cc-4445-a4c7-bdac954dd7ab" name="Регистрация заявки во внешних системах" call="&apos;APP_REGISTER_EXT&apos;" result_from="REGISTER_RESULT" result_to="REGISTER_RESULT"/>
+            <split id="cfefcbed-89b1-4125-be2d-3e10a3e00693" name="Результат регистрации">
+                <condition id="ddb27278-a35c-4346-8a21-86aafb7eade1" name="Успешно"/>
+                <condition id="c1bb4744-656c-4781-879e-6737a95dda13" name="В доработку" expression="pv[&apos;REGISTER_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+                    <task id="cc1b4e6f-29ee-4b6d-8924-49d5cb98b7bc" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{po.app.code}}, {{po.client.name}}">
+                        <journal time="leave">
+                            <![CDATA[{{task.description}}]]>
+                        </journal>
+                        <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                            <p name="objectKey" expression="{  &apos;dep_id&apos;: process_vars[&apos;dep_id&apos;],   &apos;id&apos;: process_vars[&apos;id&apos;] }"/>
+                            <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                            <p name="readOnly" expression="False"/>
+                            <p name="object" expression="&apos;app&apos;"/>
+                            <p name="form" expression="&apos;appEditTask&apos;"/>
+                        </clientTask>
+                        <deadline>
+                            <![CDATA[{}]]>
+                        </deadline>
+                    </task>
+                    <jump id="c428db7a-a4a3-4135-aa20-4b2059578a73" name="Переход к Таймер, регистрация во внешних системах" target_id="af7158ab-a6f7-430c-9898-bb2f4cf5aa13"/>
+                </condition>
+            </split>
+            <script id="ebc00dde-b3c5-4d19-8b7b-f332f4bfee8a" name="Установка отказа по контролю обеспечения">
+                <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+process_vars['decision'] = {
+    'decision': 'decline',
+    'code': '01',
+    'number': '1',
+    'date': decision_date,
+    'text': 'Отказать',
+    'declineReason': '08',
+    'show_dialog': False,
+}
+]]>
+            </script>
+            <jump id="673b21a7-fe20-470d-b19f-831dc0d47b44" name="Переход к Обработка решения по заявке" target_id="8b78cf78-fffb-4245-8d9b-a7f6a0e57323"/>
+        </condition>
+    </split>
+    <call id="c6ab3efc-f32b-4413-a3d4-3438bad5ac87" name="Передача заявки в АФС" call="&apos;APP_TO_AFS&apos;" condition="pv[&apos;decisions&apos;][&apos;scoring&apos;] or pv[&apos;decisions&apos;][&apos;rating&apos;]" result_from="tax_periods" result_to="tax_periods"/>
+    <call id="app_register_ext" name="Регистрация заявки во внешних системах" call="&apos;APP_REGISTER_EXT&apos;" result_from="REGISTER_RESULT" result_to="REGISTER_RESULT"/>
+    <split id="test_register_ext_result" name="Статус регистрации заявки">
+        <condition id="register_ext_review" name="В доработку" expression="pv[&apos;REGISTER_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+            <task id="review_application" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[{{task.description}}]]>
+                </journal>
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{  &apos;dep_id&apos;: process_vars[&apos;dep_id&apos;],   &apos;id&apos;: process_vars[&apos;id&apos;] }"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+            <jump id="jmp_repeat_register" name="Переход к Таймер, 0 сек" target_id="7265d30a-7d02-4193-9f8b-f14d65719ee5"/>
+        </condition>
+        <condition id="test_register_Ext_success" name="Успешно"/>
+    </split>
+    <split id="init_data_cond" name="Ввод исходных данных">
+        <condition id="init_data_cond_yes" name="Вводим исходные данные" expression="po[&apos;afs&apos;].get(&apos;needMonitoring&apos;, True) and (pv[&apos;decisions&apos;][&apos;scoring&apos;] == True or pv[&apos;decisions&apos;][&apos;rating&apos;] == True)">
+            <script id="303fd5bd-7f88-4771-b660-4b6d379dc74c" name="Стадия рассмотрения">
+                <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser() as au:
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'stage': 'PREANALYSE',
+        }
+    })
+
+]]>
+            </script>
+            <timer id="0c2f7dbd-38c4-48f3-affa-277e27427e7e" name="Ввод данных для АФС" description="Ввод данных для АФС" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+            <script id="prepare_oper_init" name="Регистрация ввода исходных данных">
+                <![CDATA[
+from colvir_mis.fsa_views import open_afs_oper_impl
+import logging
+logger = logging.getLogger('csl.mis')
+
+num_of_periods_dict = execObjectMethod({
+    'object': 'afs', 'method': 'get_num_of_periods'
+})
+pv['number_of_periods'] = num_of_periods_dict['num_of_periods']
+pv['number_of_periods_prev'] = num_of_periods_dict['num_of_periods_prev']
+
+p = {
+    'mnt_proc_id': po['afs']['monitoringId'],
+    'wf_label' :'LOAD_DATA',
+    'number_of_periods':  pv['number_of_periods'],
+    'number_of_periods_prev':  pv['number_of_periods_prev'],	
+    'periods': pv['tax_periods']
+}
+
+pv['mnt_proc_id'] = p['mnt_proc_id']
+pv['wf_label'] = p['wf_label']
+pv['tax_flag'] = po['afs'].get('tax_flag',0)
+
+logger.debug('call open_afs_oper_impl: %s', p)
+#logger.debug('process_vars: %s', process_vars)
+
+pv['opr_id'] = open_afs_oper_impl(p)
+
+
+if not pv['tax_periods']:
+    pv['tax_periods']=None
+
+
+logger.debug('opr_id: %s', pv['opr_id'])
+
+
+    ]]>
+            </script>
+            <task id="edit_data_init" name="Ввод исходных данных" autoStart="true" description="Ввод исходных данных, заявка {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/fsa/app" taskName="Ввод исходных данных, заявка {{po.app.code}}, {{po.client.name}}">
+                    <p name="process_vars" expression="{&apos;mnt_proc_id&apos;: pv[&apos;mnt_proc_id&apos;],&apos;number_of_periods&apos;: pv[&apos;number_of_periods&apos;],&apos;number_of_periods_prev&apos;: pv[&apos;number_of_periods_prev&apos;],&apos;wf_label&apos;: pv[&apos;wf_label&apos;], &apos;periods&apos;:pv[&apos;tax_periods&apos;], &apos;tax_flag&apos;:pv.get(&apos;tax_flag&apos;,0)}"/>
+                    <p name="resultVar" expression="&apos;CLIENT_RAING&apos;"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+        </condition>
+        <condition id="init_data_cond_no" name="Исходные данные отсутствуют" expression="po[&apos;afs&apos;].get(&apos;needMonitoring&apos;, True)==False or pv[&apos;decisions&apos;][&apos;scoring&apos;] == False and pv[&apos;decisions&apos;][&apos;rating&apos;] == False"/>
+    </split>
+    <split id="a40ff93c-5b8c-4254-b8f0-19863e158249" name="Требуется расчет стоп факторов">
+        <condition id="f5617cf6-c6e9-4b07-a017-d1a0933ca039" name="Да" expression="process_vars[&apos;decisions&apos;][&apos;scoring&apos;] == True">
+            <call id="app_stop_factors" name="Расчет стоп факторов" call="&apos;APP_STOP_FACTORS_JUR&apos;" result_from="STOP_FACTORS" result_to="STOP_FACTORS">
+                <p name="tax_periods" expression="pv.get(&apos;tax_periods&apos;)"/>
+            </call>
+            <split id="test_stop_factors" name="Обработка стоп факторов">
+                <condition id="test_factors_declined" name="Отказ банка" expression="pv[&apos;STOP_FACTORS&apos;][&apos;status&apos;] in (&apos;Отказать&apos;, &apos;decline&apos;) and po.get(&apos;government&apos;, {}).get(&apos;hasDecision&apos;, False) == False">
+                    <script id="BCCE03F3-5486-A129-1EA9-7678EB341F8F" name="Установка отказа по СФ">
+                        <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+pv['decision'] = {
+    'decision': 'decline',
+    'code': '02',
+    'number': '1',
+    'date': decision_date,
+    'text': 'Отказ по стоп факторам',
+    'declineReason': '04',
+    'show_dialog': False,
+}
+
+]]>
+                    </script>
+                    <jump id="B78ED74A-C795-8EB3-8C92-F9A0046A85BD" name="Переход к Обработка решения по заявке" target_id="8b78cf78-fffb-4245-8d9b-a7f6a0e57323"/>
+                </condition>
+                <condition id="34c28ac2-c55b-4c22-8e8c-00410505a9ad" name="Отказ клиента" expression="pv[&apos;STOP_FACTORS&apos;][&apos;status&apos;] == &apos;declineClient&apos;">
+                    <script id="b588a8b2-e595-45d5-b875-08a031c44d76" name="Установка отказа клиента">
+                        <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+pv['decision'] = {
+    'decision': 'decline',
+    'code': '01',
+    'number': '1',
+    'date': decision_date,
+    'text': 'Клиента',
+    'declineReason': '08',
+    'show_dialog': False,
+}
+
+]]>
+                    </script>
+                    <jump id="3335960e-21a8-4160-8a6e-6a7a841de163" name="Переход к Обработка решения по заявке" target_id="8b78cf78-fffb-4245-8d9b-a7f6a0e57323"/>
+                </condition>
+                <condition id="test_stop_factors_accept" name="Пройдены"/>
+                <condition id="1ed3ef2f-4e71-436e-a983-e774d2a31448" name="Не пройдены, но пропускаем" expression="pv[&apos;STOP_FACTORS&apos;][&apos;status&apos;] in (&apos;Отказать&apos;, &apos;decline&apos;) and po.get(&apos;government&apos;, {}).get(&apos;hasDecision&apos;, False) == True">
+                    <script id="de3093e8-017d-43f4-895f-5fae0c135b72" name="Обработка исключения">
+                        <journal time="leave">
+                            <![CDATA[Допускается наличие стоп факторов для кредитов по решению Правительства]]>
+                        </journal>
+                    </script>
+                </condition>
+            </split>
+        </condition>
+        <condition id="bb6a2d7f-b74c-4dbd-81a5-1f8746babe1d" name="Нет" expression="process_vars[&apos;decisions&apos;][&apos;scoring&apos;] == False"/>
+    </split>
+    <call id="calc_rating" name="Получение заключений" call="&apos;APP_CONCLUSIONS&apos;" result_from="conclusions_result" result_to="conclusions_result">
+        <p name="skip_rating" expression="pv.get(&apos;skip_rating&apos;)"/>
+        <p name="tax_periods" expression="pv.get(&apos;tax_periods&apos;)"/>
+    </call>
+    <split id="spl_rating" name="Заключения получены">
+        <condition id="cnd_rating_decline" name="Отказать" expression="pv[&apos;conclusions_result&apos;][&apos;status&apos;] == &apos;decline&apos;">
+            <script id="set_rating_decline" name="Установка результата по заявке">
+                <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+pv['decision'] = {
+    'decision': 'decline',
+    'code': '02',
+    'number': '1',
+    'date': decision_date,
+    'text': pv['conclusions_result']['text'],
+    'declineReason': '04',
+    'show_dialog': False,
+}
+
+
+            ]]>
+            </script>
+            <jump id="jmp_rating_deline" name="Переход к Обработка решения по заявке" target_id="8b78cf78-fffb-4245-8d9b-a7f6a0e57323"/>
+        </condition>
+        <condition id="cnd_rating_accept" name="Продолжить" expression="pv[&apos;conclusions_result&apos;][&apos;status&apos;] == &apos;continue&apos;"/>
+        <condition id="012e3531-d695-41dc-b3d4-1851bd5e2f09" name="В доработку" expression="pv[&apos;conclusions_result&apos;][&apos;status&apos;] == &apos;review&apos;">
+            <task id="709ea2bd-c237-49e4-a9c7-ac24504cbed5" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{  &apos;dep_id&apos;: pv[&apos;dep_id&apos;],  &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+            <jump id="b97e1309-3569-41c9-8192-d7cde04d72b4" name="Переход к Обработка заявки" target_id="7265d30a-7d02-4193-9f8b-f14d65719ee5"/>
+        </condition>
+    </split>
+    <call id="app_decision" name="Принятие решения" call="pv[&apos;decisionWorkflow&apos;] if pv.get(&apos;decisionWorkflow&apos;) else &apos;APP_DECISION&apos;" result_from="decision" result_to="decision"/>
+    <split id="d1556184-fb16-4c56-a776-660612825cc2" name="Решения получены">
+        <condition id="1d920561-dbc7-4212-9fca-4214a47c5b7e" name="Продолжить"/>
+        <condition id="8fa88c62-cda8-4465-bc2f-55c4ca33580d" name="В доработку" expression="pv[&apos;decision&apos;][&apos;decision&apos;] in (&apos;review&apos;, &apos;rework&apos;)">
+            <task id="b7a0fecc-0c99-4dfb-8165-819381fbfa78" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{po.app.code}}, {{po.client.name}}">
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{  &apos;dep_id&apos;: pv[&apos;dep_id&apos;],  &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+            <jump id="0b77f3fa-5678-4db6-893f-cc86528851a0" name="Переход к Таймер, 0 сек" target_id="7265d30a-7d02-4193-9f8b-f14d65719ee5"/>
+        </condition>
+    </split>
+    <call id="8b78cf78-fffb-4245-8d9b-a7f6a0e57323" name="Обработка решения по заявке" call="&apos;APP_REVIEW_FIN&apos;">
+        <p name="decision" expression="pv.get(&apos;decision&apos;)"/>
+        <p name="show_dialog" expression="pv.get(&apos;DECISION_SHOW_DIALOG&apos;)"/>
+    </call>
+    <script id="091a8e56-fd02-4d33-9664-35881250d6d5" name="Стадия рассмотрения: завершено">
+        <journal time="leave">
+            <![CDATA[Рассмотрение заявки {{po.app.code}} завершено]]>
+        </journal>
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser() as au:
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'stage': 'COMPLETED',
+        }
+    })
+]]>
+    </script>
+</workflow>

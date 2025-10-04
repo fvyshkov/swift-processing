@@ -1,0 +1,237 @@
+<workflow id="APP_CHECK_INCOME" name="Проверка доходов заемщика">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import getApplication
+with AuthenticatedUser() as au:
+    token._po = getApplication({
+        'dep_id': int(pk[0]),
+        'id'    : int(pk[1]),
+    })
+    ]]>
+    </event>
+    <script id="ce64ad6c-58df-410f-8ffa-84a008883234" name="Инициализация">
+        <![CDATA[ok = process_vars.get('objectKey')
+if not ok:
+    raise Exception('Не задан ключ объекта')
+
+# Из объекта получаем идентификаторы заявки    
+kv = ok.split(':')
+pk = kv[1].split(',')
+process_vars['dep_id'] = int(pk[0])
+process_vars['id'] = int(pk[1])
+
+if not process_vars.get('client'):
+    raise Exception('Не задан клиент')
+
+
+
+#raise Exception(json.dumps(process_vars['client'], indent=4))
+
+]]>
+    </script>
+    <split id="15f6cbdd-9f55-4491-a4b0-dd31035b8e77" name="Отчисления в ГНК">
+        <condition id="69670e0e-03d1-4544-bd98-764be994d2c0" name="Да" expression="process_vars[&apos;client&apos;][&apos;income&apos;].get(&apos;hasPayments&apos;) == True">
+            <timer id="fcb62140-9e85-4242-81d2-34676b15f4cc" name="Подготовка порядка запросов" description="Подготовка порядка запросов в ГНК, заявка {{po.app.code}}, клиент {{pv.client.name}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+            <script id="e4f8a096-cd32-4aa8-999b-58fb6c7b8092" name="Подготовка порядка запросов">
+                <![CDATA[from apng_core.aoa.services import execObjectMethod
+
+gnkLst = execObjectMethod({'object': 'settings', 'method': 'get'})['loanapp'].get('gnk')
+
+if not gnkLst :
+    gnkLst = ['DOC', 'INN', 'PINFL']
+
+process_vars['requests'] = []
+
+for item in gnkLst :
+    #
+    # Паспорт
+    #
+    if item == 'DOC' and process_vars['client'].get('idDocument') and process_vars['client']['idDocument'].get('number'):
+        process_vars['requests'].append({
+            'type': 'passport',
+            'data': {
+                'tin': '',
+                'pinfl': '',
+                'series_passport': process_vars['client']['idDocument'].get('serials'),
+                'number_passport': process_vars['client']['idDocument'].get('number'),
+            }
+        })
+
+    #
+    # Запрос по ПИНФЛ
+    #
+    elif item == 'PINFL' and process_vars['client'].get('pinfl'):
+        process_vars['requests'].append({
+            'type': 'pinfl',
+            'data': {
+                'tin': '',
+                'pinfl': process_vars['client']['pinfl'],
+                'series_passport': '',
+                'number_passport': '',
+            }
+        })
+
+    #
+    # Запрос по ИНН
+    #
+    elif item == 'INN' and process_vars['client'].get('inn') and process_vars['client']['inn'] != '000000000':
+        process_vars['requests'].append({
+            'type': 'inn',
+            'data': {
+                'tin': process_vars['client']['inn'],
+                'pinfl': '',
+                'series_passport': '',
+                'number_passport': '',
+            }
+        })
+
+process_vars['requestIndex'] = 0
+
+process_vars['REQUEST_RESPONSE'] = {'success': False}
+
+]]>
+            </script>
+            <timer id="1214717a-9bbc-4ad7-86c4-f451e7688321" name="Запрос отчета в ГНК" description="Запрос отчета в ГНК, {{process_vars.client.typeName}} {{process_vars.client.name}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+            <script id="f1323dd2-63fc-4b73-b20d-32c6469b7101" name="Запрос отчета в ГНК">
+                <journal time="leave">
+                    <![CDATA[Запрос в ГНК, {{pv.client.typeName}} {{pv.client.name}}, {% if pv.request.type == 'passport' %}Паспорт {{pv.request.data.series_passport}} {{pv.request.data.number_passport}} {% elif pv.request.type == 'inn' %}ИНН {{pv.request.data.tin}}{% elif pv.request.type == 'pinfl' %}ПИНФЛ {{pv.request.data.pinfl}}{% endif %}, {% if pv.REQUEST_RESPONSE.success %}Ответ получен{% else %}Нет данных, причина: {{pv.REQUEST_RESPONSE.reason}}{% endif %}]]>
+                </journal>
+                <![CDATA[from loanapp_requests.models import Request
+from colvir_loanapp.service import mis
+import json
+import traceback
+
+
+pv['last_error'] = None
+pv['request'] = process_vars['requests'][process_vars['requestIndex']]
+
+
+def checkGnkStatus(response):
+    try:
+        if response['success'] == False and response.get('reason') is not None and 'Bad Gateway' in response['reason']:
+                
+            raise UserException({
+                'message': 'Ошибка сервиса ГНК (на стороне ГНК)',
+                'description': response.get('reason'),
+                'trace': json.dumps(response, indent=4, ensure_ascii=False)
+            })
+    except UserException:
+        raise
+    except Exception as e:
+        raise UserException({
+            'message': 'Ошибка обработки ответа ГНК\n%s' % e,
+            'description': 'Текст ответа:\n%s' % json.dumps(response, indent=4, ensure_ascii=False),
+            'trace': traceback.format_exc()
+        })
+
+response = mis.request(
+    '/TaxService/GetSalary',
+    process_vars['request']['data']
+)
+    
+if response.status_code != 200:
+    raise UserException(mis.extractResponseError(response))
+else:
+    process_vars['REQUEST_RESPONSE'] = json.loads(response.content)
+    checkGnkStatus(process_vars['REQUEST_RESPONSE'])
+    
+#
+# Сохранение в журнал запроса
+#
+r = Request()
+r.applicationId = '{},{}'.format(process_vars['dep_id'], process_vars['id'])
+r.serviceType = 'gnk'
+r.clientName = process_vars['client']['cli_name']
+r.requestData = json.dumps({
+    'claimId': process_vars['client']['appId'],
+    'language': 'UZ',
+    'pinfl': process_vars['request']['data']['pinfl'],
+    'inn': process_vars['request']['data']['tin'],
+    'passport': {
+        'ser': process_vars['request']['data']['series_passport'],
+        'num': process_vars['request']['data']['number_passport']
+    },
+    'reportType': 'GetSalary',
+    'reportTypeName': 'Сведения о заработной плате ФЛ',
+}, ensure_ascii=False)
+
+r.responseData = json.dumps(
+    process_vars['REQUEST_RESPONSE'],
+    ensure_ascii=False
+)
+
+r.state = 'processed'
+r.save()    
+
+#
+# При успешном ответе завершаем цикл
+#
+if process_vars['REQUEST_RESPONSE']['success']:
+    process_vars['requestIndex'] = len(process_vars['requests'])
+else:
+    process_vars['requestIndex'] += 1
+
+#raise Exception(json.dumps(process_vars['REQUEST_RESPONSE'], indent=4))
+]]>
+            </script>
+            <split id="0cfe94a1-3bf6-4561-ac83-00016f31c4a8" name="Есть запросы для обработки">
+                <condition id="2a591122-203b-4339-ba3a-992a67a214ad" name="Да" expression="process_vars[&apos;requestIndex&apos;] &lt; len(process_vars[&apos;requests&apos;])">
+                    <jump id="c4059447-5560-4c9d-ac7c-6a6f588064fd" name="Переход к Запрос отчета в ГНК" target_id="1214717a-9bbc-4ad7-86c4-f451e7688321"/>
+                </condition>
+                <condition id="8727b6ae-2d4e-4c41-9cd4-1aee0eb8867d" name="Нет" expression="process_vars[&apos;requestIndex&apos;] &gt;= len(process_vars[&apos;requests&apos;])"/>
+            </split>
+            <timer id="c6df94bb-96de-41e0-bae8-d6bbdadd66dc" name="Обработка результата запросов в ГНК" description="Обработка результата запросов в ГНК, {{process_vars.client.typeName}} {{process_vars.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+            <split id="a9804cbe-d72c-4bca-ad4a-17e122e0c693" name="Результат запроса">
+                <condition id="99949b8b-24be-47d4-9cf4-cc3d9f6c838c" name="Успешно" expression="process_vars[&apos;REQUEST_RESPONSE&apos;][&apos;success&apos;] == True">
+                    <script id="412ac113-eec2-4787-ba97-90ad99bec28a" name="Установка результата">
+                        <![CDATA[from datetime import datetime
+
+process_vars['CHECK_RESULT'] = {
+    'date': datetime.now(),
+    'status': 'hasPayments',
+    'data': process_vars['REQUEST_RESPONSE']['data'],
+}
+]]>
+                    </script>
+                </condition>
+                <condition id="1c49e5e1-9138-4b74-9e11-f2ef1aa4aeda" name="Без отчислений" expression="process_vars[&apos;REQUEST_RESPONSE&apos;][&apos;success&apos;] == False">
+                    <script id="3790637c-644f-4b3e-b6fa-c68984b19d37" name="Установка признака без отчислений в ГНК">
+                        <journal time="leave">
+                            <![CDATA[{{process_vars.client.typeName}} {{process_vars.client.name}}, отчисления в ГНК не подтверждены.]]>
+                        </journal>
+                        <![CDATA[process_vars['client']['income'] = { **process_vars['client']['income'],
+    'hasPayments': False,
+}
+
+from datetime import datetime
+process_vars['CHECK_RESULT'] = {
+    'date': datetime.now(),
+    'status': 'noPayments',
+    'data': None,
+}
+]]>
+                    </script>
+                </condition>
+            </split>
+        </condition>
+        <condition id="c4f8d8b6-0a4e-484f-ab19-b70e4c68cce6" name="Нет" expression="not process_vars[&apos;client&apos;][&apos;income&apos;].get(&apos;hasPayments&apos;)">
+            <script id="edcb6a8a-59ba-4da0-9a30-533c35e90250" name="Установка результата: без отчислений ГНК">
+                <journal time="leave">
+                    <![CDATA[{{process_vars.client.typeName}} {{process_vars.client.name}} без отчислений в ГНК по заявке]]>
+                </journal>
+                <![CDATA[from datetime import datetime
+
+process_vars['CHECK_RESULT'] = {
+    'date': datetime.now(),
+    'status': 'noPayments',
+    'data': None,
+}
+]]>
+            </script>
+        </condition>
+    </split>
+</workflow>

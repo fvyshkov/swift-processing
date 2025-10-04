@@ -1,0 +1,151 @@
+{
+    "forms": {
+        "selectMonitoringPeriodTask": {
+            "title": "Выбор периода мониторинга",
+            "className": "task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden",
+                "display": "flex",
+                "flexDirection": "column"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden",
+                        "margin": "8px",
+                        "paddingTop": "4px"
+                    },
+                    "$": {
+                        "periodType": {
+                            "label": "Период мониторинга",
+                            "style": {
+                                "width": "280px"
+                            },
+                            "control": "SelectList",
+                            "controlProps": {
+                                "list": [
+                                    {
+                                        "value": "Q",
+                                        "name": "Квартал"
+                                    },
+                                    {
+                                        "value": "Y",
+                                        "name": "Год"
+                                    }
+                                ]
+                            },
+                            "required": true
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "margin": "8px"
+                    },
+                    "$": {
+                        ".btnContinue": {
+                            "label": "Продолжить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if(!validate()) throw 'Abort';"
+                                },
+                                {
+                                    "js": "return frontend.easyflow.completeTaskById(task.data.taskId, {[task?.params?.actionVar||'action']: {status: 'continue', periodType: mem.periodType}}, ()=>{frontend.closeTask()});",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "updateRow": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "\nfrom apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\nimport logging\nlogger = logging.getLogger('afs')\n\nafs = parameters['afs']\n\nwith Csl('CSL_APP_URL') as csl:\n    \n    #csl.timeout = (10, 120)\n    try:\n        request = {\n            'header': {\n                'path': 'MTH=>%s,SHT=>%s' % (afs['method'], afs['sheet']), \n                'key': afs['key'],\n            },\n            'data': parameters['data']\n        }\n        \n        #logger.debug('UpdateRow: %s', json.dumps(request, indent=4, ensure_ascii=False))\n        \n        response = csl.request(\n            '/ESInputData/UpdateRow',\n            request\n        )\n        \n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        import json\n        r = json.loads(response.content)\n        \ndata = r\n"
+            }
+        },
+        "updateEntity": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "\nfrom apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\nobj = parameters\n\nwith Csl('CSL_APP_URL') as csl:\n    \n    #csl.timeout = (10, 120)\n    try:\n        request = {\n            'path': 'MTH=>{}'.format(obj['method']),\n            'name': 'OBJ',\n            'key': obj['key'],\n            'value': obj['value'],\n        }\n        response = csl.request(\n            '/ESSchema/UpdateEntityItem', \n            request\n        )\n        \n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        import json\n        r = json.loads(response.content)\n        \ndata = r\n"
+            }
+        },
+        "deleteRow": {
+            "sql": {},
+            "script": {
+                "py": "\nfrom apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\nimport logging\nlogger = logging.getLogger('afs')\n\nafs = parameters['afs']\n\nwith Csl('CSL_APP_URL') as csl:\n    \n    #csl.timeout = (10, 120)\n    try:\n        request = {\n            'path': 'MTH=>%s,SHT=>%s' % (afs['method'], afs['sheet']), \n            'key': afs['key'],\n        }\n        \n        #logger.debug('UpdateRow: %s', json.dumps(request, indent=4, ensure_ascii=False))\n        \n        response = csl.request(\n            '/ESInputData/DeleteRow',\n            request\n        )\n        \n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        import json\n        r = json.loads(response.content)\n        \ndata = r\n"
+            }
+        },
+        "analyzeSheet": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "\nfrom apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\nafs = parameters['afs']\nsheet = parameters['sheet']\nkey = parameters['key']\n\ndef checkAfsResponse(response):\n    if response.get('RESULT') is None:\n        raise UserException({\n            'message': 'В ответе сервиса отсутствует атрибут RESULT',\n            'trace': json.dumps(response, indent=4, ensure_ascii=False)\n        })\n    if response.get('RESULT_CODE') is None:\n        raise UserException({\n            'message': 'В ответе сервиса отсутствует атрибут RESULT_CODE',\n            'trace': json.dumps(response, indent=4, ensure_ascii=False)\n        })\n        \n    if response['RESULT_CODE'] == 'altAmount':\n        if response.get('SCRG_AMOUNT') and response['SCRG_AMOUNT'].get('value'):\n            response['altAmount'] = response['SCRG_AMOUNT']['value']\n\n        if not response['altAmount']:\n            raise UserException({\n                'message': 'Не расчитана альтернативная сумма',\n                'trace': 'Ответ сервиса:\\n%s' % json.dumps(response, indent=4, ensure_ascii=False)\n            })\n        \n\nwith Csl('CSL_APP_URL') as csl:\n    \n    try:\n        request = {\n            'path': 'MTH=>{},SHT=>{}'.format(afs['method'], sheet['code']),\n            'key': key\n        }\n        \n        response = csl.request(\n            '/ESProcessor/GetResults',\n            request\n        )\n        \n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        import json\n        r = json.loads(response.content)\n        \n        checkAfsResponse(r)\n        \ndata = r\n"
+            }
+        },
+        "createReport": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\nafs = parameters['afs']\nsheet = parameters['sheet']\nkey = parameters['key']\n\nwith Csl('CSL_APP_URL') as csl:\n    \n    try:\n        request = {\n            'path': 'MTH=>{},RPT=>{}'.format(afs['method'], sheet['report']),\n            'parameters': key\n        }\n        \n        response = csl.request(\n            '/ESProcessor/GetReport',\n            request\n        )\n\n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        data = base64.b64encode(response.content).decode('ascii')\n\n"
+            }
+        },
+        "getNextStep": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\n\nwith Csl('CSL_APP_URL') as csl:\n    \n    try:\n        request = {\n            'mth': parameters['mth'],\n            'obj': parameters['obj'],\n            'wf_label': parameters.get('wf_label'),\n            'dop': parameters['dop'],\n            'periods': parameters['periods']\n        }\n        \n        response = csl.request(\n            '/FSAProcessor/getNextStep',\n            request\n        )\n\n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        data = response.json()\n\n"
+            }
+        },
+        "getAfsMethodAndDescription": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.csl import Csl\n\ndef getAfsMethodAndDescription(params):\n    with Csl('CSL_APP_URL') as csl:\n        response = csl.request(\n            '/FSAProcessor/GetCodes',\n            {\n                'attributes': {\n                    'DCL_CODE': params.get('productCode'),\n                    'CLI_TYPE': params.get('CLI_TYPE'),\n                    'CRE_TYPE': params.get('CRE_TYPE'),\n                }\n            }\n        )\n    \n        if response.status_code != 200:\n            raise UserException({\n                'message': 'Ошибка вызова метода АФС получения анкеты',\n            }).withError(csl.extractLastError())\n    \n        j = response.json()\n        mth = j['code']\n        sheets = j.get('sheets')\n        needMonitoring = j.get('createmntfl')=='1' \n        \n        sht = params.get('sheet')\n        \n        path = 'MTH=>{},SHT=>{}'.format(mth, sht)\n        \n        response = csl.request(\n            '/esschema/getindicators', \n            {'path': path }\n        )\n        if response.status_code != 200:\n            raise UserException({\n                'message': 'Ошибка вызова метода АФС получения анкеты',\n            }).withError(csl.extractLastError())\n    \n    r = {\n        'method': mth,\n        'sheet': sht,\n        'sheets': sheets,\n        'needMonitoring' : needMonitoring,\n        'description': response.json()\n    }\n    \n    return r\n\n#data = getAfsMethodAndDescription(parameters)\ndata = {}\n"
+            }
+        },
+        "getAfsDescription": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.csl import Csl\n\ndef getAfsDescription(params):\n\n    mth = params.get('mth')\n    sht = params.get('sht')\n    \n    path = 'MTH=>{},SHT=>{}'.format(mth, sht)\n    \n    with Csl('CSL_APP_URL') as csl:\n        response = csl.request(\n            '/esschema/getindicators', \n            {'path': path }\n        )\n        if response.status_code != 200:\n            misError = csl.extractLastError()\n            raise UserException('Ошибка определения методики АФС').withError(csl.extractLastError())\n\n        return response.json()\n\n#data = getAfsDescription(parameters)\ndata = {}\n"
+            }
+        },
+        "get_num_of_periods": {
+            "sql": {},
+            "script": {
+                "py": "def get_num_of_periods():\n    conn = initDbSession(application='colvir_cbs')\n    with conn.cursor() as cursor:\n        cursor.execute(\"\"\"\n        select \n          nvl(c_fprm('AFS_NUM_OF_PERIODS'),1) as num_of_periods,\n          nvl(c_fprm('AFS_NUM_OF_PERIODS_PREV'),1) as num_of_periods_prev\n          -- l_fGetReqMethodPer_Afs(l.dep_id,l.id) -- эта функция по DEP_ID,ID вернет количество периодов для методики АФС\n          -- но поскольку количество периодов надо знать и без заявки, пока мы это спрячем\n          --COLVIR.l_fGetReqMethodPer_Afs(:dep_id,:id) \n          from dual \n        \"\"\", {})\n        data = cursor.fetchall()\n\n    return {\"num_of_periods\": int(data[0][0]),\"num_of_periods_prev\" : int(data[0][1])}\n\ndata = get_num_of_periods()\n"
+            }
+        },
+        "getRow": {
+            "script": {
+                "py": "from apng_core.csl import Csl\nfrom apng_core.json import WebJSONEncoder\n\nafs = parameters['afs']\nattributes = parameters['attributes']\n\nwith Csl('CSL_APP_URL') as csl:\n    \n    try:\n        request = {\n            'path': 'MTH=>{},SHT=>{}'.format(afs['method'], afs['sheet']),\n            'key': afs['key'],\n            'attributes': attributes,\n        }\n        \n        response = csl.request(\n            '/ESInputData/GetRow',\n            request\n        )\n        \n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(e)\n    \n    if response.status_code != 200:\n        raise UserException({\n            'message': 'Сервис АФС отработал с ошибкой',\n            'description': 'Запрос:\\n%s' % json.dumps(request, indent=4, ensure_ascii=False, cls=WebJSONEncoder)\n        }).withError(csl.extractLastError())\n    else:\n        r = response.json()\ndata = r"
+            }
+        },
+        "extractDebtBurden": {
+            "sql": {},
+            "script": {
+                "py": "#\n# Извлечение показателя долговой нагрузки из ответа сервиса\n#\n\"\"\"\n    \"SF.2.5\": {\n        \"value\": \"Нет (7.8%)\",\n        \"sql_value\": \"Нет (7.8%)\",\n        \"code\": \"ФО3.1\",\n        \"hint\": \"Кредитная нагрузка\"\n    }\n    \"SF.2.5\": {\n        \"value\": \"Кредитная нагрузка > 50%(88.5%)\",\n        \"sql_value\": \"Кредитная нагрузка > 50%(88.5%)\",\n        \"code\": \"ФО3.1\",\n        \"hint\": \"Кредитная нагрузка\"\n    },    \n\"\"\"\nimport re\n\nr = parameters['sresult']\n\nsvalue = r.get('SF.2.5', {}).get('value')\nnvalue = None\n\nif svalue is not None:\n    # Превышение кредитной нагрузки\n    m1 = re.match(r'^(.+\\> ([\\d\\.]+)(%\\())', svalue)\n    # Текущая кредитная нагрузка\n    m2 = re.match(r'^(.+\\()([\\d\\.]+)(%\\))', svalue)\n    \n    # Исходим из того, что показатель будет использоваться только для выданных кредитов\n    # Поэтому если выдали, значит не превышает порог\n    \n    if m1 is not None:\n        nvalue = float(m1[2])-0.01\n    elif m2 is not None:\n        nvalue = float(m2[2])\n    \n    #if m is not None:\n    #    nvalue = float(sval)\n\nif nvalue is None:\n    data = '0'\nelif nvalue <= 50:\n    data = '1'\nelse:\n    data = '2'\n"
+            }
+        }
+    },
+    "lists": {},
+    "references": {},
+    "js": {}
+}

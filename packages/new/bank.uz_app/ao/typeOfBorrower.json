@@ -1,0 +1,65 @@
+{
+    "forms": {},
+    "methods": {
+        "get": {
+            "sql": {
+                "sqlType": "query",
+                "database": "bank",
+                "params": [
+                    "code"
+                ],
+                "sql": "SELECT\n  code \"code\",\n  longname \"name\"\nFROM \n  U_UZ_TZ t\nwhere code=:code\n"
+            },
+            "script": {
+                "py": "if data:\n    data = data[0]"
+            }
+        },
+        "getTypeOfBorrowerInfo": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getTypeOfBorrowerInfo(params):\n    if params.get('code') is None:\n        return None\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'code': params.get('code'),\n        }\n        \n        cursor.execute(\"\"\"\n            select * from U_UZ_TZ\n            where code=:code\n        \"\"\", p)\n        \n        d = fetchone(cursor)\n        \n        if d:\n            return {\n                'code': d['CODE'],\n                'name': d['LONGNAME']\n            }\n        \n    return None\n\ndata = getTypeOfBorrowerInfo(parameters)\n"
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "700px",
+                    "height": "400px"
+                },
+                "fastFilter": true,
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 150,
+                        "hide": false
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code"
+            },
+            "method": {
+                "sql": {
+                    "params": [
+                        "clientType",
+                        "code"
+                    ],
+                    "sqlType": "query",
+                    "database": "bank",
+                    "sql": "SELECT\n  id \"id\",\n  code \"code\",\n  longname \"name\"\nFROM \n  U_UZ_TZ t\nwhere t.TYPE_SUB_CODE=:clientType\n  and arcfl='0' and arestfl='0'\n  and nvl(:code, t.code)=t.code\norder by code  \n"
+                },
+                "script": {
+                    "params": []
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

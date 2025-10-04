@@ -1,0 +1,87 @@
+<workflow id="APP_CLEAN_REVIEW" name="Очистка процессов рассмотрения">
+    <script id="1e97e5d3-51a4-406d-abc5-ee3a56dac14c" name="Удаление данных">
+        <![CDATA[from django.db import transaction
+from django.conf import settings
+
+ok = process_vars.get('objectKey')
+if not ok:
+    # Если запустили без параметров, то обрабатываем тестовую заявку
+    ok = 'loanapp:1855,5625274'
+    #process_vars['objectKey'] = ok
+else:
+    del process_vars['objectKey']
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+process_vars['dep_id'] = pk[0]
+process_vars['id'] = pk[1]
+
+
+#
+# Для тестирования
+# Удалим старые тестовые журналы
+#
+from apng_core.easyflow.models import Token, TokenAut, TokenVar, Journal
+from apng_core.easyflow.services import RunTimeService
+
+with transaction.atomic(using=settings.APPS_DB['easyflow']):
+    # Удаляем все процессы 
+    for p in Token.objects.filter(objectKey=ok):
+        RunTimeService.deleteProcessById(p.id)
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser() as au:
+
+    #
+    # Возврат состояния заявки в начальное положение
+    #
+    from loanapp.services.application import setState
+    setState({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'state': 'START',
+        'stage': 'NEW',
+    })
+    
+    with au.getConnection().cursor() as cursor:
+    
+        params = {
+            'dep_id': process_vars['dep_id'],
+            'id'    : process_vars['id']
+        }
+        
+        #
+        # Отменяем все возможные операции по заявке
+        #
+
+        cursor.execute("""
+                begin
+                    -- Чистим участников
+                    delete from T_PROCMEM where MAINFL='0' and id=(select ID from T_PROCMEM where DEP_ID=:dep_id and ORD_ID=:id and MAINFL='1');
+                    
+                    -- Удаляем связи с порожденными процессами
+                    delete from T_PROCINH where parent_id=(select id from T_PROCMEM where dep_id=:dep_id and ord_id=:id and mainfl='1');
+                    
+                    -- Удаляем из журнала операции
+                    update T_OPERJRN set undofl='1' where dep_id=:dep_id and ord_id=:id;
+                    delete from T_OPERJRN where dep_id=:dep_id and ord_id=:id;
+
+                    --for r in (
+                    --    select* from COLVIR.t_operjrn 
+                    --    where dep_id=:dep_id and ord_id=:id
+                    --        and undofl='0' and cancelfl='0'
+                    --    order by njrn desc
+                    --) loop
+                    --    COLVIR.t_pkgrunoprutl.pUndoOpr(r.id, r.njrn);
+                    --end loop;
+                    
+                end;
+            """,
+            params
+        )
+        
+
+            
+    ]]>
+    </script>
+</workflow>

@@ -1,0 +1,44 @@
+{
+    "forms": {},
+    "methods": {},
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 100
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "fastFilter": false,
+                "primaryKey": "code",
+                "isGroup": "item.groupFl=='1'"
+            },
+            "method": {
+                "sql": {
+                    "params": [
+                        "productCode"
+                    ],
+                    "sqlType": "query",
+                    "database": "bank",
+                    "sql": "select \r\n    l.CODE \"code\",\r\n    l.groupfl \"groupFl\",\r\n    l.LONGNAME \"name\" \r\nfrom U_UZ_VIDCRED  l \r\nwhere (for_ul is not null or for_ip is not null)\r\n    and l.CODE=nvl(l_Pkgdeauniref.fGetClsRefValCode(T_pkgDea.fDclId(:productCode,0), u_Pkguniref.fRefCode2Id('UZ_VIDCRED',0)),l.CODE)\r\n    and l.arcfl='0' and l.arestfl='0' \r\norder by code"
+                },
+                "script": {
+                    "params": []
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

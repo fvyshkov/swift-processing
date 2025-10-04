@@ -1,0 +1,462 @@
+<workflow id="APP_ALTERNATIVE_AMOUNT" name="Approve alternative amount">
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <event name="onGetProcessObject">
+        <![CDATA[if not pv.get('objectKey'):
+    raise Exception('Не задан ключ объекта для запуска сценария, objectKey');
+    
+kv = pv['objectKey'].split(':')
+pk = kv[1].split(',')
+
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser() as au:
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+]]>
+    </event>
+    <context>
+        <![CDATA[{}]]>
+    </context>
+    <script id="ad198521-3a53-4439-bbc5-af18f24d2e93" name="Инициализация">
+        <![CDATA[
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+from apng_core.aoa.services import execObjectMethod
+appSettings = execObjectMethod({'object': 'settings', 'method': 'get'})['loanapp']
+def getParameter(s, name):
+    return next(filter(lambda x: x['code']==name, s.get('parameters', [])), {}).get('value', None)
+
+pv['waitClientAcceptFiz'] = getParameter(appSettings, 'waitClientAcceptFiz')
+if pv['waitClientAcceptFiz']:
+    import datetime
+    pv['waitClientAcceptFiz'] = token.created + datetime.timedelta(days=pv['waitClientAcceptFiz'])
+
+#raise UserException(json.dumps(pv['waitClientAcceptFiz'], indent=4, ensure_ascii=False))]]>
+    </script>
+    <task id="9506cff9-0f71-482d-a388-f7c128edb83e" name="Предложение альтернативной суммы" autoStart="true" description="Предложение альтернативной суммы по заявке {{po.app.code}}, {{po.client.name}}">
+        <event name="onPrepare">
+            <![CDATA[lv['actions'] = []
+
+lv['actions'].append(
+    { 'name': 'Клиент согласен', 'value': 'accept'}
+)
+    
+lv['actions'].append(
+    { 'name': 'Не согласен', 'value': 'reject'}
+)
+
+if pv.get('canReview', False):
+    lv['actions'].append(
+        {'name': 'Повторное рассмотрение с изменениями', 'value': 'edit'} 
+    )]]>
+        </event>
+        <clientTask path="/easyflow/state-dialog" taskName="{{task.description}}">
+            <p name="caption" expression="task[&apos;description&apos;]"/>
+            <p name="message" expression="&apos;Новая сумма: {:,.2f}&apos;.format(pv[&apos;altAmount&apos;])"/>
+            <p name="actionVar" expression="&apos;action&apos;"/>
+            <p name="actions" expression="lv[&apos;actions&apos;] if lv.get(&apos;actions&apos;) else [{ &apos;name&apos;: &apos;Клиент согласен&apos;, &apos;value&apos;: &apos;accept&apos;}, { &apos;name&apos;: &apos;Не согласен&apos;, &apos;value&apos;: &apos;reject&apos;} ]"/>
+            <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+            <p name="altAmount" expression="pv[&apos;altAmount&apos;]"/>
+        </clientTask>
+        <deadline>
+            <![CDATA[{}]]>
+        </deadline>
+        <timer id="c9169a89-8305-43e7-b2ff-06f1ea1bcb34" name="Ожидание подтверждения клиентом альтернативной суммы" description="Ожидание подтверждения клиентом альтернативной суммы, заявка {{po.app.code}}" duration="pv[&apos;waitClientAcceptFiz&apos;]" action="terminate" condition="not (po[&apos;client&apos;][&apos;isJur&apos;] or po[&apos;client&apos;][&apos;isIE&apos;]) and pv.get(&apos;waitClientAcceptFiz&apos;) is not None" errorDuration="00:01:00">
+            <script id="b6659142-6b8a-4320-ac42-7a1a07ecba8b" name="Завершение ожидания">
+                <journal time="enter">
+                    <![CDATA[Истекло время ожидания подтверждения клиента]]>
+                </journal>
+                <![CDATA[clientTask = token.parent.parent
+
+clientTask.signal('complete', {'action': 'decline'})]]>
+            </script>
+        </timer>
+    </task>
+    <split id="cb839123-fae2-43c9-8bcb-38be16ee8034" name="Решение клиента">
+        <condition id="c6c29579-f6c4-45df-92a6-c17312c14cf3" name="Согласовал" expression="pv[&apos;action&apos;] == &apos;accept&apos;">
+            <split id="a75c33d8-d7c4-4d9f-893a-c9d15d1b5990" name="Проверять фотографию клиента">
+                <condition id="7c64f59c-e48f-44c6-995d-cad67081122c" name="Да" expression="pv.get(&apos;checkClientPhoto&apos;, False)">
+                    <script id="cf873efe-2b5b-4b61-867f-78ef5fde0b3e" name="Контроль фотографии клиента">
+                        <![CDATA[
+from apng_core.aoa.services import execObjectMethod
+
+# Ищем фото клиента в атрибутах процесса, передаётся из задачи
+check_photo = next(filter(lambda x: x['docType']=='CRED.FOTO_CLI', pv.get('dossier', [])),None)
+
+# Только для тестирования
+if False and not check_photo:
+    # Ищем в досье заявки
+    check_photo = execObjectMethod({
+        'object': 'loanapp',
+        'method': 'getDossierFileByType',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'docType': 'CRED.FOTO_CLI'
+        }
+    })
+
+if not check_photo:
+    raise UserException('В подтверждение клиента не передана фотография')
+
+execObjectMethod({
+    'object': 'loanapp',
+    'method': 'compareClientPhoto',
+    'params': {
+        'appKey': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+        },
+        'client': po['client'],
+        'check_photo': check_photo
+    }
+})
+
+]]>
+                    </script>
+                    <timer id="bd601098-5823-408e-afbf-024b1f7b8729" name="Фотография проверена" description="" duration="00:00:01" errorDuration="00:01:00" action="continue"/>
+                    <script id="be891549-6320-42c0-94c9-ddb125c902fd" name="Сохранение в досье">
+                        <![CDATA[if pv.get('dossier'):
+    from colvir_cbs.auth import AuthenticatedUser
+    from apng_core.aoa.services import execObjectMethod
+    with AuthenticatedUser():
+        execObjectMethod({
+            'object': 'app', 'method': 'saveDossierFiles',
+            'params': {
+                'dep_id': pv['dep_id'],
+                'id': pv['id'],
+                'files': pv['dossier']
+            }
+        })
+
+]]>
+                    </script>
+                </condition>
+                <condition id="91150241-1fcc-40a4-a59a-370f5711d163" name="Нет"/>
+            </split>
+            <script id="6a7d2af7-e75a-45c7-95d2-00495fb89ce0" name="Определение новой процентной ставки">
+                <![CDATA[from colvir_cbs.services.application import calculateInterest
+
+if not po['product']['options'].get('interestEnabled', False):
+    x = po['app']['code']
+    from apng_core.aoa.services import execObjectMethod
+    
+    doc_parameters = execObjectMethod({
+        'object': 'app', 'method': 'extractParameters',
+        'params': {'app': po}
+    })
+
+    doc_classifiers = execObjectMethod({
+        'object': 'app', 'method': 'extractClassifiers',
+        'params': {'app': po}
+    })
+
+    pv['newInterest'] = execObjectMethod({
+        'object': 'loanapp', 'method': 'calculateInterest',
+        'params': {
+            'clientCode': po['client']['code'],
+            'productCode': po['app']['productCode'],
+            'amount': pv['altAmount'],
+            'currency': po['app']['currency'],
+            'duration': po['app'].get('duration'),
+            'durationUnit': po['app'].get('durationUnit'),
+            'durationEndDate': po['app'].get('durationEndDate'),
+            'parameters': {
+                **po['app'].get('parameters', {}),
+                **doc_parameters
+                
+            },
+            'classifiers': doc_classifiers,
+            'withDebug': True,
+        }
+    })
+
+]]>
+            </script>
+            <script id="d35f510a-9b1d-4a51-a8a5-bc3ae0725659" name="Изменение суммы заявки">
+                <journal time="leave">
+                    <![CDATA[{%load wfj%}
+Клиент согласен изменить сумму заявки с {{po.app.amount | currency }} на {{pv.altAmount | currency}}]]>
+                </journal>
+                <![CDATA[
+#
+# Сохранение заявки в CBS
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser() as au:
+    with au.getConnection().cursor() as cursor:
+    
+        params = {
+            'dep_id': pv['dep_id'],
+            'id'    : pv['id'],
+            'amount': pv['altAmount'],
+            'interest': pv['newInterest'] if  pv.get('newInterest') else po['app']['interest']
+        }
+        
+        cursor.execute("""
+            declare
+                r L_REQDEA%%rowtype;
+                json_r json_object_t;
+                jApp json_object_t;
+                jProduct json_object_t;
+                jConstraints json_object_t;
+                jData clob;
+                
+            begin
+                select * into r from L_REQDEA where DEP_ID = :dep_id and ID = :id;
+                
+                
+                json_r := treat(json_element_t.parse(nvl(r.json, '{}')) as json_object_t);
+                jApp := json_r.get_Object('app');
+                jApp.put('amount', :amount);
+                jApp.put('interest', :interest);
+                
+                jProduct := json_r.get_object('product');
+                if jProduct is null then
+                    jProduct := json_object_t();
+                    json_r.put('product', jProduct);
+                end if;
+                
+                jConstraints := jProduct.get_object('constraints');
+                if jConstraints is null then
+                    jConstraints := json_object_t();
+                    jProduct.put('constraints', jConstraints);
+                end if;
+                
+                jConstraints.put('maxAmount', :amount);
+                
+                jData := json_r.to_clob();
+                
+                -- raise_application_error(-20000, jData);
+
+                update L_REQDEA set
+                    REQ_SUM = :amount,
+                    RATE_REQ = :interest,
+                    jSON = jData
+                where DEP_ID = :dep_id and ID = :id;
+            end;
+        /""", params)
+    
+#
+# Сохранение заявки в аналитическую платформу
+#
+from apng_core.csl import Csl
+
+pv['last_error'] = None
+try:
+    with Csl('CSL_APP_URL') as csl:
+        response = csl.request(
+            '/ESInputData/UpdateRow',
+            {
+                'header': {
+                    'path': 'MTH=>{},SHT=>OBJ'.format(po['afs'].get('method')), 
+                    'key': '%s,%s' % (pv['dep_id'], pv['id']),
+                },
+                'data': {
+                    'SUM': pv['altAmount'],
+                    'RATE': pv['newInterest'] if  pv.get('newInterest') else po['app']['interest']
+                }
+            }        
+        )
+        if response.status_code != 200:
+            pv['last_error'] = csl.extractLastError()
+except Exception as e:
+    import traceback
+    pv['last_error'] = {
+        'message': '%s' % e,
+        'trace': traceback.format_exc()
+    }
+    raise
+
+    
+                                
+                            ]]>
+            </script>
+            <split id="b15c2010-d817-436b-b59e-d61145af6845" name="Требуется коррекция заявки">
+                <condition id="fb8f1fb5-6755-45b3-9338-8d1150cdfe3d" name="Да" expression="pv.get(&apos;disableModifyTask&apos;, False) != True"/>
+                <condition id="a6457fbc-9e83-4a5a-a676-963baccc2508" name="Нет" expression="pv.get(&apos;disableModifyTask&apos;) == True">
+                    <jump id="e673f133-6539-4d3c-a2b2-6f8783d3c12d" name="Переход к Регистрация во внешних системах" target_id="677c0970-fca9-45ad-b067-cd333014c283"/>
+                </condition>
+            </split>
+            <task id="11663d00-7967-4c7e-93df-7a69774cedbe" name="Коррекция при альтернативной сумме" autoStart="true" description="Коррекция при альтернативной сумме, заявка {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[Коррекция заявки при альтернативной сумме]]>
+                </journal>
+                <event name="onPrepare">
+                    <![CDATA[lv['sections'] = {
+    'clientDataFiz': {'readOnly': True},
+    'loanDataFiz': {
+        'readOnly': True,
+        'options': {
+            'amount': {'readOnly': False},
+        }
+    },
+    'appParameters': {},
+    'objectOfCredit': {
+        'readOnly': False,
+        'options': {
+            'mortgage_value': {'readOnly': False},
+            'own_amount': {'readOnly': False},
+        }
+    },
+    'pledges': {
+        'options': {
+            'type': {
+                'SURETY': {
+                    #'readOnly': True,
+                    'disableDelete': False,
+                    'attributes': {
+                        'ens_code': {
+                            'disabled': True,
+                        },
+                        'surerer': {
+                            'disabled': True,
+                        },
+                    },
+                },
+            },
+        },
+    },
+    'dossier': {},
+}
+
+
+lv['task'] = '/aoa/ObjectTask'
+lv['object'] = 'appLoanfiz'
+lv['form'] = 'altAmountEditTask'
+]]>
+                </event>
+                <event name="onComplete">
+                    <![CDATA[if po['app'].get('interest') is None:
+    raise UserException('Ставка не определена')]]>
+                </event>
+                <clientTask path="lv[&apos;task&apos;]" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{ &apos;dep_id&apos;: pv[&apos;dep_id&apos;], &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                    <p name="sections" expression="lv[&apos;sections&apos;]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="object" expression="lv.get(&apos;object&apos;)"/>
+                    <p name="form" expression="lv.get(&apos;form&apos;)"/>
+                    <p name="needCalculateInterest" expression="True"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+            <split id="677c0970-fca9-45ad-b067-cd333014c283" name="Регистрация во внешних системах">
+                <condition id="ca2ecfda-f136-4e9e-84b3-b24333b67600" name="Регистрация" expression="pv.get(&apos;updateExternalRegistration&apos;, True)  is None or pv.get(&apos;updateExternalRegistration&apos;, True)  == True">
+                    <call id="bd5bb5be-7764-4ae3-bf22-2c5ff9d1af32" name="Регистрация изменения по заявке во внешних системах" call="&apos;APP_REGISTER_EXT&apos;" result_from="REGISTER_RESULT" result_to="REGISTER_RESULT"/>
+                </condition>
+                <condition id="57c23e31-528e-419e-99c1-256446885d41" name="Не требуется" expression="pv.get(&apos;updateExternalRegistration&apos;, True) == False"/>
+            </split>
+            <script id="d9805ce1-605a-44f9-97ef-1db6b75b35b0" name="Установка результата">
+                <![CDATA[pv['RESULT'] = {
+    'status': 'accept',
+}
+
+]]>
+            </script>
+        </condition>
+        <condition id="0ab26e40-cd69-4d1c-9760-141796989a64" name="Не согласовал" expression="pv[&apos;action&apos;] in (&apos;reject&apos;, &apos;decline&apos;)">
+            <script id="a2a711e4-7df6-4fa7-8c49-cce9049218f3" name="Установка отказа">
+                <journal time="leave">
+                    <![CDATA[Клиент не согласен на альтернативную сумму]]>
+                </journal>
+                <![CDATA[pv['RESULT'] = {
+    'status': 'decline',
+}
+
+]]>
+            </script>
+        </condition>
+        <condition id="526ec4bf-9049-4c51-8359-242be673f0c0" name="Повторное рассмотрение заявки с изменениями" expression="pv[&apos;action&apos;] == &apos;edit&apos;">
+            <script id="7b9c5827-fc47-403b-95f5-a4b9195c7789" name="Сбросим ставку для ее пересчета при сохранении корректировок">
+                <![CDATA[from colvir_cbs.services.client import getClient
+from colvir_cbs.services.application import getApplicationJson, saveApplicationJson
+from colvir_cbs.auth import AuthenticatedUser
+
+
+if not po['product']['options'].get('interestEnabled', False):
+    with AuthenticatedUser(user='COLVIR') as au:
+        req = execObjectMethod({
+            'object': 'app', 'method': 'getApplicationJson',
+            'params': {'dep_id': pv['dep_id'], 'id': pv['id'],}
+        })
+
+        
+        req['app']['interest'] = None
+        
+        req = execObjectMethod({
+            'object': 'app', 'method': 'saveApplicationJson',
+            'params': {'dep_id': pv['dep_id'], 'id': pv['id'], 'json': req}
+        })
+
+]]>
+            </script>
+            <task id="dcd77aa8-e55f-4099-be3c-b71bd661b973" name="Коррекция условий заявки" autoStart="true" description="Коррекция условий, заявка {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[Коррекция заявки при альтернативной сумме]]>
+                </journal>
+                <event name="onPrepare">
+                    <![CDATA[lv['sections'] = {
+    'clientDataFiz': {'readOnly': True},
+    'loanDataFiz': {
+        'readOnly': True,
+        'options': {
+            'amount': {'readOnly': False},
+            'currency': {'readOnly': False},
+        }
+    },
+    'appParameters': {'readOnly': True},
+    'coborrowers': {'readOnly': False},
+    'objectOfCredit': {'readOnly': True},
+    'pledges': {'readOnly': False},
+    'dossier': {'readOnly': True},
+}
+
+]]>
+                </event>
+                <event name="onComplete">
+                    <![CDATA[if po['app'].get('interest') is None:
+    raise UserException('Ставка не определена')]]>
+                </event>
+                <clientTask path="&apos;/aoa/ObjectTask&apos;" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{ &apos;dep_id&apos;: pv[&apos;dep_id&apos;], &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                    <p name="sections" expression="lv[&apos;sections&apos;]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="needCalculateInterest" expression="True"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+                <deadline>
+                    <![CDATA[{}]]>
+                </deadline>
+            </task>
+            <script id="e60701b4-9321-4820-a23d-1bc2f9209b38" name="Установка статуса для пересмотра">
+                <![CDATA[pv['RESULT'] = {
+    'status': 'review',
+}
+]]>
+            </script>
+        </condition>
+    </split>
+    <timer id="420264c3-908d-4fb2-9e13-90b70aeb5ef7" name="Альтернативная сумма обработана" description="Альтернативная сумма обработана" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+</workflow>

@@ -1,0 +1,289 @@
+{
+    "forms": {
+        "editJobTask": {
+            "title": "Редактирование задания",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Сохранить",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveJob"
+                                        },
+                                        "disabled$": "!context.modified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "hidden",
+                        "flex": 1
+                    },
+                    "form": "editJobForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "task.params.id && backend.post('/aoa/execObjectMethod', {object: 'cron', method: 'get', params: {id: task.params.id}}).then((r)=>{mem.job=r; forceUpdate()})"
+                },
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "saveJob": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'cron', method: 'save', params: mem.job}).then((r)=>{mem.job.id=r.id; context.modified = false; forceUpdate();})"
+                }
+            }
+        },
+        "editJobForm": {
+            "title": "Форма редактирования задания",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "job": {
+                    "className": "vertical",
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "name": {
+                            "label": "Наименование",
+                            "style": {
+                                "width": "680px"
+                            },
+                            "control": "TextEdit",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "active": {
+                            "label": "Активен",
+                            "control": "Checkbox",
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        },
+                        "@time": {
+                            "className": "horizontal",
+                            "$": {
+                                "min": {
+                                    "label": "Минуты",
+                                    "style": {
+                                        "width": "160px"
+                                    },
+                                    "control": "TextEdit",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "hour": {
+                                    "label": "Часы",
+                                    "style": {
+                                        "width": "160px"
+                                    },
+                                    "control": "TextEdit",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "day": {
+                                    "label": "Дни",
+                                    "style": {
+                                        "width": "160px"
+                                    },
+                                    "control": "TextEdit",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "month": {
+                                    "label": "Месяц",
+                                    "style": {
+                                        "width": "80px"
+                                    },
+                                    "control": "TextEdit",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                },
+                                "dayOfWeek": {
+                                    "label": "День недели",
+                                    "style": {
+                                        "width": "80px"
+                                    },
+                                    "control": "TextEdit",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@script": {
+                            "style": {
+                                "flex": 1
+                            },
+                            "$": {
+                                "script": {
+                                    "label": "Скрипт",
+                                    "style": {
+                                        "height": "100%"
+                                    },
+                                    "control": "AceEditor",
+                                    "controlProps": {
+                                        "editorId": "jobscript",
+                                        "mode": "python"
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onModified"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.cron.models import Job\n\nquery = Job.objects.all()\n\ndata = []\nfor r in query:\n    data.append({\n        'id': r.id.__str__(),\n        'name': r.name,\n        'active': r.active\n    })\n\n"
+            }
+        },
+        "save": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.cron.models import Job\n\nif parameters.get('id'):\n    j = Job.objects.get(id=parameters['id'])\nelse:\n    j = Job()\n    \nj.active = parameters.get('active')\nj.name = parameters['name']\nj.min = parameters.get('min')\nj.hour = parameters.get('hour')\nj.day = parameters.get('day')\nj.month = parameters.get('month')\nj.dayOfWeek = parameters.get('dayOfWeek')\nj.script = parameters.get('script')\n\nj.save()\n\ndata = {\n    'id': j.id.__str__()\n}\n\nimport uwsgi\nuwsgi.cache_del('cron')"
+            }
+        },
+        "get": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from apng_core.cron.models import Job\n\nj = Job.objects.get(id=parameters['id'])\n\ndata = {\n    'id': j.id.__str__(),\n    'name': j.name,\n    'active': j.active,\n    'min': j.min,\n    'hour': j.hour,\n    'day': j.day,\n    'month': j.month,\n    'dayOfWeek': j.dayOfWeek,\n    'script': j.script,\n}\n"
+            }
+        },
+        "delete": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from apng_core.cron.models import Job\n\nj = Job.objects.get(id=parameters['id'])\n\nj.delete()\n\nimport uwsgi\nuwsgi.cache_del('cron')"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "name": {
+                    "title": "Наименование",
+                    "flex": 1
+                },
+                "active": {
+                    "title": "Активен",
+                    "getter": "data != undefined && (data.active?'Да':'Нет') || null",
+                    "width": 80
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Создать",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "Новое задание",
+                        "params": {
+                            "object": "cron",
+                            "form": "editJobTask"
+                        }
+                    }
+                },
+                {
+                    "title": "Открыть",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Задание ${$listRow.name}`",
+                        "params": {
+                            "object": "cron",
+                            "form": "editJobTask",
+                            "id$": "$listRow.id"
+                        }
+                    },
+                    "disabled": "!$listRow"
+                },
+                {
+                    "title": "Удалить",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Удалить задание ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled": "!$listRow"
+                }
+            ]
+        }
+    },
+    "references": {}
+}

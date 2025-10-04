@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<model id="easyflow.Deployment" name="Workflow diagram">
+	<task path="/easyflow/diagram-graphics-edit">
+		<p name="deploymentId" expression="objectId"/>
+	</task>
+	<description><![CDATA[description['code'] = obj.code
+description['name'] = obj.flow.name
+description['file_name'] = obj.code+'.xml'
+description['file_path'] = 'workflow'
+]]></description>
+	<load><![CDATA[]]></load>
+	<export><![CDATA[ 
+file['data'] = obj.data.replace('\r', '')
+]]></export>
+	<import><![CDATA[ 
+from beflex.easyflow.models import Deployment
+try:
+    obj = Deployment.objects.get(id=object_id)
+except Deployment.DoesNotExist:
+    obj = Deployment()
+    obj.id = object_id
+
+obj.data = file_data
+obj._isImport = True
+obj.save()
+]]></import>
+	<lookup><![CDATA[
+lookup_field = 'id'
+]]></lookup>
+</model>

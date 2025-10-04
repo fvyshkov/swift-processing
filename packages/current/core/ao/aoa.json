@@ -1,0 +1,1368 @@
+{
+    "forms": {
+        "objectEditTask": {
+            "title": "Редактирование прикадного объекта",
+            "className": "task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden",
+                "display": "flex",
+                "flexDirection": "column"
+            },
+            "$": {
+                "@panel": {
+                    "className": "horizontal",
+                    "style": {
+                        "padding": "8px 8px 8px 8px"
+                    },
+                    "$": {
+                        ".btnSave": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "mem.object.description.lists = mem.lists.reduce((a, v)=>{a[v.code]=JSON.parse(v.text); return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.forms = mem.forms.reduce((a, v)=>{a[v.code]=JSON.parse(v.text); return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.js = mem.js.reduce((a, v)=>{a[v.code]=v.text; return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.methods = mem.methods.reduce((a, v)=>{a[v.code]=v.data; return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.references = mem.references.reduce((a, v)=>{a[v.code]={form: JSON.parse(v.formText), method: v.method}; return a;}, {});"
+                                },
+                                {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'aoa', method: 'save', params: mem.object}).then((r)=>{mem.object.id=r.id; mem.object.modified=r.modified; context.modified=false;}).then(()=>{tm.setTaskTitle(task.key, `Объект ${mem.object.code}`)})"
+                                }
+                            ],
+                            "readOnly$": "!context.modified"
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@object": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                ".tabs": {
+                                    "control": "Tabs",
+                                    "style": {
+                                        "height": "100%",
+                                        "overfow": "hidden",
+                                        "display": "flex",
+                                        "flexDirection": "column"
+                                    },
+                                    "controlProps": {
+                                        "variant": "standard",
+                                        "context$": "(()=>{if (!context.taskTabs){context.taskTabs={};} return context.taskTabs})()",
+                                        "style": {
+                                            "marginBottom": "8px"
+                                        },
+                                        "pages": {
+                                            "common": {
+                                                "title": "Объект",
+                                                "$": {
+                                                    "@form": {
+                                                        "init$": "mem.object||{}",
+                                                        "object": "aoa",
+                                                        "form": "objectCommonForm"
+                                                    }
+                                                }
+                                            },
+                                            "lists": {
+                                                "title": "Списки",
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectListsForm"
+                                                    }
+                                                }
+                                            },
+                                            "forms": {
+                                                "title": "Формы",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectFormsForm"
+                                                    }
+                                                }
+                                            },
+                                            "js": {
+                                                "title": "JS",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectJSForm"
+                                                    }
+                                                }
+                                            },
+                                            "methods": {
+                                                "title": "Методы",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectMethodsForm"
+                                                    }
+                                                }
+                                            },
+                                            "refs": {
+                                                "title": "Справочники",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectReferencesForm"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return task.params.objectId && backend.post('/aoa/execObjectMethod', {object: 'aoa', method: 'get', params: {id: task.params.objectId}}).then((r)=>{mem.object = r; tm.setTaskTitle(task.key, `Объект ${r.code}`); forceUpdate();})"
+                    },
+                    {
+                        "js": "if (!mem.object){mem.object = {description: {}}}"
+                    },
+                    {
+                        "js": "mem.lists = []; for (const [k,v] of Object.entries(mem.object.description.lists||{})){mem.lists.push({code: k, text: JSON.stringify(v, null, 4)});}"
+                    },
+                    {
+                        "js": "mem.forms = []; for (const [k,v] of Object.entries(mem.object.description.forms||{})){mem.forms.push({code: k, text: JSON.stringify(v, null, 4)});}"
+                    },
+                    {
+                        "js": "mem.js = []; for (const [k,v] of Object.entries(mem.object.description.js||{})){mem.js.push({code: k, text: v});}"
+                    },
+                    {
+                        "js": "mem.methods = []; for (const [k,v] of Object.entries(mem.object.description.methods||{})){mem.methods.push({code: k, data: v});}"
+                    },
+                    {
+                        "js": "mem.references = []; for (const [k,v] of Object.entries(mem.object.description.references||{})){mem.references.push({code: k, formText: JSON.stringify(v.form||{}, null, 4), method: v.method});}"
+                    }
+                ],
+                "onModified": {
+                    "js": "if (!context.modified){context.modified=true; forceUpdate();}",
+                    "disableUpdate": false
+                }
+            }
+        },
+        "objectCommonForm": {
+            "className": "vertical",
+            "style": {
+                "margin": "4px"
+            },
+            "$": {
+                "code": {
+                    "label": "Код",
+                    "control": "TextEdit",
+                    "actions": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    },
+                    "required": true
+                },
+                "name": {
+                    "label": "наименование",
+                    "control": "TextEdit",
+                    "actions": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    },
+                    "required": true
+                },
+                "comment": {
+                    "label": "Комментарий",
+                    "control": "TextEdit",
+                    "controlProps": {
+                        "multiline": true,
+                        "minRows": 3,
+                        "maxRows": 3
+                    },
+                    "actions": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    }
+                }
+            }
+        },
+        "objectListsForm": {
+            "title": "Списки",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "lists",
+                                "listForm": "listForm"
+                            },
+                            "actions": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `Список_${mem.lists.length+1}`; mem.lists = [...mem.lists, {code: newName, text: '{}'}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectFormsForm": {
+            "title": "Формы",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "forms",
+                                "listForm": "formForm"
+                            },
+                            "actions": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `Форма_${Object.keys(mem.forms).length+1}`; mem.forms = [...mem.forms, {code: newName, text: '{}'}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectJSForm": {
+            "title": "JS scripts",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "js",
+                                "listForm": "jsForm"
+                            },
+                            "actions": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `js_${Object.keys(mem.js).length+1}`; mem.js = [...mem.js, {code: newName, text: ''}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectMethodsForm": {
+            "title": "Методы",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "methods",
+                                "listForm": "methodForm"
+                            },
+                            "actions": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `Метод_${Object.keys(mem.methods).length+1}`; mem.methods = [...mem.methods, {code: newName, data: {}}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectReferencesForm": {
+            "title": "Справочники",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "references",
+                                "listForm": "referenceForm"
+                            },
+                            "actions": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `Справочник_${Object.keys(mem.references).length+1}`; mem.references=[...mem.references,{code: newName, formText: '{}', method: {}}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "listFormControl": {
+            "className": "horizontal",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@list": {
+                    "className": "vertical",
+                    "style": {
+                        "height": "100%",
+                        "width": "300px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Добавить",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "name": "onAddListRow"
+                                            },
+                                            {
+                                                "name": "onModified"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "Удалить",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "name": "onDelListRow"
+                                            },
+                                            {
+                                                "name": "onModified"
+                                            }
+                                        ],
+                                        "disabled$": "!context[params.listAtr+'_active']"
+                                    }
+                                ]
+                            }
+                        },
+                        ".list": {
+                            "style": {
+                                "flex": 1,
+                                "overflow": "hidden"
+                            },
+                            "control": "ListTable",
+                            "getter": "mem[params.listAtr]",
+                            "setter": "mem[params.listAtr] = params.value;",
+                            "controlOpts": {
+                                "id": "code",
+                                "rowDrag": true,
+                                "columns!": {
+                                    "code": {
+                                        "label": "Список",
+                                        "flex": 1,
+                                        "editable": true,
+                                        "fastFilter": true
+                                    }
+                                }
+                            },
+                            "controlProps": {
+                                "style": {
+                                    "height": "100%"
+                                },
+                                "context$": "(()=>{if (!context['ctx_'+params.listAtr]){context['ctx_'+params.listAtr] = {};} return context['ctx_'+params.listAtr];})()",
+                                "gridOptions": {
+                                    "headerHeight": 0,
+                                    "domLayout": "normal",
+                                    "localeText": {
+                                        "noRowsToShow": "Пусто"
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                },
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "if (context[params.listAtr+'_active'] == selectedRow) throw 'Abort';"
+                                    },
+                                    {
+                                        "js": "context[params.listAtr+'_active'] = selectedRow;"
+                                    },
+                                    {
+                                        "name": "onChangeListRow"
+                                    }
+                                ],
+                                "onCellValueChanged": [
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "flex": 1
+                    },
+                    "object": "aoa",
+                    "form$": "params.listForm",
+                    "visible$": "!!context[params.listAtr+'_active']",
+                    "params": {}
+                }
+            },
+            "actions": {
+                "onChangeListRow": {
+                    "js": ";"
+                },
+                "onDelListRow": {
+                    "js": "mem[params.listAtr].splice(mem[params.listAtr].indexOf(context[params.listAtr+'_active']), 1); mem[params.listAtr]=[...mem[params.listAtr]]; context[params.listAtr+'_active']=null;"
+                }
+            }
+        },
+        "listForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".list": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.lists_active",
+                    "$": {
+                        "text": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "listFormEdit",
+                                "mode": "json"
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "formForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".form": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.forms_active",
+                    "$": {
+                        "text": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "formFormEdit",
+                                "mode": "json"
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "jsForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".form": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.js_active",
+                    "$": {
+                        "text": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "jsFormEdit",
+                                "mode": "javascript"
+                            },
+                            "actions": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "methodForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".method": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.methods_active.data",
+                    "$": {
+                        ".tabs": {
+                            "control": "Tabs",
+                            "style": {
+                                "height": "100%",
+                                "display": "flex",
+                                "flexDirection": "column"
+                            },
+                            "controlProps": {
+                                "variant": "standard",
+                                "context$": "(()=>{if (!context.methodTabs){context.methodTabs={};} return context.methodTabs;})()",
+                                "style": {
+                                    "marginBottom": "8px"
+                                },
+                                "pages": {
+                                    "sql": {
+                                        "style": {
+                                            "flex": 1
+                                        },
+                                        "title": "SQL",
+                                        "$": {
+                                            "sql": {
+                                                "className": "horizontal",
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "$": {
+                                                    "@params": {
+                                                        "className": "vertical",
+                                                        "style": {
+                                                            "width": "240px"
+                                                        },
+                                                        "$": {
+                                                            "sqlType": {
+                                                                "label": "Тип",
+                                                                "control": "SelectList",
+                                                                "controlProps": {
+                                                                    "list": [
+                                                                        {
+                                                                            "value": "query",
+                                                                            "name": "Запрос"
+                                                                        },
+                                                                        {
+                                                                            "value": "plsql",
+                                                                            "name": "Скрипт"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "actions": {
+                                                                    "onChange": {
+                                                                        "name": "onModified"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "database": {
+                                                                "label": "База данных",
+                                                                "control": "TextEdit",
+                                                                "actions": {
+                                                                    "onChange": {
+                                                                        "name": "onModified"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "@params": {
+                                                                "className": "vertical",
+                                                                "$": {
+                                                                    "@buttons": {
+                                                                        "className": "horizontal",
+                                                                        "$": {
+                                                                            ".btnAdd": {
+                                                                                "label": "Добавить",
+                                                                                "control": "IconButton",
+                                                                                "controlProps": {
+                                                                                    "icon": "add"
+                                                                                },
+                                                                                "action": {
+                                                                                    "name": "addParam"
+                                                                                }
+                                                                            },
+                                                                            ".btnDel": {
+                                                                                "label": "Удалить",
+                                                                                "control": "IconButton",
+                                                                                "controlProps": {
+                                                                                    "icon": "delete"
+                                                                                },
+                                                                                "action": {
+                                                                                    "name": "delParam"
+                                                                                },
+                                                                                "readOnly$": "!context.methodParamsCtx?.selectedRow"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    ".list": {
+                                                                        "control": "ListTable",
+                                                                        "getter": "context.methodParamsCtx.list || (()=>{context.methodParamsCtx.list=mem.params?.map((p)=>({code: p})); return context.methodParamsCtx.list})()",
+                                                                        "controlOpts": {
+                                                                            "id": "code",
+                                                                            "columns!": {
+                                                                                "code": {
+                                                                                    "editable": true
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "controlProps": {
+                                                                            "context$": "(()=>{if (!context.methodParamsCtx)context.methodParamsCtx={}; return context.methodParamsCtx;})()",
+                                                                            "gridOptions": {
+                                                                                "headerHeight": 0
+                                                                            }
+                                                                        },
+                                                                        "actions": {
+                                                                            "onCellValueChanged": [
+                                                                                {
+                                                                                    "js": "mem.params.splice(mem.params.indexOf(params.oldValue), 1, params.newValue);"
+                                                                                },
+                                                                                {
+                                                                                    "name": "onModified"
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "actions": {
+                                                                    "addParam": [
+                                                                        {
+                                                                            "js": "if (!mem.params)mem.params=[]; mem.params.push(`param_${mem.params.length+1}`); context.methodParamsCtx=null;"
+                                                                        },
+                                                                        {
+                                                                            "name": "onModified"
+                                                                        }
+                                                                    ],
+                                                                    "delParam": [
+                                                                        {
+                                                                            "js": "mem.params.splice(mem.params.indexOf(context.methodParamsCtx.selectedRow.code), 1); context.methodParamsCtx=null;"
+                                                                        },
+                                                                        {
+                                                                            "name": "onModified"
+                                                                        }
+                                                                    ],
+                                                                    "onSelectionChanged": {
+                                                                        "js": ";"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "@text": {
+                                                        "style": {
+                                                            "flex": 1
+                                                        },
+                                                        "$": {
+                                                            "sql": {
+                                                                "style": {
+                                                                    "height": "100%",
+                                                                    "overflow": "hidden"
+                                                                },
+                                                                "control": "AceEditor",
+                                                                "controlProps": {
+                                                                    "editorId": "methodMethodSql",
+                                                                    "mode": "sql"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "script": {
+                                        "style": {
+                                            "flex": 1
+                                        },
+                                        "title": "Py скрипт",
+                                        "$": {
+                                            "script": {
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "$": {
+                                                    "py": {
+                                                        "style": {
+                                                            "height": "100%",
+                                                            "overflow": "hidden"
+                                                        },
+                                                        "control": "AceEditor",
+                                                        "controlProps": {
+                                                            "editorId": "methodMethodSql",
+                                                            "mode": "python"
+                                                        },
+                                                        "actions": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "referenceForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".tabs": {
+                    "init$": "context.references_active",
+                    "control": "Tabs",
+                    "style": {
+                        "height": "100%",
+                        "display": "flex",
+                        "flexDirection": "column"
+                    },
+                    "controlProps": {
+                        "variant": "standard",
+                        "context$": "(()=>{if (!context.referenceTabs){context.referenceTabs={};} return context.referenceTabs;})()",
+                        "style": {
+                            "marginBottom": "8px"
+                        },
+                        "pages": {
+                            "form": {
+                                "style": {
+                                    "flex": 1
+                                },
+                                "title": "Форма",
+                                "$": {
+                                    "formText": {
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "hidden"
+                                        },
+                                        "control": "AceEditor",
+                                        "controlProps": {
+                                            "editorId": "referenceForm",
+                                            "mode": "json"
+                                        },
+                                        "actions": {
+                                            "onChange": {
+                                                "name": "onModified"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "sql": {
+                                "style": {
+                                    "flex": 1
+                                },
+                                "title": "SQL",
+                                "$": {
+                                    ".sql": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "className": "horizontal",
+                                        "init$": "mem.method?.sql || (()=>{mem.method.sql={}; return mem.method.sql})()",
+                                        "$": {
+                                            "@params": {
+                                                "className": "vertical",
+                                                "style": {
+                                                    "width": "240px"
+                                                },
+                                                "$": {
+                                                    "sqlType": {
+                                                        "label": "Тип",
+                                                        "control": "SelectList",
+                                                        "controlProps": {
+                                                            "list": [
+                                                                {
+                                                                    "value": "query",
+                                                                    "name": "Запрос"
+                                                                },
+                                                                {
+                                                                    "value": "plsql",
+                                                                    "name": "Скрипт"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "actions": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    },
+                                                    "database": {
+                                                        "label": "База данных",
+                                                        "control": "TextEdit",
+                                                        "actions": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    },
+                                                    "@params": {
+                                                        "className": "vertical",
+                                                        "$": {
+                                                            "@buttons": {
+                                                                "className": "horizontal",
+                                                                "$": {
+                                                                    ".btnAdd": {
+                                                                        "label": "Добавить",
+                                                                        "control": "IconButton",
+                                                                        "controlProps": {
+                                                                            "icon": "add"
+                                                                        },
+                                                                        "action": {
+                                                                            "name": "addParam"
+                                                                        }
+                                                                    },
+                                                                    ".btnDel": {
+                                                                        "label": "Удалить",
+                                                                        "control": "IconButton",
+                                                                        "controlProps": {
+                                                                            "icon": "delete"
+                                                                        },
+                                                                        "readOnly$": "!context.referenceMethodParamsCtx?.selectedRow",
+                                                                        "action": {
+                                                                            "name": "delParam"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            ".list": {
+                                                                "control": "ListTable",
+                                                                "controlProps": {
+                                                                    "context$": "(()=>{if (!context.referenceMethodParamsCtx)context.referenceMethodParamsCtx={}; return context.referenceMethodParamsCtx;})()",
+                                                                    "gridOptions": {
+                                                                        "headerHeight": 0
+                                                                    }
+                                                                },
+                                                                "getter": "context.referenceMethodParamsCtx.list || (()=>{context.referenceMethodParamsCtx.list=mem.params?.map((p)=>({code: p})); return context.referenceMethodParamsCtx.list})()",
+                                                                "controlOpts": {
+                                                                    "id": "code",
+                                                                    "columns!": {
+                                                                        "code": {
+                                                                            "editable": true
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "actions": {
+                                                                    "onCellValueChanged": [
+                                                                        {
+                                                                            "js": "mem.params.splice(mem.params.indexOf(params.oldValue), 1, params.newValue); context.referenceMethodParamsCtx.list = null;"
+                                                                        },
+                                                                        {
+                                                                            "name": "onModified"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "actions": {
+                                                            "addParam": [
+                                                                {
+                                                                    "js": "if (!mem.params)mem.params=[]; mem.params.push(`param_${mem.params.length+1}`); context.referenceMethodParamsCtx=null;"
+                                                                },
+                                                                {
+                                                                    "name": "onModified"
+                                                                }
+                                                            ],
+                                                            "delParam": [
+                                                                {
+                                                                    "js": "mem.params.splice(mem.params.indexOf(context.referenceMethodParamsCtx.selectedRow.code), 1); context.referenceMethodParamsCtx=null;"
+                                                                },
+                                                                {
+                                                                    "name": "onModified"
+                                                                }
+                                                            ],
+                                                            "onSelectionChanged": {
+                                                                "js": ";"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "@text": {
+                                                "style": {
+                                                    "flex": 1
+                                                },
+                                                "$": {
+                                                    "sql": {
+                                                        "style": {
+                                                            "height": "100%",
+                                                            "overflow": "hidden"
+                                                        },
+                                                        "control": "AceEditor",
+                                                        "controlProps": {
+                                                            "editorId": "referenceMethodSql",
+                                                            "mode": "sql"
+                                                        },
+                                                        "actions": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "pyScript": {
+                                "style": {
+                                    "flex": 1
+                                },
+                                "title": "Py скрипт",
+                                "$": {
+                                    ".script": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "init$": "mem.method?.script || (()=>{mem.method.script={}; return mem.method.script})()",
+                                        "$": {
+                                            "py": {
+                                                "style": {
+                                                    "height": "100%",
+                                                    "overflow": "hidden"
+                                                },
+                                                "control": "AceEditor",
+                                                "controlProps": {
+                                                    "editorId": "referenceMethodSql",
+                                                    "mode": "python"
+                                                },
+                                                "actions": {
+                                                    "onChange": {
+                                                        "name": "onModified"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "cleanCacheTask": {
+            "title": "Очистка кэша объектов",
+            "className": "vertical task task-panel",
+            "$": {
+                ".btnCleanObjectCache": {
+                    "label": "Сброс кэша прикладных объектов",
+                    "control": "Button",
+                    "action": {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'aoa', method: 'cleanCache'})"
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import Object\nfrom apng_core.aoa.services import applyFilterModel2\n\nquery = Object.objects\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    filterModel2 = parameters['request'].get('filterModel2') if parameters.get('request') else None\n        \n    if filterModel2:\n        \n        if 'package' in filterModel2:\n            from django.db.models import Exists, OuterRef, F, CharField\n            from django.db.models.functions import Cast\n            from apng_core.aos.models import PackageObject\n            \n            po = PackageObject.objects.filter(deployment_id=filterModel2['package'])\n\n            query = query.annotate(\n                id_str=Cast('id', output_field=CharField())\n            ).annotate(\n                isInPackage=Exists(po.filter(object_id=OuterRef('id_str')))\n            ).filter(isInPackage=True)\n            \n\n            del filterModel2['package']\n        \n        query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    query = query.order_by('code')\n    \n    query = query[parameters['request']['startRow']:parameters['request']['endRow']]\n        \ndata = []\nfor o in query:\n    d = {\n        'id': o.id.__str__(),\n        'code': o.code,\n        'name': o.name,\n    }\n    \n    data.append(d)\n\n\n"
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from django.db import transaction\nfrom django.conf import settings\nfrom apng_core.aoa.models import Object\n\nwith transaction.atomic(using=settings.APPS_DB[Object._meta.app_label]):\n    o = Object.objects.get(id=parameters.get('id')) \n    o.delete()\n\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import Object\n\ndata = None\n\nif parameters.get('id'):\n    o = Object.objects.get(id=parameters.get('id'))\nelif parameters.get('code'):\n    try:\n        o = Object.objects.get(code=parameters.get('code'))\n    except Object.DoesNotExist:\n        raise UserException('Прикладной объект %s не существует' % parameters.get('code'))\n\n\n\ndata = {\n    'id': o.id.__str__(),\n    'code': o.code,\n    'name': o.name,\n    'modified': o.modified,\n    'description': o.description,\n}\n\nif data['description']:\n    #\n    # Преобразование старого справочника в список\n    #\n    if data['description'].get('reference') and not data['description'].get('references'):\n        form = data['description']['reference']\n        method = data['description']['reference'].get('method')\n        del form['method']\n        if len(form.keys()) > 0:\n            # Только если есть описание формы\n            data['description']['references'] = {\n                'default': {\n                    'form': form,\n                    'method': method\n                }\n            }\n        del data['description']['reference']\n    \n    #\n    # Преобразование к множественным спискам\n    #\n    if data['description'].get('list') and not data['description'].get('lists'):\n        dlist = data['description']['list']\n        data['description']['lists'] = {\n            'default': dlist\n        }\n        del data['description']['list']\n        "
+            }
+        },
+        "save": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import Object\nfrom datetime import datetime\n\nif parameters.get('id'):\n    o = Object.objects.get(id=parameters['id'])\n    if o.modified is not None and parameters['modified'] is not None and o.modified != datetime.fromisoformat(parameters['modified']):\n        raise UserError('Объект изменен в другой задаче, сохранение не возможно')\nelse:\n    o = Object()\n    \no.code = parameters['code']\no.name = parameters['name']\no.description = parameters['description']\no.save()\n\ntry:\n    import uwsgi\n    uwsgi.signal(100)\nexcept: \n    from apng_core.aoa.services import reset_object_cache\n    reset_object_cache()\n\ndata = {\n    'id': o.id.__str__(),\n    'modified': o.modified\n}\n\n\n#raise UserException(json.dumps(parameters, indent=4, ensure_ascii=False))"
+            }
+        },
+        "cleanCache": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "try:\n    import uwsgi\n    uwsgi.signal(100)\nexcept: \n    pass\n"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "code": {
+                    "title": "Код",
+                    "width": 250
+                },
+                "name": {
+                    "title": "Наименование",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Создать старая",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/edit",
+                        "title": "Новый объект",
+                        "data": {
+                            "object": {
+                                "name": "Новый объект"
+                            }
+                        }
+                    },
+                    "visible": false
+                },
+                {
+                    "title": "Создать",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "Новый объект",
+                        "params": {
+                            "object": "aoa",
+                            "form": "objectEditTask"
+                        }
+                    }
+                },
+                {
+                    "title": "Открыть старая",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/edit",
+                        "title$": "`Объект ${$listRow.code}`",
+                        "data": {
+                            "object": {
+                                "id$": "$listRow.id"
+                            }
+                        }
+                    },
+                    "disabled": "!$listRow",
+                    "visible": false
+                },
+                {
+                    "title": "Открыть",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Объект ${$listRow.code}`",
+                        "params": {
+                            "object": "aoa",
+                            "form": "objectEditTask",
+                            "objectId$": "$listRow.id"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Удалить",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Удалить объект ${$listRow.code}, ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled": "!$listRow"
+                },
+                {
+                    "title": "Инструменты",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Пакеты",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.id, model: 'aoa.Object'}, context: {}})"
+                            },
+                            "disabled": "!$listRow"
+                        },
+                        {
+                            "title": "История",
+                            "command": {
+                                "type": "task",
+                                "title$": "`История объекта: ${$listRow.code}`",
+                                "call": "/aoa/ObjectTask",
+                                "params": {
+                                    "object": "aos.ModifiedObjects",
+                                    "form": "historyTask",
+                                    "model": "aoa.Object",
+                                    "objectId$": "$listRow.id"
+                                }
+                            },
+                            "disabled": "!$listRow"
+                        }
+                    ]
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Фильтр",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Код",
+                                    "control": "TextEdit"
+                                },
+                                "name": {
+                                    "label": "Наименование",
+                                    "control": "TextEdit"
+                                },
+                                "description": {
+                                    "label": "Содержит",
+                                    "control": "TextEdit"
+                                },
+                                "package": {
+                                    "label": "Пакет",
+                                    "control": "ObjectSelectList",
+                                    "controlProps": {
+                                        "object": "package",
+                                        "method": "getList",
+                                        "params": {}
+                                    },
+                                    "controlOpts": {
+                                        "translate": {
+                                            "value": "id",
+                                            "name": "name"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Очистить",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Применить",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "references": {}
+}

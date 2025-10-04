@@ -1,0 +1,731 @@
+{
+    "lists": {
+        "listSampleTask": {
+            "id": "code",
+            "getList": "getListSample",
+            "columns": {
+                "code": {
+                    "title": "Code",
+                    "width": 200
+                },
+                "name": {
+                    "title": "Name",
+                    "width": 300
+                },
+                "sign": {
+                    "title": "Sign",
+                    "control": "checkbox"
+                }
+            },
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Error script",
+                    "command": {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: '', method:''});"
+                    },
+                    "disableUpdate": true
+                }
+            ]
+        }
+    },
+    "forms": {
+        "testTabsTask": {
+            "label": "Tabs",
+            "className": "vertical task task-panel",
+            "$": {
+                "@common": {
+                    "className": "horizontal",
+                    "style": {
+                        "padding": "4px 4px 0px 4px"
+                    },
+                    "$": {
+                        ".btnValidate": {
+                            "label": "Validate",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if(validate()){task.busy.displayInfo('Validated successfuly')}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                ".tabs": {
+                    "control": "Tabs",
+                    "style": {
+                        "flexGrow": 1,
+                        "display": "flex",
+                        "flexDirection": "column"
+                    },
+                    "controlProps": {
+                        "variant": "standard",
+                        "drawMode": "full",
+                        "context$": "(()=>{context.tabCtx=context.tabCtx||{}; return context.tabCtx;})()",
+                        "titleStyle": {
+                            "xtextTransform": "none"
+                        },
+                        "pages": {
+                            "page1": {
+                                "title": "Page 1",
+                                "titleStyle": {
+                                    "textTransform": "none"
+                                },
+                                "style": {
+                                    "height": "100%",
+                                    "overflow": "auto",
+                                    "padding": "4px"
+                                },
+                                "$": {
+                                    "@form": {
+                                        "style": {
+                                            "paddingTop": "4px"
+                                        },
+                                        "$": {
+                                            "field1": {
+                                                "label": "Field 1",
+                                                "control": "TextEdit",
+                                                "required": true
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "page2": {
+                                "title": "Page 2",
+                                "style": {
+                                    "height": "100%",
+                                    "overflow": "auto",
+                                    "padding": "4px"
+                                },
+                                "$": {
+                                    "@form": {
+                                        "style": {
+                                            "paddingTop": "4px"
+                                        },
+                                        "$": {
+                                            "field2": {
+                                                "label": "Field 2",
+                                                "control": "TextEdit"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "frame": {
+                                "title": "Frame",
+                                "style": {
+                                    "height": "100%",
+                                    "overflow": "auto",
+                                    "padding": "4px"
+                                },
+                                "$": {
+                                    ".frame": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "control": "Frame",
+                                        "controlProps": {
+                                            "src": "http://30.30.1.86:30504/"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refreshTask": {
+                    "js": ";"
+                }
+            }
+        },
+        "testVerticalTabsTask": {
+            "label": "Vertical tabs",
+            "className": "vertical task task-panel",
+            "$": {
+                ".tabs": {
+                    "control": "Tabs",
+                    "style": {
+                        "display": "flex",
+                        "flexDirection": "row"
+                    },
+                    "controlProps": {
+                        "variant": "standard",
+                        "orientation": "vertical",
+                        "context$": "(()=>{context.tabCtx=context.tabCtx||{}; return context.tabCtx;})()",
+                        "pageStyle": {
+                            "margin": "8px"
+                        },
+                        "pages": {
+                            "page1": {
+                                "title": "Page 1",
+                                "$": {
+                                    ".label": {
+                                        "control": "Text",
+                                        "getter": "'Page 1'"
+                                    }
+                                }
+                            },
+                            "page2": {
+                                "title": "Page 2",
+                                "$": {
+                                    ".label": {
+                                        "control": "Text",
+                                        "getter": "'Page 2'"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "testGridCellStyleTask": {
+            "label": "Тестирование стиля ячейки грида",
+            "className": "vertical task task-panel",
+            "$": {
+                "|rows": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "id": "id",
+                        "columns!": {
+                            "id": {
+                                "label": "id",
+                                "cellStyle$": "console.log('cellStyle$', arguments['0']) || data.id%2==0?{border: '1px solid red'}:null"
+                            },
+                            "value": {
+                                "label": "value",
+                                "cellStyle": {
+                                    "backgroundColor": "cyan"
+                                },
+                                "cellStyle$": "console.log('cellStyle$', arguments['0']) || data.id%3==0?{border: '1px solid green'}:null"
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "mem.rows=[...Array(5).keys()].map(v=>({id: v, value: `field ${v}`}))"
+                }
+            }
+        },
+        "testEmptyTask": {},
+        "testListTableTask": {
+            "title": "Test ListTable",
+            "$": {
+                ".list": {
+                    "label": "myListTable",
+                    "control": "ListTable",
+                    "getter": "mem.list||[]",
+                    "controlProps": {
+                        "compact": true,
+                        "columns!": {
+                            "code": {
+                                "label": "code",
+                                "icon": "namedIcon"
+                            },
+                            "name": {
+                                "label": "name",
+                                "icon": "view"
+                            },
+                            "name2": {
+                                "label": "Name 2",
+                                "getter": "data?.name",
+                                "icon": {
+                                    "svg": {
+                                        "style": {
+                                            "width": "24px",
+                                            "height": "24px"
+                                        },
+                                        "$": [
+                                            {
+                                                "path": {
+                                                    "d": "M7 20h4c0 1.1-.9 2-2 2s-2-.9-2-2m-2-1h8v-2H5zm11.5-9.5c0 3.82-2.66 5.86-3.77 6.5H5.27c-1.11-.64-3.77-2.68-3.77-6.5C1.5 5.36 4.86 2 9 2s7.5 3.36 7.5 7.5m-2 0C14.5 6.47 12.03 4 9 4S3.5 6.47 3.5 9.5c0 2.47 1.49 3.89 2.35 4.5h6.3c.86-.61 2.35-2.03 2.35-4.5m6.87-2.13L20 8l1.37.63L22 10l.63-1.37L24 8l-1.37-.63L22 6zM19 6l.94-2.06L22 3l-2.06-.94L19 0l-.94 2.06L16 3l2.06.94z"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "buttons": {
+                                "label": "dynamic form",
+                                "control": "DynamicForm",
+                                "elements": {
+                                    "$": {
+                                        ".btnTest": {
+                                            "label": "Test",
+                                            "control": "Button",
+                                            "action": {
+                                                "name": "onRowButtonClick"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "icons": {
+                            "namedIcon": {
+                                "svg": {
+                                    "style": {
+                                        "width": "24px",
+                                        "height": "24px"
+                                    },
+                                    "$": [
+                                        {
+                                            "path": {
+                                                "d": "M12 1.95c-5.52 0-10 4.48-10 10s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57v-1.43c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57v-1.43c0-5.52-4.48-10-10-10m0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "events": {
+                        "onSelectionChanged": {
+                            "js": ";"
+                        },
+                        "onRowButtonClick": {
+                            "js": "console.log('onRowButtonClick');"
+                        }
+                    }
+                }
+            },
+            "events": {
+                "onTaskCreated": {
+                    "js": "mem.list=[{code: '123123', name: 'fsdfsgdsgjskf'}, {code: '252245', name: 'ffffhhdwrtwe'}]"
+                }
+            }
+        },
+        "testListTableInfiniteTask": {
+            "title": "Test ListTable infinite",
+            "$": {
+                "list|": {
+                    "label": "myListTable",
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "rowModelType": "infinite",
+                        "columns!": {
+                            "code": {
+                                "label": "code"
+                            },
+                            "name": {
+                                "label": "name"
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onGetRows": {
+                            "js": "onSuccess([])"
+                        }
+                    }
+                }
+            }
+        },
+        "testDialogTask": {
+            "title": "Test call dialog",
+            "className": "vertical task task-panel",
+            "$": {
+                ".btnCallDialog": {
+                    "label": "Open Dialog",
+                    "control": "Button",
+                    "action": {
+                        "js": "frontend.dialog({object: 'test_ui', form: 'testDialog', params: {dialogTitle: 'Dialog parameter and very very long dialog title'}})"
+                    }
+                }
+            }
+        },
+        "testDialog": {
+            "title$": "`Test Dialog: ${params.dialogTitle}`",
+            "className": "vertical",
+            "dialogStyle": {
+                "width": "200px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flexGrow": 1
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnAppy": {
+                            "label": "Apply",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Abort';"
+                                },
+                                {
+                                    "name": "onApplyDialog",
+                                    "params": {
+                                        "result$": "mem"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "testObjectReferenceTask": {
+            "label": "Тестирование справочника ObjectReference",
+            "className": "vertical task task-panel",
+            "$": {
+                "@form": {
+                    "style": {
+                        "margin": "8px"
+                    },
+                    "className": "vertical",
+                    "$": {
+                        "@ref1": {
+                            "className": "horizontal",
+                            "$": {
+                                "ref": {
+                                    "label": "Справочник 1",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "ObjectReference",
+                                    "controlProps": {
+                                        "object": "test_ui",
+                                        "reference": "simpleReference",
+                                        "textReadOnly$": "!!context.textReadOnly",
+                                        "valueField": "code",
+                                        "dependentAttrs": {
+                                            "refName": "name"
+                                        }
+                                    },
+                                    "readOnly$": "!!context.readOnly"
+                                },
+                                "refName": {
+                                    "label": "Наименование",
+                                    "style": {
+                                        "width": "560px"
+                                    },
+                                    "control": "TextEdit",
+                                    "readOnly": true
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "readOnly": {
+                                    "label": "Switch readOnly",
+                                    "control": "Button",
+                                    "action": [
+                                        {
+                                            "js": "context.readOnly=!context.readOnly"
+                                        },
+                                        {
+                                            "name": "refresh"
+                                        }
+                                    ]
+                                },
+                                "textReadOnly": {
+                                    "label": "Switch textReadOnly",
+                                    "control": "Button",
+                                    "action": [
+                                        {
+                                            "js": "context.textReadOnly=!context.textReadOnly"
+                                        },
+                                        {
+                                            "name": "refresh"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "@ref2": {
+                            "$": {
+                                "ref": {
+                                    "label": "Справочник 2",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "ObjectReference",
+                                    "controlProps": {
+                                        "object": "test_ui",
+                                        "reference": "simpleReference",
+                                        "valueField": "code",
+                                        "textReadOnly": true,
+                                        "displayAttr": "ref2Name",
+                                        "dependentAttrs": {
+                                            "ref2Name": "name"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refresh": {
+                    "js": ";"
+                }
+            }
+        },
+        "testCurrencyEditTask": {
+            "title": "Test currency edit",
+            "className": "vertical task task-panel",
+            "style": {
+                "padding": "4px"
+            },
+            "$": {
+                "value": {
+                    "label": "Currency",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "CurrencyField",
+                    "controlOpts": {
+                        "currencyAttr": "currency"
+                    }
+                }
+            }
+        },
+        "testActionPanelTask": {
+            "title": "Test currency edit",
+            "className": "vertical task task-panel",
+            "style": {
+                "padding": "4px"
+            },
+            "$": {
+                ".ap": {
+                    "control": "ActionPanel",
+                    "controlOpts": {
+                        "actions": [
+                            {
+                                "title": "Dynamic menu",
+                                "actions$": "[{title: 'menu 1'}, {title: 'menu2'}]"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "testAceEditorTask": {
+            "title": "Test AceEditor",
+            "className": "vertical task-panel",
+            "style": {
+                "padding": "4px"
+            },
+            "$": {
+                ".text": {
+                    "style": {
+                        "flex": 1
+                    },
+                    "control": "AceEditor",
+                    "controlProps": {
+                        "mode": "json",
+                        "context$": "(()=>{context.ctxAce = context.ctxAce || {}; return context.ctxAce;})()"
+                    },
+                    "getter": "context.aceText || '{}'",
+                    "setter": "context.aceText=params.value;"
+                }
+            }
+        },
+        "testMaskedEditTask": {
+            "title": "Test masked edit",
+            "className": "vertical task task-panel",
+            "style": {
+                "padding": "4px"
+            },
+            "$": {
+                "value": {
+                    "label": "Masked field",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit",
+                    "controlProps": {
+                        "masked": {
+                            "mask": [
+                                "/\\d/",
+                                "/\\d/"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "testTextEditTask": {
+            "title": "Test text edit",
+            "className": "vertical task task-panel",
+            "style": {
+                "padding": "4px"
+            },
+            "$": {
+                "text": {
+                    "label": "Text field",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit"
+                },
+                "@g": {
+                    "$": {
+                        "sec_password": {
+                            "label": "Password field",
+                            "style": {
+                                "width": "280px"
+                            },
+                            "control": "TextEdit",
+                            "controlProps": {
+                                "InputProps": {
+                                    "inputComponent": "div"
+                                },
+                                "type": "password"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "testFormScriptTask": {
+            "title": "Test form script",
+            "className": "vertical task task-panel",
+            "$": {
+                ".btnCallDialog": {
+                    "label": "Run script",
+                    "control": "Button",
+                    "action": {
+                        "js": "js.testFormScript()"
+                    }
+                }
+            }
+        },
+        "appToolbarButton": {
+            "$": {
+                ".btn": {
+                    "label": "Test",
+                    "control": "IconButton",
+                    "controlProps": {
+                        "icon": {
+                            "svg": {
+                                "style": {
+                                    "width": "24px",
+                                    "height": "24px"
+                                },
+                                "$": [
+                                    {
+                                        "path": {
+                                            "d": "M7 20h4c0 1.1-.9 2-2 2s-2-.9-2-2m-2-1h8v-2H5zm11.5-9.5c0 3.82-2.66 5.86-3.77 6.5H5.27c-1.11-.64-3.77-2.68-3.77-6.5C1.5 5.36 4.86 2 9 2s7.5 3.36 7.5 7.5m-2 0C14.5 6.47 12.03 4 9 4S3.5 6.47 3.5 9.5c0 2.47 1.49 3.89 2.35 4.5h6.3c.86-.61 2.35-2.03 2.35-4.5m6.87-2.13L20 8l1.37.63L22 10l.63-1.37L24 8l-1.37-.63L22 6zM19 6l.94-2.06L22 3l-2.06-.94L19 0l-.94 2.06L16 3l2.06.94z"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "action": {
+                        "js": "js.toggleAppPanel();"
+                    }
+                }
+            }
+        },
+        "appPanel": {
+            "className": "",
+            "style": {
+                "minWidth": "200px",
+                "height": "100%",
+                "boxShadow": "0 3px 6px 0 rgba(0, 0, 0, 0.32)",
+                "backgroundColor": "#ffffff",
+                "padding": "0px",
+                "borderRadius": "4px",
+                "marginLeft": "auto"
+            },
+            "$": {
+                ".btn": {
+                    "label": "test",
+                    "control": "Button",
+                    "action": {
+                        "js": "js.test()"
+                    }
+                }
+            }
+        }
+    },
+    "js": {
+        "testFormScript": "console.log(arguments['0'])",
+        "toggleAppPanel": "//const targetComponents = app.rootComponents;\nconst targetComponents = app.tvComponents;\n\nconst c = targetComponents.components.find((x)=>x.component==='ObjectForm' && x.props?.object=='test_ui' && x.props?.form=='appPanel');\nif (c){\n    targetComponents.removeComponent(c);\n}else{\n    targetComponents.addComponent({\n        component: 'ObjectForm',\n        props: {\n            object: 'test_ui',\n            form: 'appPanel',\n            app: app,\n            task: {data:{}, busy: app.busy}\n        }\n    });\n}\n",
+        "test": "const t = app.tm.getActiveTask();\nif (t){\n    t.events.fire('onSetDiagramXml', '<workflow id=\\\"new_workflow\\\"></workflow>');\n    t.events.fire('onGetDiagramXml')\n        .then((r)=>{\n            console.log('r', r);    \n        })\n    ;\n}\n"
+    },
+    "methods": {
+        "getListSample": {
+            "sql": {},
+            "script": {
+                "py": "data = [\n    {'code': 'code 1', 'name': 'name 1', 'sign': True},\n    {'code': 'code 2', 'name': 'name 2', 'sign': False},\n    {'code': 'code 3', 'name': 'name 3', 'sign': True},\n]\n\n\nif parameters.get('code'):\n    data = next(filter(lambda x: x['code']==parameters['code'], data), None)"
+            }
+        }
+    },
+    "references": {
+        "simpleReference": {
+            "form": {
+                "style": {
+                    "width": "700px",
+                    "height": "400px"
+                },
+                "fastFilter": true,
+                "columns": [
+                    {
+                        "title": "Code",
+                        "field": "code",
+                        "width": 150,
+                        "hide": false
+                    },
+                    {
+                        "title": "Name",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code"
+            },
+            "method": {
+                "script": {
+                    "py": "data = [\n    {\n        \"code\": \"code 1\",\n        \"name\": \"name 1\"\n    },\n    {\n        \"code\": \"code 2\",\n        \"name\": \"name 2\"\n    }\n]\n\nif parameters.get('code'):\n    data = next(filter(lambda x: x['code']==parameters['code'], data), None)"
+                }
+            }
+        }
+    }
+}

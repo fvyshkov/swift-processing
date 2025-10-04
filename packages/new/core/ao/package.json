@@ -1,0 +1,908 @@
+{
+    "forms": {
+        "objectPackageDialog": {
+            "title": "Object package",
+            "className": "vertical",
+            "style": {
+                "width": "500px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flexGrow": 1,
+                        "paddingTop": "8px"
+                    },
+                    "form": "objectPackageForm"
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": {
+                                "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'updateObjectPackages', params: {object: {model: params.model, ...mem.object}, packages: mem.packages}}).then(()=>{actions.close()})",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onDialogCreated": [
+                    {
+                        "js": "return backend.post('/aos/getObjectInfo', {model: params.model, objectId: params.objectId}).then((r)=>{ mem.object=r; mem.object.id = params.objectId})"
+                    },
+                    {
+                        "js": "return backend.post('/aos/getObjectPackages', {model: params.model, objectId: params.objectId}).then((r)=>{mem.packages=r; forceUpdate();})"
+                    }
+                ]
+            }
+        },
+        "objectPackageForm": {
+            "title": "Object package",
+            "className": "vertical",
+            "$": {
+                "object": {
+                    "className": "vertical",
+                    "$": {
+                        "id": {
+                            "label": "Object identifier",
+                            "control": "TextEdit"
+                        },
+                        "name": {
+                            "label": "Object name",
+                            "control": "TextEdit"
+                        },
+                        "file_name": {
+                            "label": "File name",
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "@package": {
+                    "title": "Packages",
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlProps": {
+                                "actions": [
+                                    {
+                                        "title": "Add",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": {
+                                            "js": "frontend.dialog({object: 'package', form: 'selectPackageDialog'})"
+                                        }
+                                    },
+                                    {
+                                        "title": "Remove",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "excludePackage",
+                                            "confirm": {
+                                                "title": "Remove object from package",
+                                                "message$": "`Remove object from package ${context.selectedPackage.name}?`",
+                                                "yes": "Yes",
+                                                "no": "No"
+                                            }
+                                        },
+                                        "disabled$": "!context.selectedPackage"
+                                    }
+                                ]
+                            }
+                        },
+                        "|packages": {
+                            "control": "ListTable",
+                            "controlProps": {
+                                "columns!": {
+                                    "name": {
+                                        "label": "Name",
+                                        "flex": 1
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "events": {
+                        "excludePackage": {
+                            "js": "mem.packages.splice(mem.packages.indexOf(context.selectedPackage), 1); mem.packages = [...mem.packages];"
+                        },
+                        "onSelectPackage": {
+                            "js": "console.log('onSelectPackage', params, mem.packages); if (!mem.packages.find((p)=>{return p.id==params.package.id})) {mem.packages.push(params.package); mem.packages = [...mem.packages];}"
+                        },
+                        "onSelectionChanged": {
+                            "js": "context.selectedPackage = selectedRow;"
+                        }
+                    }
+                }
+            }
+        },
+        "selectPackageDialog": {
+            "title": "Select package",
+            "dialogStyle": {
+                "width": "500px"
+            },
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden"
+            },
+            "$": {
+                "@list": {
+                    "style": {
+                        "overflowY": "auto",
+                        "flexGrow": 1
+                    },
+                    "$": {
+                        "|packages": {
+                            "control": "ListTable",
+                            "controlProps": {
+                                "columns!": {
+                                    "name": {
+                                        "label": "Name",
+                                        "flex": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnAppy": {
+                            "label": "Select",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "readOnly$": "!context.selectedPackage",
+                            "action": [
+                                {
+                                    "name": "onSelectPackage",
+                                    "params": {
+                                        "package$": "context.selectedPackage"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        },
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            },
+            "events": {
+                "onDialogCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'getList'}).then((r)=>{mem.packages=r; forceUpdate()})"
+                },
+                "onSelectionChanged": {
+                    "js": "context.selectedPackage = selectedRow;"
+                }
+            }
+        },
+        "packageEditTask": {
+            "title": "Package",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@panel": {
+                    "className": "horizontal",
+                    "style": {
+                        "marginTop": "4px",
+                        "padding": "8px 8px 8px 8px"
+                    },
+                    "$": {
+                        ".btnSave": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Abort';"
+                                },
+                                {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'savePackage', params: {id: mem.package.id, name: mem.package.name, path: mem.package.path}}).then((r)=>{mem.package.id=r.id; mem.package.modified=r.modified; context.modified=false;}).then(()=>{tm.setTaskTitle(task.key, `${_('Package')} ${mem.package.name}`)})"
+                                }
+                            ],
+                            "readOnly$": "!context.modified"
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden",
+                        "padding": "0px 8px 0px 8px"
+                    },
+                    "$": {
+                        "package": {
+                            "className": "vertical",
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                "@common": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "marginTop": "4px"
+                                    },
+                                    "$": {
+                                        "name": {
+                                            "label": "Name",
+                                            "control": "TextEdit",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "onModified"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "path": {
+                                            "label": "Path",
+                                            "control": "TextEdit",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "onModified"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "@content": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "flex": 1
+                                    },
+                                    "$": {
+                                        ".ap": {
+                                            "control": "ActionPanel",
+                                            "controlProps": {
+                                                "actions": [
+                                                    {
+                                                        "title": "Refresh",
+                                                        "icon": "refresh",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "name": "onReloadPackageObjects"
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Open",
+                                                        "icon": "view",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "js": "frontend.dialog({object: 'package', form: 'packageObjectDialog', mem: {...context.lctx.selectedRow}, context: {}})"
+                                                        },
+                                                        "disabled$": "!context?.lctx?.selectedRow"
+                                                    },
+                                                    {
+                                                        "title": "History",
+                                                        "action": {
+                                                            "js": "tm.newTask({path: '/aoa/ObjectTask', params: {object: 'aos.ModifiedObjects', form: 'historyTask', model: context?.lctx?.selectedRow?.model_name, objectId: context?.lctx?.selectedRow?.object_id}, title: `_('Package history') ${context?.lctx?.selectedRow?.object_name}`})"
+                                                        },
+                                                        "disabled$": "!context?.lctx?.selectedRow"
+                                                    },
+                                                    {
+                                                        "title": "Exclude",
+                                                        "icon": "delete",
+                                                        "mini": true,
+                                                        "action": {
+                                                            "confirm": {
+                                                                "title": "Exclude",
+                                                                "message$": "`Exclude objects`"
+                                                            },
+                                                            "name": "onExcludeObject"
+                                                        },
+                                                        "disabled$": "!context?.lctx?.selectedRow"
+                                                    },
+                                                    {
+                                                        "title": "Workcopy",
+                                                        "actions": [
+                                                            {
+                                                                "title": "Load package",
+                                                                "upload": true,
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'uploadPackage', file: params.file, params: {packageId: mem.id}}, {isFormData: true})",
+                                                                        "disableUpdate": true
+                                                                    },
+                                                                    {
+                                                                        "name": "onReloadPackageObjects"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "title": "Compare with workcopy",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'comparePackageWithWorkCopy', params: {id: mem.id}})",
+                                                                        "disableUpdate": "true"
+                                                                    },
+                                                                    {
+                                                                        "name": "onReloadPackageObjects"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "title": "Export object",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'exportPackageObjects', params: {packageId: mem.id, objects: context.lctx.selectedRows.map((o)=>o.id)}})",
+                                                                        "disableUpdate": "true"
+                                                                    },
+                                                                    {
+                                                                        "name": "onReloadPackageObjects"
+                                                                    }
+                                                                ],
+                                                                "disabled$": "!context?.lctx?.selectedRow"
+                                                            },
+                                                            {
+                                                                "title": "Install object",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'importPackageObjects', params: {packageId: mem.id, objects: context.lctx.selectedRows.map((o)=>o.id)}})",
+                                                                        "disableUpdate": "true"
+                                                                    },
+                                                                    {
+                                                                        "name": "onReloadPackageObjects"
+                                                                    }
+                                                                ],
+                                                                "disabled$": "!context?.lctx?.selectedRow"
+                                                            },
+                                                            {
+                                                                "title": "Compare object",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'getObjectForCompare', params: {packageId: mem.id, objectId: context.lctx.selectedRow.object_id, storage: 'path'}}).then((r)=>{context.compare = r;})",
+                                                                        "disableUpdate": "true"
+                                                                    },
+                                                                    {
+                                                                        "js": "tm.newTask({path: '/diffviewer', title: _('Compare objects'), params: {diff: context.compare}})",
+                                                                        "disableUpdate": true
+                                                                    }
+                                                                ],
+                                                                "disabled$": "!context?.lctx?.selectedRow"
+                                                            },
+                                                            {
+                                                                "title": "Download as package",
+                                                                "action": {
+                                                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'createPackageFromWorkCopy', params: {packageId: mem.id}}).then((r)=>{fileDownload(r.blob, r.fileName)})",
+                                                                    "disableUpdate": true
+                                                                }
+                                                            },
+                                                            {
+                                                                "title": "Package content",
+                                                                "actions": [
+                                                                    {
+                                                                        "title": "Compare",
+                                                                        "action": [
+                                                                            {
+                                                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'getPackageContentForCompare', params: {packageId: mem.id, storage: 'path'}}).then((r)=>{context.compare = r;})",
+                                                                                "disableUpdate": "true"
+                                                                            },
+                                                                            {
+                                                                                "js": "tm.newTask({path: '/diffviewer', title: 'Сравнение содержания пакета', params: {diff: context.compare}})",
+                                                                                "disableUpdate": true
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "title": "Export",
+                                                                        "action": {
+                                                                            "confirm": {
+                                                                                "message": "Export package description"
+                                                                            },
+                                                                            "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'exportPackageContent', params: {packageId: mem.id}})",
+                                                                            "disableUpdate": true
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "title": "Load",
+                                                                        "confirm": {
+                                                                            "message": "Import package description"
+                                                                        },
+                                                                        "action": [
+                                                                            {
+                                                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'importPackageContent', params: {packageId: mem.id}})",
+                                                                                "disableUpdate": true
+                                                                            },
+                                                                            {
+                                                                                "name": "onReloadPackageObjects"
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "title": "Distribution",
+                                                        "disabled$": "!mem.haveZip",
+                                                        "actions": [
+                                                            {
+                                                                "title": "Compare package",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'comparePackageWithDistribution', params: {packageId: mem.id}})",
+                                                                        "disableUpdate": true
+                                                                    },
+                                                                    {
+                                                                        "name": "onReloadPackageObjects"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "title": "Install package",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'installObjectsFromDistribution', params: {packageId: mem.id, objects: context.lctx.selectedRows.map((o)=>o.id)}})",
+                                                                        "disableUpdate": "true"
+                                                                    },
+                                                                    {
+                                                                        "name": "onReloadPackageObjects"
+                                                                    }
+                                                                ],
+                                                                "disabled$": "!context?.lctx?.selectedRow"
+                                                            },
+                                                            {
+                                                                "title": "Compare object",
+                                                                "action": [
+                                                                    {
+                                                                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'getObjectForCompare', params: {packageId: mem.id, objectId: context.lctx.selectedRow.object_id, storage: 'distribution'}}).then((r)=>{context.compare = r;})",
+                                                                        "disableUpdate": "true"
+                                                                    },
+                                                                    {
+                                                                        "js": "tm.newTask({path: '/diffviewer', title: 'Сравнение объектов', params: {diff: context.compare}})",
+                                                                        "disableUpdate": true
+                                                                    }
+                                                                ],
+                                                                "disabled$": "!context?.lctx?.selectedRow"
+                                                            },
+                                                            {
+                                                                "title": "Download package",
+                                                                "action": {
+                                                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'downloadPackageDistribution', params: {packageId: mem.id}}).then((r)=>{fileDownload(r.blob, r.fileName)})",
+                                                                    "disableUpdate": true
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "@content": {
+                                            "style": {
+                                                "flex": 1,
+                                                "overflow": "hidden"
+                                            },
+                                            "$": {
+                                                "|content": {
+                                                    "style": {
+                                                        "height": "100%"
+                                                    },
+                                                    "control": "ListTable",
+                                                    "controlProps": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "gridOptions": {
+                                                            "rowSelection": "multiple",
+                                                            "domLayout": "normal"
+                                                        },
+                                                        "listContext$": "context.lctx || (()=>{context.lctx={}; return context.lctx;})()"
+                                                    },
+                                                    "controlOpts": {
+                                                        "compact": true,
+                                                        "id": "id",
+                                                        "getRowStyle": "data.sync_state_op != '=' && {color: 'rgb(206, 42, 15)'}",
+                                                        "columns!": {
+                                                            "model_title": {
+                                                                "label": "Object type",
+                                                                "width": 200
+                                                            },
+                                                            "object_name": {
+                                                                "label": "Object name",
+                                                                "flex": 1
+                                                            },
+                                                            "sync_date": {
+                                                                "label": "Date",
+                                                                "width": 160,
+                                                                "format": "datetime"
+                                                            },
+                                                            "sync_state": {
+                                                                "label": "State",
+                                                                "width": 250
+                                                            },
+                                                            "user": {
+                                                                "label": "User",
+                                                                "width": 160
+                                                            }
+                                                        }
+                                                    },
+                                                    "actions": {
+                                                        "onSelectionChanged": {
+                                                            "name": "onRefreshContent"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "actions": {
+                                        "onRefreshContent": {
+                                            "js": ";"
+                                        },
+                                        "onReloadPackageObjects": {
+                                            "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'getPackageObjects', params: {id: task.params.id}}).then((r)=>{mem.content=r; forceUpdate();})"
+                                        },
+                                        "onExcludeObject": [
+                                            {
+                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'package', method: 'excludeObjectFromPackage', params: {packageId: mem.id, objects: context.lctx.selectedRows.map((o)=>o.id)}})"
+                                            },
+                                            {
+                                                "js": "backend.post('/aoa/execObjectMethod', {object: 'package', method: 'getPackageObjects', params: {id: task.params.id}}).then((r)=>{mem.content=r; forceUpdate();})"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return task.params.id && task.params.id && backend.post('/aoa/execObjectMethod', {object: 'package', method: 'get', params: {id: task.params.id}}).then((r)=>{mem.package = r; tm.setTaskTitle(task.key, `${_('Package')} ${r.name}`); forceUpdate();})",
+                        "disableUpdate": true
+                    },
+                    {
+                        "js": "!task.params.id && (()=>{mem.package.name = 'New package'})()"
+                    }
+                ],
+                "onModified": {
+                    "js": "if (!context.modified){context.modified=true; forceUpdate();}",
+                    "disableUpdate": false
+                }
+            }
+        },
+        "packageObjectDialog": {
+            "title$": "`${mem.object_name}`",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flexGrow": 1,
+                        "paddingTop": "8px",
+                        "overflow": "auto"
+                    },
+                    "form": "packageObjectForm"
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "flexDirection": "row-reverse"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Close",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onDialogCreated": {}
+            }
+        },
+        "packageObjectForm": {
+            "className": "vertical",
+            "$": {
+                "object_id": {
+                    "label": "Id",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit"
+                },
+                "object_name": {
+                    "label": "Name",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit"
+                },
+                "object_attrs": {
+                    "label": "Attributes",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit",
+                    "getter": "JSON.stringify(mem.object_attrs)"
+                },
+                "file_name": {
+                    "label": "File name",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit"
+                },
+                "sync_date": {
+                    "label": "Sync date",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit",
+                    "format": "datetime"
+                },
+                "sync_state_op": {
+                    "label": "Sync state op",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit"
+                },
+                "sync_state": {
+                    "label": "Sync state",
+                    "style": {
+                        "width": "280px"
+                    },
+                    "control": "TextEdit"
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.models import Package\n\nif parameters.get('id'):\n    query = Package.objects.filter(id=parameters['id'])\nelse:\n    query = Package.objects.all().order_by('name')\n\ndata = []\nfor p in query:\n    data.append({\n        'id': p.id.__str__(),\n        'name': p.name\n    })\n"
+            }
+        },
+        "updateObjectPackages": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from django.db import transaction\nfrom django.conf import settings\nfrom beflex.aos.models import PackageObject\nfrom beflex.aos.services import includeObjectToPackage\n\nold_content = PackageObject.objects.filter(model_name=parameters['object']['model'], object_id=parameters['object']['id'])\nnew_packages = parameters.get('packages')\n\n#raise Exception(old_content)\n\nwith transaction.atomic(using=settings.APPS_DB['aos']):\n    for p in old_content:\n        existed_package = next(filter(lambda x: x['id']==p.deployment.id.__str__(), new_packages), None)\n        if existed_package:\n            new_packages.remove(existed_package)\n            #raise Exception('remove')\n        else:\n            p.delete()\n    \n    for p in new_packages:\n        includeObjectToPackage(parameters['object']['model'], parameters['object']['id'], p['id'])\n        \n    #raise Exception(json.dumps(new_packages, indent=4, ensure_ascii=False))\n"
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.models import Package\npackage = Package.objects.get(id=parameters.get('id'))\npackage.delete()\n"
+            }
+        },
+        "installPackageFile": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.services import installPackage\n\nfiles = parameters['$files']\ndel parameters['$files']\n\n\ninstallPackage(files['file'])"
+            }
+        },
+        "get": {
+            "sql": {},
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos.services import getPackageObjects\n\npackage = Package.objects.get(id=parameters.get('id'))\ndata = {\n    'id': package.id.__str__(),\n    'name': package.name,\n    'path': package.path,\n    'content': [],\n    'haveZip': not package.zip is None,\n};\n\ndata['content'].extend(getPackageObjects(package.id))\n"
+            }
+        },
+        "getPackageObjects": {
+            "sql": {},
+            "script": {
+                "py": "from beflex.aos.services import getPackageObjects\ndata = getPackageObjects(parameters.get('id'))\n"
+            }
+        },
+        "excludeObjectFromPackage": {
+            "script": {
+                "py": "from beflex.aos.models import PackageObject\n\ndeploymentId = parameters.get('packageId')\nobjects = parameters.get('objects')\n\ndol = PackageObject.objects.filter(deployment_id=deploymentId, id__in=objects)\nif dol.count()==0:\n    raise Exception('Not found') from None\nelse:\n    dol.delete()\n"
+            }
+        },
+        "comparePackageWithWorkCopy": {
+            "script": {
+                "py": "from django.utils import timezone\nfrom beflex.aos.models import Package\nfrom beflex.aos import services\nimport os\n\n\ndeployment = Package.objects.get(id=parameters.get('id'))\ndeployment_objects = deployment.content.all()\n\nfor do in deployment_objects:\n    do.sync_date = timezone.now()\n    do.sync_state_op = '?'\n    \n    cfg = services.loadObjectConfig(do.model_name)\n    obj = None\n    try:\n        obj = services.loadObjectWithConfig(cfg, do.object_id)\n    except services.ObjectDoesNotExists:\n        do.sync_state = 'Отсутствует в системе'\n    \n    if obj:    \n        dsc = services.evalDescription(cfg, obj)\n        \n        local_file_name = os.path.join(dsc['file_path'], dsc['file_name'])\n        \n        if not do.file_name:\n            do.file_name = local_file_name\n        \n        full_file_name = services.checkPackagePath(os.path.join(deployment.path, do.file_name), create=False)\n        if not os.path.exists(full_file_name):\n            do.sync_state = 'Отсутствует в хранилище'\n        else:\n            f = open(full_file_name, 'r', encoding='utf8')\n            file_data = str(f.read())\n            f.close()\n            \n            obj_file = services.evalExport(cfg, obj);\n            obj_data = obj_file['data']\n            \n            if (file_data == obj_data):\n                do.sync_state = 'Совпадает с папкой'\n                do.sync_state_op = '='\n            else:\n                do.sync_state = 'Отличается от папки'\n    \n    \n    do.save()\n"
+            }
+        },
+        "exportPackageObjects": {
+            "script": {
+                "py": "from beflex.aos.services import exportPackageObjectsToFolder\nexportPackageObjectsToFolder({\n    'deploymentId': parameters.get('packageId'),\n    'objects': parameters.get('objects')\n})\n"
+            }
+        },
+        "importPackageObjects": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\nimport os\nfrom django.utils import timezone\n\npackageId = parameters.get('packageId')\nobjects = parameters.get('objects')\n\npackage = Package.objects.get(id=packageId)\npackage_objects = package.content.filter(id__in=objects)\n\nfull_package_path = services.checkPackagePath(package.path, create=False)\n\nfor o in package_objects:\n    try:\n        cfg = services.loadObjectConfig(o.model_name)\n    except ObjectConfig.DoesNotExist:\n        # Конфига нет в системе, поищем его в каталоге поставки\n        cfg_file_name = os.path.join(full_package_path, '.configs', o.model_name+'.xml')\n        cfg_file_data = None\n        try:\n            fd = open(cfg_file_name, 'r', encoding='utf-8')\n            cfg_file_data = fd.read()\n            fd.close()\n        except Exception as e:\n            logger.debug('Error reading config %s from deployment: %s', o.model_name, e)\n\n        if cfg_file_data:\n            # Создадим объект конфига\n            cfg = ObjectConfig()\n            cfg.model_name = o.model_name\n            cfg.data = cfg_file_data\n            cfg._isImported = True\n            cfg.save()\n\n            # Ну и зачитаем его штатно\n            cfg = services.loadObjectConfig(o.model_name)\n\n        else:\n            raise ObjectConfig.DoesNotExist('Конфигурация объекта %s отсутствуен в системе и в поставке' % o.model_name) from None\n\n    # Путь у объекту берём из описания пакета\n    full_file_name = os.path.join(full_package_path, o.file_name)\n\n    # Нормализация пути, замена разделитея для windows\n    full_file_name = os.path.normpath(full_file_name)\n\n    with open(full_file_name, 'r', encoding='utf-8') as fd:\n        file_data = fd.read()\n\n    if services.is_object_modified(o.model_name, o.object_id, file_data):\n        services.evalImport(cfg, o.object_id, file_data, object_attrs=o.object_attrs)\n        o.sync_state = 'Установлен из папки'\n    else:\n        o.sync_state = 'Совпадает с архивом'\n\n    o.sync_date = timezone.now()\n    o.sync_state_op = '='\n    o.save()\n"
+            }
+        },
+        "getObjectForCompare": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\nimport os\nimport io\nimport zipfile\n\npackageId = parameters.get('packageId')\nif not packageId:\n    raise Exception('No id (Package Id) parameter specified')\n    \nobjectId = parameters.get('objectId')\n\nstorage = parameters.get('storage')\nif not storage:\n    raise Exception('No storage (path/zip) parameter specified') from None\n\npackage = Package.objects.get(id=packageId)\nobject = package.content.get(object_id=objectId)\n\ncfg = services.loadObjectConfig(object.model_name)\nobj = services.loadObjectWithConfig(cfg, object.object_id)\ndsc = services.evalDescription(cfg, obj)\nobj_data = services.evalExport(cfg, obj)\n\nfilename = os.path.join(dsc['file_path'], dsc['file_name'])\nfilename = os.path.normpath(filename)\n\ndata = {}\n\ndata['left'] = {\n    'title': 'Current object',\n    'filename': filename,\n    'data': obj_data['data']\n}\n\n\nif storage == 'path':\n    # Путь к файлу берём через конфиг объекта\n    filename = os.path.join(dsc['file_path'], dsc['file_name'])\n    filename = os.path.normpath(filename)\n\n    data['right'] = {\n        'title': 'Work copy',\n        'filename': filename,\n        'data': services.getPackageObjectFile(package, filename),\n    }\nelif storage in ['distribution', 'archive']:\n    buffer = io.BytesIO(package.zip)\n    file_data = None\n    import posixpath\n    filename = posixpath.join(dsc['file_path'], dsc['file_name'])\n    with zipfile.ZipFile(buffer) as zh:\n        file_data = str(zh.read(filename), 'utf8')\n        \n    data['right'] = {\n        'title': 'Distribution',\n        'filename': filename,\n        'data': file_data\n    }\nelse:\n    raise UserException('Object source unknown: %s' % storage)\n    "
+            },
+            "sql": {}
+        },
+        "createPackageFromWorkCopy": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\nfrom django.http import HttpResponse\nimport urllib\n\npackageId = parameters.get('packageId')\npackage = Package.objects.get(id=packageId)\n\ntry:\n    data = services.createPackageArchiveFromPath(package)\nexcept Exception as e:\n    raise Exception('Ошибка создания архива пакета %s\\n%s' % (package.name, e))\n    \ndata = HttpResponse(\n    #mimetype='application/force-download',\n    content_type=\"application/zip\", \n    content=data,\n)\n\narchive_file_name = urllib.parse.quote(package.name) + '.zip'\n#archive_file_name = deployment.name + '.zip'\n\ndata['Content-Disposition'] = 'inline; filename=\"%s\"' % (archive_file_name)\n"
+            }
+        },
+        "getPackageContentForCompare": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\nimport os\n\npackage = Package.objects.get(id=parameters.get('packageId'))\n\ndata = {}\ndata['left'] = {\n    'title': 'Объект в системе',\n    'filename': 'package.info',\n    'data': json.dumps(services.buildPackageInfo(package), indent=4, ensure_ascii=False)\n}\n\nif parameters.get('storage') == 'path':\n    file_pathname = os.path.join(package.path, '.package.info')\n    full_file_pathname = services.checkPackagePath(file_pathname, create=False)\n    full_file_pathname = os.path.normpath(full_file_pathname)\n    \n    try:\n        with open(full_file_pathname, encoding='utf-8') as fh:\n            file_data = fh.read()\n    except FileNotFoundError:\n        raise UserException({\n            'message': 'File .package.info does not exists in work copy.',\n            'description': '%s' % full_file_pathname\n        })\n        \n    data['right'] = {\n        'title': 'Объект в папке',\n        'filename': file_pathname,\n        'data': file_data,\n    }\nelse:\n    raise UserException({'message': 'Место хранения %s не реализовано' % parameters.get('storage')})\n\n"
+            },
+            "sql": {}
+        },
+        "exportPackageContent": {
+            "script": {
+                "py": "from beflex.aos import services\n\nservices.exportPackageContent(parameters.get('packageId'))\n"
+            }
+        },
+        "importPackageContent": {
+            "script": {
+                "py": "from beflex.aos.models import Package\n\nfrom beflex.aos import services\nimport os\n\nfrom django.db import transaction\nfrom django.conf import settings\n\n\npackageId = parameters.get('packageId')\npackage = Package.objects.get(id=packageId)\n\ninfo_file_name = os.path.join(package.path, '.package.info')\nfull_info_file_name = services.checkPackagePath(info_file_name, create=False)\n\nwith open(full_info_file_name, 'r', encoding='utf-8') as fd:\n    info_data = fd.read()\n\ncontent = json.loads(info_data)['content']\nwith transaction.atomic(using=settings.APPS_DB['aos']):\n    services.updatePackageContent(package, content, message='Обновлено содержание')\n"
+            }
+        },
+        "savePackage": {
+            "script": {
+                "py": "from beflex.aos.models import Package\n\nif parameters.get('id'):\n    package = Package.objects.get(id=parameters.get('id'))\nelse:\n    package = Package()\n\npackage.name = parameters.get('name')\npackage.path = parameters.get('path')\npackage.save()\n    \ndata = {\n    'id': package.id.__str__(),\n};\n"
+            }
+        },
+        "uploadPackage": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\npackageId = parameters.get('packageId')\npackage = Package.objects.get(id=packageId)\n\nfile = parameters['$files'].get('file')\n\nservices.uploadDeploymentArchive(package, file)\n"
+            }
+        },
+        "comparePackageWithDistribution": {
+            "sql": {},
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\npackage = Package.objects.get(id=parameters.get('packageId'))\nservices.comparePackageWithArchive(package)\n"
+            }
+        },
+        "installObjectsFromDistribution": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\npackage = Package.objects.get(id=parameters.get('packageId'))\nservices.installObjectsFromArchive(package, parameters.get('objects'))\n"
+            }
+        },
+        "downloadPackageDistribution": {
+            "script": {
+                "py": "from beflex.aos.models import Package\nfrom beflex.aos import services\n\nfrom django.http import HttpResponse\nimport urllib\n\n\npackageId = parameters.get('packageId')\npackage = Package.objects.get(id=packageId)\n        \n\ndata = HttpResponse(\n    content_type=\"application/zip\", \n    content=package.zip,\n)\n\narchive_file_name = urllib.parse.quote(package.name) + '.zip'\n\ndata['Content-Disposition'] = 'inline; filename=\"%s\"' % (archive_file_name)\n"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "name": {
+                    "title": "Name",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Create",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "Package: <new>",
+                        "params": {
+                            "object": "package",
+                            "form": "packageEditTask"
+                        }
+                    }
+                },
+                {
+                    "title": "Open",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Пакет: ${$listRow.name}`",
+                        "params": {
+                            "id$": "$listRow.id",
+                            "object": "package",
+                            "form": "packageEditTask"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Delete package ${$listRow.name} ?`",
+                        "yes": "Yes",
+                        "no": "No"
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Install",
+                    "upload": true,
+                    "command": {
+                        "type": "js",
+                        "js": "console.log('upload', arguments['0']) || backend.post('/aoa/execObjectMethod', {object: 'package', method: 'installPackageFile', file: params.file}, {isFormData: true})"
+                    }
+                }
+            ]
+        }
+    },
+    "references": {},
+    "js": {}
+}

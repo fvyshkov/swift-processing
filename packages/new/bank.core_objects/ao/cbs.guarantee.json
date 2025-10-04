@@ -1,0 +1,441 @@
+{
+    "lists": {
+        "guaranteeList": {
+            "comment": "Список договоров гарантий",
+            "id": "fakeId",
+            "columns": {
+                "numdate": {
+                    "title": "Номер/Дата",
+                    "width": 160,
+                    "fields": {
+                        "code": {},
+                        "dord": {
+                            "format": "date"
+                        }
+                    }
+                },
+                "appId": {
+                    "title": "id заявки",
+                    "width": "120"
+                },
+                "clientAndProduct": {
+                    "title": "Клиент/Продукт",
+                    "flex": 1,
+                    "fields": {
+                        "cli_name": {},
+                        "product_name": {}
+                    }
+                },
+                "amount": {
+                    "title": "Сумма",
+                    "cellStyle": {
+                        "textAlign": "right"
+                    },
+                    "fields|": {
+                        "amount": {
+                            "format": "currency"
+                        },
+                        "currency": {}
+                    }
+                },
+                "duration": {
+                    "title": "Срок",
+                    "width": 160,
+                    "fields": {
+                        "fromDate": {
+                            "format": "date"
+                        },
+                        "toDate": {
+                            "format": "date"
+                        }
+                    }
+                },
+                "stateName": {
+                    "title": "Состояние",
+                    "width": 180
+                },
+                "user": {
+                    "title": "Исполнитель",
+                    "width": 180,
+                    "fields": {
+                        "depCode": {},
+                        "userName": {}
+                    }
+                }
+            },
+            "actions": [
+                {
+                    "title": "Обновить",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Операции",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Создать заявку",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'cbs.guarantee', form: 'createApplicationDialog', mem: {}, params: {dea_dep_id: $listRow.dep_id, dea_id: $listRow.id}, context: {}})"
+                            },
+                            "visible$": "$listRow.isIssued=='1'",
+                            "disabled$": "!!$listRow.appId"
+                        },
+                        {
+                            "title": "Операции отсутствуют",
+                            "visible$": "$listRow.isIssued=='0'",
+                            "disabled": true
+                        }
+                    ],
+                    "disabled$": "!$listRow"
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Фильтр",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Номер договора",
+                                    "control": "TextEdit"
+                                },
+                                "refer": {
+                                    "label": "Референс договора",
+                                    "control": "TextEdit"
+                                },
+                                "ir": {
+                                    "label": "Вид гарантии",
+                                    "control": "SelectList",
+                                    "controlProps": {
+                                        "list": [
+                                            {
+                                                "value": "0",
+                                                "name": "Выданная"
+                                            },
+                                            {
+                                                "value": "1",
+                                                "name": "Полученная"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "withoutApp": {
+                                    "label": "Без заявок",
+                                    "control": "Checkbox"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Очистить",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Применить",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                },
+                "query": {
+                    "code": {
+                        "sql": "\"code\" = :code"
+                    },
+                    "refer": {
+                        "sql": "\"refer\" = :refer"
+                    },
+                    "ir": {
+                        "sql": "nvl(T_PkgDeaPrm.fParByCode (\"id\", \"dep_id\", 'EX_IMP'), '0') = :ir"
+                    },
+                    "withoutApp": {
+                        "sql": "(:withoutApp = 1 and T_PkgDeaPrm.fParByCode(\"id\", \"dep_id\", 'L_UNNUMBER') is null or :withoutApp = 0 and T_PkgDeaPrm.fParByCode (\"id\", \"dep_id\", 'L_UNNUMBER') is not null)"
+                    }
+                }
+            }
+        }
+    },
+    "forms": {
+        "createApplicationDialog": {
+            "title": "Создание заявки по договору",
+            "className": "vertical",
+            "style": {
+                "width": "900px",
+                "overflow": "hidden",
+                "display": "flex",
+                "flexDirection": "column"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "flexGrow": 1,
+                        "overflowY": "auto"
+                    },
+                    "required": true,
+                    "$": {
+                        "dea": {
+                            "className": "horizontal",
+                            "style": {
+                                "marginTop": "4px"
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Номер договора",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "TextEdit"
+                                },
+                                "productName": {
+                                    "label": "Продукт",
+                                    "style": {
+                                        "width": "570px"
+                                    },
+                                    "control": "TextEdit"
+                                }
+                            },
+                            "readOnly": true,
+                            "required": false
+                        },
+                        "app": {
+                            "className": "vertical",
+                            "$": {
+                                "appId": {
+                                    "label": "Id заявки",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "TextEdit",
+                                    "visible": false
+                                },
+                                "@num": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "code": {
+                                            "label": "Юридический номер заявки",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "inputProps": {
+                                                    "maxLength": 20
+                                                }
+                                            }
+                                        },
+                                        "registrationDate": {
+                                            "label": "Дата заявки",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "DateEdit",
+                                            "validate": [
+                                                "mem.registrationDate > context.dea.fromDate.substring(0,10) && {helperText: `Дата заявки должана быть меньше либо равна ${formatters.date(context.dea.fromDate)}`} || undefined"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "decision": {
+                            "className": "vertical",
+                            "$": {
+                                "@num": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "number": {
+                                            "label": "Номер решения",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "inputProps": {
+                                                    "maxLength": 10
+                                                }
+                                            }
+                                        },
+                                        "date": {
+                                            "label": "Дата решения",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "DateEdit",
+                                            "validate": [
+                                                "mem.date > context.dea.fromDate.substring(0,10) && {helperText: `Дата решения должана быть меньше либо равна ${formatters.date(context.dea.fromDate)}`} || undefined",
+                                                "context?.onValidateDecisionDate?.()"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "code": {
+                                    "label": "Орган принявший решение",
+                                    "style": {
+                                        "width": "570px"
+                                    },
+                                    "control": "SelectList",
+                                    "controlProps": {
+                                        "list": [
+                                            {
+                                                "value": "01",
+                                                "name": "Кредитный комитет филиала КБ"
+                                            },
+                                            {
+                                                "value": "02",
+                                                "name": "Кредитный комитет регионального подразделения КБ"
+                                            },
+                                            {
+                                                "value": "03",
+                                                "name": "Кредитный комитет Головного банка"
+                                            },
+                                            {
+                                                "value": "04",
+                                                "name": "Правление банка"
+                                            },
+                                            {
+                                                "value": "05",
+                                                "name": "Совет банка"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "text": {
+                                    "label": "Примечание",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "width": "860px"
+                                    },
+                                    "required": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        ".btnClose": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        },
+                        ".btnCreate": {
+                            "label": "Создать",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "variant": "contained"
+                            },
+                            "action": [
+                                {
+                                    "name": "onCreateApplication"
+                                },
+                                {
+                                    "xjs": "actions.close();",
+                                    "params": {
+                                        "disableUpdate": true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onCreateApplication": [
+                    {
+                        "js": "if (!validate()){throw 'Abort';}"
+                    },
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'appGuarantee', method: 'createApplicationFromDea', params: {dea_dep_id: params.dea_dep_id, dea_id: params.dea_id, app: mem.app, decision: mem.decision}}).then(r=>{context.app=r})"
+                    },
+                    {
+                        "js": "tm.newTask({title: 'Заявка на гарантию', path: '/aoa/ObjectTask', params: {object: 'app', form: 'appEditTask', objectKey:  {dep_id:context.app.dep_id, id:context.app.id}}})",
+                        "disableUpdate": true
+                    }
+                ],
+                "onElementCreated": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'cbs.guarantee', method: 'getGuarantee', params: {dep_id: params.dea_dep_id, id: params.dea_id}}).then(r=>{mem.dea=r; context.dea=r;})"
+                    },
+                    {
+                        "js": "context.onValidateDecisionDate = ()=>mem.decision.date < mem.app.registrationDate && {helperText: `Дата решения должна быть в интервале ${formatters.date(mem.app.registrationDate)} - ${formatters.date(context.dea.fromDate)}`} || undefined"
+                    },
+                    {
+                        "xjs": "let r=context.dea; mem.app.code=r.code; mem.app.registrationDate=r.dord; mem.decision.code='01'; mem.decision.number=r.code; mem.decision.date=r.dord;"
+                    }
+                ]
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {},
+            "script": {
+                "py": "SQL=\"\"\"\nselect\n    j.dep_id||','||j.id \"fakeId\",\n\n    j.dep_id \"dep_id\",\n    j.id \"id\",\n\n    j.DORD \"dord\",\n    j.CODE \"code\",\n    j.DEA_REFER \"refer\",\n\n    j.DCL_NAME \"product_name\",\n    decode(FLCONTR, 1, COR_NAME, CLI_NAME) \"cli_name\",\n\n    j.VAL_CODE \"currency\",\n    j.VAL_NAME \"currencyName\",\n    j.SDOK \"amount\",\n\n    j.FROMDATE \"fromDate\",\n    j.TODATE \"toDate\",\n    \n    j.STAT_NAME \"stateName\",\n\n    j.DEP_CODE \"depCode\",\n    \n    j.TUSER_NAME \"userName\",\n    \n    case \n        when nvl(T_PkgDeaPrm.fParByCode(j.id, j.dep_id, 'EX_IMP'), '0')='0' then '1'\n        else '0'\n    end \"isIssued\",\n    \n    T_PkgDeaPrm.fParByCode (j.id, j.dep_id, 'L_UNNUMBER') \"appId\"\nfrom JV_GRNLST j\n\"\"\"\n\nfrom apng_core.db import fetchall\n\ndef doQuery(sql, params):\n    #raise UserException(sql)\n    try:\n        with initDbSession(application='colvir_cbs').cursor() as cursor:\n            cursor.execute(sql, params)\n            d = fetchall(cursor)\n        return d\n    except Exception as e:\n        raise UserException({\n            'description': 'Запрос\\n%s\\nПараметры\\n%s' % (sql, json.dumps(params, indent=4, ensure_ascii=False))\n        }).withError(e)\n\nrawSQL = SQL\n\n\nif parameters.get('fakeId'):\n    import re\n    r = re.match(r'([0-9]+)([ ]*\\,[ ]*)([0-9]+)', parameters['fakeId'])\n    if r and len(r.groups())==3:\n        dep_id=int(r[1])\n        ord_id=int(r[3])\n    else:\n        raise UserException('Неправильный формат идентификатора, используйте dep_id,id')\n    \n    if dep_id and ord_id:\n        rawSQL += 'where 1=1 '\n        rawSQL = rawSQL + ' and j.DEP_ID=to_number(:dep_id) and j.ID=to_number(:ord_id)'\n        q  = doQuery(rawSQL, {\n            'dep_id': dep_id,\n            'ord_id': ord_id,\n        })\nelse:\n    queryParams = {}\n    filterModel2 = parameters.get('request', {}).get('filterModel2', {})\n    if filterModel2:\n        from apng_core.aoa.services import filter as aoa\n        filterDef = aoa.buildFilterSql({\n            'object': parameters['request']['object'],\n            'list': parameters['request']['list'],\n            'filterData': filterModel2,\n        })\n        rawSQL =  'select * from (' + rawSQL + ') '+ filterDef['sql']\n        queryParams = {\n            **filterDef['params']\n        }\n\n    rawSQL += ' order by \"dord\" desc'\n    \n    if parameters.get('request', {}).get('startRow') is not None:\n        # Ограничение по количеству записей\n        startRow = int(parameters['request'].get('startRow'))\n        endRow = int(parameters['request'].get('endRow'))\n\n        rawSQL = rawSQL + \\\n            ' OFFSET %s ROWS FETCH NEXT %s ROWS ONLY' % (startRow, endRow-startRow+1)\n    \n    \n    q = doQuery(rawSQL, queryParams)\n\ndata = q\n    \n    "
+            }
+        },
+        "getGuarantee": {
+            "script": {
+                "py": "#\n# Зачитывание гарантии\n#\nfrom apng_core.db import fetchone\n\nSQL=\"\"\"\nselect\n    g.dep_id \"dep_id\",\n    g.id \"id\",\n    o.DORD \"dord\",\n    o.CODE \"code\",\n    T_PkgDeaPrm.fParByCode (g.id, g.dep_id, 'L_UNNUMBER') \"appId\",\n    \n    (select code from c_dep_std where id=dea.srv_dep_id) \"depCode\",\n    \n    c.code \"clientCode\",\n    \n    dc.code \"productCode\",\n    dc.longname \"productName\",\n    (select code from t_val_std where id=nvl(o.val_id, p_natval)) \"currency\",\n    dea.SDOK \"amount\",\n\n    dea.FROMDATE \"fromDate\",\n    dea.TODATE \"toDate\",\n    \n    g.W_FRM \"guaranteeForm\",\n    g.NAZN \"purposeOfGuarantee\",\n    bs_dom.dLongname ('J_GRNNAZN', g.nazn) \"purposeOfGuaranteeName\",\n    \n    -- Бенефициар\n    G_PkgCli.fGetCliCode (g.COR_DEP_ID, g.COR_ID) \"beneficiary\",\n    G_PkgCli.fGetCliLongName (g.COR_DEP_ID, g.COR_ID) \"beneficiaryName\",\n    \n    -- Тип заёмщика\n    L_PkgDeaUniRef.fGetDeaRefValCode(g.dep_id, g.id, u_pkguniref.fRefCode2Id( 'UZ_TZ')) \"typeOfBorrower\",\n    L_PkgDeaUniRef.fGetDeaRefValLongname(g.dep_id, g.id, u_pkguniref.fRefCode2Id( 'UZ_TZ')) \"typeOfBorrowerName\",\n    \n    -- Нормативно правовой акт\n    L_PkgDeaUniRef.fGetDeaRefValCode(g.dep_id, g.id, u_pkguniref.fRefCode2Id( 'UZ_NPA')) \"legalAct\",\n    L_PkgDeaUniRef.fGetDeaRefValLongname(g.dep_id, g.id, u_pkguniref.fRefCode2Id( 'UZ_NPA')) \"legalActName\",\n    \n    T_PkgDeaPrm.fParByCode (g.ID, g.DEP_ID, 'LPAYDAY') \"prm_LPAYDAY\",\n    T_PkgDeaPrm.fParByCode (g.ID, g.DEP_ID, 'J_GRNVOFL') \"prm_J_GRNVOFL\",\n\n    null \"dummy\"\nfrom T_DEACLS_STD dc, G_CLI c, T_ORD o, T_DEA dea, J_GRN g\nwhere g.dep_id=:dep_id and g.id=:id\n    and dea.dep_id=g.dep_id and dea.id=g.id\n    and o.dep_id=g.dep_id and o.id=g.id\n    and c.dep_id=dea.cli_dep_id and c.id=dea.cli_id\n    and dc.id=dea.dcl_id\n\"\"\"\n\nwith initDbSession(application='colvir_cbs').cursor() as c:\n    c.execute(SQL, {\n        'dep_id': parameters['dep_id'],\n        'id': parameters['id']\n    })\n    \n    data = fetchone(c)\n    \n"
+            },
+            "sql": {}
+        }
+    },
+    "references": {}
+}

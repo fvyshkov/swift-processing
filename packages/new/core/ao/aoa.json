@@ -1,0 +1,1452 @@
+{
+    "forms": {
+        "objectEditTask": {
+            "title": "Edit application object",
+            "className": "task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden",
+                "display": "flex",
+                "flexDirection": "column"
+            },
+            "$": {
+                "@panel": {
+                    "className": "horizontal",
+                    "style": {
+                        "padding": "8px 8px 8px 8px"
+                    },
+                    "$": {
+                        ".btnSave": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "xjs": "!validate() && (()=>{throw 'Abort'})()"
+                                },
+                                {
+                                    "js": "mem.object.description.lists = mem.lists.reduce((a, v)=>{a[v.code]=JSON.parse(v.text); return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.forms = mem.forms.reduce((a, v)=>{a[v.code]=JSON.parse(v.text); return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.js = mem.js.reduce((a, v)=>{a[v.code]=v.text; return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.methods = mem.methods.reduce((a, v)=>{a[v.code]=v.data; return a;}, {});"
+                                },
+                                {
+                                    "js": "mem.object.description.references = mem.references.reduce((a, v)=>{a[v.code]={form: JSON.parse(v.formText), method: v.method}; return a;}, {});"
+                                },
+                                {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'aoa', method: 'save', params: mem.object}).then((r)=>{mem.object.id=r.id; mem.object.modified=r.modified; context.modified=false;}).then(()=>{tm.setTaskTitle(task.key, `Object ${mem.object.code}`); app.ao.cleanCache(mem.object.code);})"
+                                }
+                            ],
+                            "readOnly$": "!context.modified"
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@object": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                ".tabs": {
+                                    "control": "Tabs",
+                                    "style": {
+                                        "height": "100%",
+                                        "overfow": "hidden",
+                                        "display": "flex",
+                                        "flexDirection": "column"
+                                    },
+                                    "controlProps": {
+                                        "variant": "standard",
+                                        "context$": "(()=>{if (!context.taskTabs){context.taskTabs={};} return context.taskTabs})()",
+                                        "style": {
+                                            "marginBottom": "8px"
+                                        },
+                                        "pages": {
+                                            "common": {
+                                                "title": "Object",
+                                                "$": {
+                                                    "@form": {
+                                                        "init$": "mem.object||{}",
+                                                        "object": "aoa",
+                                                        "form": "objectCommonForm"
+                                                    }
+                                                }
+                                            },
+                                            "lists": {
+                                                "title": "Lists",
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectListsForm"
+                                                    }
+                                                }
+                                            },
+                                            "forms": {
+                                                "title": "Forms",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectFormsForm"
+                                                    }
+                                                }
+                                            },
+                                            "js": {
+                                                "title": "JS",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectJSForm"
+                                                    }
+                                                }
+                                            },
+                                            "methods": {
+                                                "title": "Methods",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectMethodsForm"
+                                                    }
+                                                }
+                                            },
+                                            "refs": {
+                                                "title": "References",
+                                                "style": {
+                                                    "flex": 1,
+                                                    "overflow": "hidden"
+                                                },
+                                                "$": {
+                                                    "@form": {
+                                                        "style": {
+                                                            "height": "100%"
+                                                        },
+                                                        "object": "aoa",
+                                                        "form": "objectReferencesForm"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "events": {
+                "onTaskCreated": [
+                    {
+                        "js": "return task.params.objectId && backend.post('/aoa/execObjectMethod', {object: 'aoa', method: 'get', params: {id: task.params.objectId}}).then((r)=>{mem.object = r; tm.setTaskTitle(task.key, `Object ${r.code}`); forceUpdate();})"
+                    },
+                    {
+                        "js": "if (!mem.object){mem.object = {description: {}}}"
+                    },
+                    {
+                        "js": "mem.lists = []; for (const [k,v] of Object.entries(mem.object.description.lists||{})){mem.lists.push({id: uuidv4(), code: k, text: JSON.stringify(v, null, 4)});}"
+                    },
+                    {
+                        "js": "mem.forms = []; for (const [k,v] of Object.entries(mem.object.description.forms||{})){mem.forms.push({id: uuidv4(), code: k, text: JSON.stringify(v, null, 4)});}"
+                    },
+                    {
+                        "js": "mem.js = []; for (const [k,v] of Object.entries(mem.object.description.js||{})){mem.js.push({id: uuidv4(), code: k, text: v});}"
+                    },
+                    {
+                        "js": "mem.methods = []; for (const [k,v] of Object.entries(mem.object.description.methods||{})){mem.methods.push({id: uuidv4(), code: k, data: v});}"
+                    },
+                    {
+                        "js": "mem.references = []; for (const [k,v] of Object.entries(mem.object.description.references||{})){mem.references.push({id: uuidv4(), code: k, formText: JSON.stringify(v.form||{}, null, 4), method: v.method});}"
+                    }
+                ],
+                "onModified": {
+                    "js": "if (!context.modified){context.modified=true; forceUpdate();}",
+                    "disableUpdate": false
+                }
+            }
+        },
+        "objectCommonForm": {
+            "className": "vertical",
+            "style": {
+                "margin": "4px"
+            },
+            "$": {
+                "code": {
+                    "label": "Code",
+                    "control": "TextEdit",
+                    "events": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    },
+                    "required": true
+                },
+                "name": {
+                    "label": "Name",
+                    "control": "TextEdit",
+                    "events": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    },
+                    "required": true
+                },
+                "comment": {
+                    "label": "Comment",
+                    "control": "TextEdit",
+                    "controlProps": {
+                        "multiline": true,
+                        "minRows": 3,
+                        "maxRows": 3
+                    },
+                    "events": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    }
+                }
+            }
+        },
+        "objectListsForm": {
+            "title": "Lists",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "lists",
+                                "listForm": "listForm"
+                            },
+                            "events": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `${_('List')}_${mem.lists.length+1}`; mem.lists = [...mem.lists, {id: uuidv4(), code: newName, text: '{}'}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectFormsForm": {
+            "title": "Forms",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "forms",
+                                "listForm": "formForm"
+                            },
+                            "events": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `${_('Form')}_${Object.keys(mem.forms).length+1}`; mem.forms = [...mem.forms, {id: uuidv4(), code: newName, text: '{}'}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectJSForm": {
+            "title": "JS scripts",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "js",
+                                "listForm": "jsForm"
+                            },
+                            "events": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `js_${Object.keys(mem.js).length+1}`; mem.js = [...mem.js, {id: uuidv4(), code: newName, text: ''}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectMethodsForm": {
+            "title": "Methods",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "methods",
+                                "listForm": "methodForm"
+                            },
+                            "events": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `${_('Method')}_${Object.keys(mem.methods).length+1}`; mem.methods = [...mem.methods, {id: uuidv4(), code: newName, data: {}}];"
+                                    }
+                                ],
+                                "onListRowChanged": {
+                                    "js": "context.activeMethodParams=null; context.methodParamsCtx=null;"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "objectReferencesForm": {
+            "title": "References",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@description": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "@control": {
+                            "style": {
+                                "height": "100%"
+                            },
+                            "object": "aoa",
+                            "form": "listFormControl",
+                            "params": {
+                                "listAtr": "references",
+                                "listForm": "referenceForm"
+                            },
+                            "events": {
+                                "onAddListRow": [
+                                    {
+                                        "js": "const newName = `${_('Reference')}_${Object.keys(mem.references).length+1}`; mem.references=[...mem.references,{id: uuidv4(), code: newName, formText: '{}', method: {}}];"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "listFormControl": {
+            "className": "horizontal",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                "@list": {
+                    "className": "vertical",
+                    "style": {
+                        "height": "100%",
+                        "width": "300px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlProps": {
+                                "actions": [
+                                    {
+                                        "title": "Add",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "name": "onAddListRow"
+                                            },
+                                            {
+                                                "name": "onModified"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "Delete",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": [
+                                            {
+                                                "name": "onDelListRow"
+                                            },
+                                            {
+                                                "name": "onModified"
+                                            }
+                                        ],
+                                        "disabled$": "!context[params.listAtr+'_active']"
+                                    }
+                                ]
+                            }
+                        },
+                        ".list": {
+                            "style": {
+                                "flex": 1,
+                                "overflow": "hidden"
+                            },
+                            "control": "ListTable",
+                            "getter": "mem[params.listAtr]",
+                            "setter": "mem[params.listAtr] = params.value;",
+                            "controlOpts": {
+                                "rowDrag": true,
+                                "columns!": {
+                                    "code": {
+                                        "label": "List",
+                                        "flex": 1,
+                                        "editable": true,
+                                        "fastFilter": true
+                                    }
+                                }
+                            },
+                            "controlProps": {
+                                "id": "id",
+                                "style": {
+                                    "height": "100%"
+                                },
+                                "listContext$": "(()=>{if (!context['ctx_'+params.listAtr]){context['ctx_'+params.listAtr] = {};} return context['ctx_'+params.listAtr];})()",
+                                "gridOptions": {
+                                    "headerHeight": 0,
+                                    "floatingFiltersHeight": 40,
+                                    "domLayout": "normal",
+                                    "localeText": {
+                                        "noRowsToShow": "No rows to show"
+                                    }
+                                }
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                },
+                                "onSelectionChanged": [
+                                    {
+                                        "js": "if (context[params.listAtr+'_active'] == selectedRow) throw 'Abort';"
+                                    },
+                                    {
+                                        "js": "context[params.listAtr+'_active'] = selectedRow;"
+                                    },
+                                    {
+                                        "name": "onChangeListRow"
+                                    }
+                                ],
+                                "onCellValueChanged": [
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "flex": 1
+                    },
+                    "object": "aoa",
+                    "form$": "params.listForm",
+                    "visible$": "!!context[params.listAtr+'_active']",
+                    "params": {}
+                }
+            },
+            "events": {
+                "onChangeListRow": [
+                    {
+                        "name": "onListRowChanged"
+                    },
+                    {
+                        "js": ";"
+                    }
+                ],
+                "onDelListRow": {
+                    "js": "mem[params.listAtr].splice(mem[params.listAtr].indexOf(context[params.listAtr+'_active']), 1); mem[params.listAtr]=[...mem[params.listAtr]]; context[params.listAtr+'_active']=null;"
+                }
+            }
+        },
+        "listForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".list": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.lists_active",
+                    "$": {
+                        "text": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "listFormEdit",
+                                "mode": "json",
+                                "context$": "(()=>{context.ctxAceList = context.ctxAceList || {}; return context.ctxAceList;})()"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "formForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".form": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.forms_active",
+                    "$": {
+                        "text": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "formFormEdit",
+                                "mode": "json",
+                                "context$": "(()=>{context.ctxAceForm = context.ctxAceForm || {}; return context.ctxAceForm;})()"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "jsForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".form": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.js_active",
+                    "$": {
+                        "text": {
+                            "style": {
+                                "height": "100%",
+                                "overflow": "hidden"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "jsFormEdit",
+                                "mode": "javascript",
+                                "context$": "(()=>{context.ctxAceJs = context.ctxAceJs || {}; return context.ctxAceJs;})()"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "methodForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".method": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "init$": "context.methods_active.data",
+                    "$": {
+                        ".tabs": {
+                            "control": "Tabs",
+                            "style": {
+                                "height": "100%",
+                                "display": "flex",
+                                "flexDirection": "column"
+                            },
+                            "controlProps": {
+                                "variant": "standard",
+                                "context$": "(()=>{if (!context.methodTabs){context.methodTabs={};} return context.methodTabs;})()",
+                                "style": {
+                                    "marginBottom": "8px"
+                                },
+                                "pages": {
+                                    "sql": {
+                                        "style": {
+                                            "flex": 1
+                                        },
+                                        "title": "SQL",
+                                        "$": {
+                                            "sql": {
+                                                "className": "horizontal",
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "$": {
+                                                    "@params": {
+                                                        "className": "vertical",
+                                                        "style": {
+                                                            "width": "240px"
+                                                        },
+                                                        "$": {
+                                                            "sqlType": {
+                                                                "label": "SQL Type",
+                                                                "control": "SelectList",
+                                                                "controlProps": {
+                                                                    "list": [
+                                                                        {
+                                                                            "value": "query",
+                                                                            "name": "Query"
+                                                                        },
+                                                                        {
+                                                                            "value": "plsql",
+                                                                            "name": "Script"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "events": {
+                                                                    "onChange": {
+                                                                        "name": "onModified"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "database": {
+                                                                "label": "Database",
+                                                                "control": "TextEdit",
+                                                                "events": {
+                                                                    "onChange": {
+                                                                        "name": "onModified"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "@params": {
+                                                                "className": "vertical",
+                                                                "$": {
+                                                                    "@buttons": {
+                                                                        "className": "horizontal",
+                                                                        "$": {
+                                                                            ".btnAdd": {
+                                                                                "label": "Add",
+                                                                                "control": "IconButton",
+                                                                                "controlProps": {
+                                                                                    "icon": "add"
+                                                                                },
+                                                                                "action": {
+                                                                                    "name": "addParam"
+                                                                                }
+                                                                            },
+                                                                            ".btnDel": {
+                                                                                "label": "Delete",
+                                                                                "control": "IconButton",
+                                                                                "controlProps": {
+                                                                                    "icon": "delete"
+                                                                                },
+                                                                                "action": {
+                                                                                    "name": "delParam"
+                                                                                },
+                                                                                "readOnly$": "!context.methodParamsCtx?.selectedRow"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    ".params": {
+                                                                        "control": "ListTable",
+                                                                        "getter": "context.activeMethodParams || (()=>{context.activeMethodParams=mem.params?.map((p)=>({id: uuidv4(), code: p}))||[]; return context.activeMethodParams})()",
+                                                                        "controlOpts": {
+                                                                            "columns!": {
+                                                                                "code": {
+                                                                                    "editable": true
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "controlProps": {
+                                                                            "id": "id",
+                                                                            "listContext$": "(()=>{if (!context.methodParamsCtx)context.methodParamsCtx={}; return context.methodParamsCtx;})()",
+                                                                            "gridOptions": {
+                                                                                "headerHeight": 0
+                                                                            }
+                                                                        },
+                                                                        "events": {
+                                                                            "onCellValueChanged": [
+                                                                                {
+                                                                                    "js": "mem.params.splice(mem.params.indexOf(params.oldValue), 1, params.newValue);"
+                                                                                },
+                                                                                {
+                                                                                    "name": "onModified"
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "events": {
+                                                                    "addParam": [
+                                                                        {
+                                                                            "js": "if(!mem.params) mem.params=[]; mem.params.push(`param_${mem.params.length+1}`); mem.params=[...mem.params]; context.activeMethodParams=null;"
+                                                                        },
+                                                                        {
+                                                                            "name": "onModified"
+                                                                        }
+                                                                    ],
+                                                                    "delParam": [
+                                                                        {
+                                                                            "js": "mem.params.splice(mem.params.indexOf(context.methodParamsCtx.selectedRow.code), 1); context.activeMethodParams=null;"
+                                                                        },
+                                                                        {
+                                                                            "name": "onModified"
+                                                                        }
+                                                                    ],
+                                                                    "onSelectionChanged": {
+                                                                        "js": ";"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "@text": {
+                                                        "style": {
+                                                            "flex": 1
+                                                        },
+                                                        "$": {
+                                                            "sql": {
+                                                                "style": {
+                                                                    "height": "100%",
+                                                                    "overflow": "hidden"
+                                                                },
+                                                                "control": "AceEditor",
+                                                                "controlProps": {
+                                                                    "editorId": "methodMethodSql",
+                                                                    "mode": "sql"
+                                                                },
+                                                                "events": {
+                                                                    "onChange": {
+                                                                        "name": "onModified"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "script": {
+                                        "style": {
+                                            "flex": 1
+                                        },
+                                        "title": "PY Script",
+                                        "$": {
+                                            "script": {
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "$": {
+                                                    "py": {
+                                                        "style": {
+                                                            "height": "100%",
+                                                            "overflow": "hidden"
+                                                        },
+                                                        "control": "AceEditor",
+                                                        "controlProps": {
+                                                            "editorId": "methodMethodSql",
+                                                            "mode": "python",
+                                                            "context$": "(()=>{context.ctxAceMethodPy = context.ctxAceMethodPy || {}; return context.ctxAceMethodPy;})()"
+                                                        },
+                                                        "events": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "referenceForm": {
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".tabs": {
+                    "init$": "context.references_active",
+                    "control": "Tabs",
+                    "style": {
+                        "height": "100%",
+                        "display": "flex",
+                        "flexDirection": "column"
+                    },
+                    "controlProps": {
+                        "variant": "standard",
+                        "context$": "(()=>{if (!context.referenceTabs){context.referenceTabs={};} return context.referenceTabs;})()",
+                        "style": {
+                            "marginBottom": "8px"
+                        },
+                        "pages": {
+                            "form": {
+                                "style": {
+                                    "flex": 1
+                                },
+                                "title": "Form",
+                                "$": {
+                                    "formText": {
+                                        "style": {
+                                            "height": "100%",
+                                            "overflow": "hidden"
+                                        },
+                                        "control": "AceEditor",
+                                        "controlProps": {
+                                            "editorId": "referenceForm",
+                                            "mode": "json"
+                                        },
+                                        "events": {
+                                            "onChange": {
+                                                "name": "onModified"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "sql": {
+                                "style": {
+                                    "flex": 1
+                                },
+                                "title": "SQL",
+                                "$": {
+                                    ".sql": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "className": "horizontal",
+                                        "init$": "mem.method?.sql || (()=>{mem.method.sql={}; return mem.method.sql})()",
+                                        "$": {
+                                            "@params": {
+                                                "className": "vertical",
+                                                "style": {
+                                                    "width": "240px"
+                                                },
+                                                "$": {
+                                                    "sqlType": {
+                                                        "label": "Type",
+                                                        "control": "SelectList",
+                                                        "controlProps": {
+                                                            "list": [
+                                                                {
+                                                                    "value": "query",
+                                                                    "name": "Query"
+                                                                },
+                                                                {
+                                                                    "value": "plsql",
+                                                                    "name": "Script"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "events": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    },
+                                                    "database": {
+                                                        "label": "Database",
+                                                        "control": "TextEdit",
+                                                        "events": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    },
+                                                    "@params": {
+                                                        "className": "vertical",
+                                                        "$": {
+                                                            "@buttons": {
+                                                                "className": "horizontal",
+                                                                "$": {
+                                                                    ".btnAdd": {
+                                                                        "label": "Add",
+                                                                        "control": "IconButton",
+                                                                        "controlProps": {
+                                                                            "icon": "add"
+                                                                        },
+                                                                        "action": {
+                                                                            "name": "addParam"
+                                                                        }
+                                                                    },
+                                                                    ".btnDel": {
+                                                                        "label": "Delete",
+                                                                        "control": "IconButton",
+                                                                        "controlProps": {
+                                                                            "icon": "delete"
+                                                                        },
+                                                                        "readOnly$": "!context.referenceMethodParamsCtx?.selectedRow",
+                                                                        "action": {
+                                                                            "name": "delParam"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            ".list": {
+                                                                "control": "ListTable",
+                                                                "controlProps": {
+                                                                    "id": "id",
+                                                                    "listContext$": "(()=>{if (!context.referenceMethodParamsCtx)context.referenceMethodParamsCtx={}; return context.referenceMethodParamsCtx;})()",
+                                                                    "gridOptions": {
+                                                                        "headerHeight": 0
+                                                                    }
+                                                                },
+                                                                "getter": "context.referenceMethodParamsCtx.list || (()=>{context.referenceMethodParamsCtx.list=mem.params?.map((p)=>({id: uuidv4(), code: p})); return context.referenceMethodParamsCtx.list})()",
+                                                                "controlOpts": {
+                                                                    "columns!": {
+                                                                        "code": {
+                                                                            "editable": true
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "events": {
+                                                                    "onCellValueChanged": [
+                                                                        {
+                                                                            "js": "mem.params.splice(mem.params.indexOf(params.oldValue), 1, params.newValue); context.referenceMethodParamsCtx.list = null;",
+                                                                            "disableUpdate": true
+                                                                        },
+                                                                        {
+                                                                            "name": "onModified"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "events": {
+                                                            "addParam": [
+                                                                {
+                                                                    "js": "if (!mem.params)mem.params=[]; mem.params.push(`param_${mem.params.length+1}`); context.referenceMethodParamsCtx=null;"
+                                                                },
+                                                                {
+                                                                    "name": "onModified"
+                                                                }
+                                                            ],
+                                                            "delParam": [
+                                                                {
+                                                                    "js": "mem.params.splice(mem.params.indexOf(context.referenceMethodParamsCtx.selectedRow.code), 1); context.referenceMethodParamsCtx=null;"
+                                                                },
+                                                                {
+                                                                    "name": "onModified"
+                                                                }
+                                                            ],
+                                                            "onSelectionChanged": {
+                                                                "js": ";"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "@text": {
+                                                "style": {
+                                                    "flex": 1
+                                                },
+                                                "$": {
+                                                    "sql": {
+                                                        "style": {
+                                                            "height": "100%",
+                                                            "overflow": "hidden"
+                                                        },
+                                                        "control": "AceEditor",
+                                                        "controlProps": {
+                                                            "editorId": "referenceMethodSql",
+                                                            "mode": "sql"
+                                                        },
+                                                        "events": {
+                                                            "onChange": {
+                                                                "name": "onModified"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "pyScript": {
+                                "style": {
+                                    "flex": 1
+                                },
+                                "title": "Py script",
+                                "$": {
+                                    ".script": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "init$": "mem.method?.script || (()=>{mem.method.script={}; return mem.method.script})()",
+                                        "$": {
+                                            "py": {
+                                                "style": {
+                                                    "height": "100%",
+                                                    "overflow": "hidden"
+                                                },
+                                                "control": "AceEditor",
+                                                "controlProps": {
+                                                    "editorId": "referenceMethodSql",
+                                                    "mode": "python"
+                                                },
+                                                "events": {
+                                                    "onChange": {
+                                                        "name": "onModified"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "cleanCacheTask": {
+            "title": "Clean application objects cache",
+            "className": "vertical task task-panel",
+            "$": {
+                ".btnClearObjectCache": {
+                    "label": "Clear Application Objects Cache",
+                    "control": "Button",
+                    "action": {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'aoa', method: 'cleanCache'})"
+                    }
+                },
+                ".btnClearClientCache": {
+                    "label": "Clear Client Object Cache",
+                    "control": "Button",
+                    "action": {
+                        "js": "app.ao.cleanCache();"
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": [],
+                "sql": ""
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aoa.models import Object\nfrom beflex.aoa.services import applyFilterModel2\n\nquery = Object.objects\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    filterModel2 = parameters['request'].get('filterModel2') if parameters.get('request') else None\n        \n    if filterModel2:\n        \n        if 'package' in filterModel2:\n            from django.db.models import Exists, OuterRef, F, CharField\n            from django.db.models.functions import Cast\n            from beflex.aos.models import PackageObject\n            \n            po = PackageObject.objects.filter(deployment_id=filterModel2['package'])\n\n            query = query.annotate(\n                id_str=Cast('id', output_field=CharField())\n            ).annotate(\n                isInPackage=Exists(po.filter(object_id=OuterRef('id_str')))\n            ).filter(isInPackage=True)\n            \n\n            del filterModel2['package']\n        \n        query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    query = query.order_by('code')\n    \n    if parameters.get('request', {}).get('startRow') is not None:\n        query = query[parameters['request']['startRow']:parameters['request']['endRow']]\n        \ndata = []\nfor o in query:\n    d = {\n        'id': o.id.__str__(),\n        'code': o.code,\n        'name': o.name,\n    }\n    \n    data.append(d)\n\n\n"
+            }
+        },
+        "delete": {
+            "sql": {
+                "params": [],
+                "sql": ""
+            },
+            "script": {
+                "params": [],
+                "py": "from django.db import transaction\nfrom django.conf import settings\nfrom beflex.aoa.models import Object\n\nwith transaction.atomic(using=settings.APPS_DB[Object._meta.app_label]):\n    o = Object.objects.get(id=parameters.get('id')) \n    o.delete()\n\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": [
+                    "p1"
+                ]
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aoa.models import Object\n\ndata = None\n\nif parameters.get('id'):\n    o = Object.objects.get(id=parameters.get('id'))\nelif parameters.get('code'):\n    try:\n        o = Object.objects.get(code=parameters.get('code'))\n    except Object.DoesNotExist:\n        raise UserException('Прикладной объект %s не существует' % parameters.get('code'))\n\n\nimport logging\nlogger = logging.getLogger('aoa')\n\n\ndata = {\n    'id': o.id.__str__(),\n    'code': o.code,\n    'name': o.name,\n    'modified': o.modified,\n    'description': o.description,\n}\n\nif data['description']:\n    #\n    # Преобразование старого справочника в список\n    #\n    if data['description'].get('reference') and not data['description'].get('references'):\n        form = data['description']['reference']\n        method = data['description']['reference'].get('method')\n        del form['method']\n        if len(form.keys()) > 0:\n            # Только если есть описание формы\n            data['description']['references'] = {\n                'default': {\n                    'form': form,\n                    'method': method\n                }\n            }\n        del data['description']['reference']\n    \n    #\n    # Преобразование к множественным спискам\n    #\n    if data['description'].get('list') and not data['description'].get('lists'):\n        dlist = data['description']['list']\n        data['description']['lists'] = {\n            'default': dlist\n        }\n        del data['description']['list']\n        "
+            }
+        },
+        "save": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aoa.models import Object\nfrom beflex.aoa.services import reset_object_cache\nfrom datetime import datetime\n\nif parameters.get('id'):\n    o = Object.objects.get(id=parameters['id'])\n    if o.modified is not None and parameters['modified'] is not None and o.modified != datetime.fromisoformat(parameters['modified']):\n        raise UserError(_('Object was modified in another task'))\nelse:\n    o = Object()\n\nimport logging\nlogger = logging.getLogger('aoa')\n\no.code = parameters['code']\no.name = parameters['name']\no.description = parameters['description']\no.save()\n\nreset_object_cache()\n\ndata = {\n    'id': o.id.__str__(),\n    'modified': o.modified\n}\n\n\n#raise UserException(json.dumps(parameters, indent=4, ensure_ascii=False))"
+            }
+        },
+        "cleanCache": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "#\n# Send signals to clear caches\n#\nfrom beflex.uwsgi import signals\nimport uwsgi\n\n# Signal constants declared in module\nfor sig in [x for x in dir(signals) if x.startswith('UWSGI_SIGNAL_CLEAR')]:\n    uwsgi.signal(getattr(signals, sig))\n\n"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "code": {
+                    "title": "Code",
+                    "width": 250
+                },
+                "name": {
+                    "title": "Name",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Create",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "New object",
+                        "params": {
+                            "object": "aoa",
+                            "form": "objectEditTask"
+                        }
+                    }
+                },
+                {
+                    "title": "Open",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Object ${$listRow.code}`",
+                        "params": {
+                            "object": "aoa",
+                            "form": "objectEditTask",
+                            "objectId$": "$listRow.id"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Delete object ${$listRow.code}, ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Tools",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Packages",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.id, model: 'aoa.Object'}, context: {}})"
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "History",
+                            "command": {
+                                "type": "task",
+                                "title$": "`Object history: ${$listRow.code}`",
+                                "call": "/aoa/ObjectTask",
+                                "params": {
+                                    "object": "aos.ModifiedObjects",
+                                    "form": "historyTask",
+                                    "model": "aoa.Object",
+                                    "objectId$": "$listRow.id"
+                                }
+                            },
+                            "disabled$": "!$listRow"
+                        }
+                    ]
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Filter",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px",
+                                "paddingRight": "8px",
+                                "overflowY": "auto",
+                                "flexGrow": 1
+                            },
+                            "$": {
+                                "code": {
+                                    "label": "Code",
+                                    "control": "TextEdit"
+                                },
+                                "name": {
+                                    "label": "Name",
+                                    "control": "TextEdit"
+                                },
+                                "description": {
+                                    "label": "Contains",
+                                    "control": "TextEdit"
+                                },
+                                "package": {
+                                    "label": "Package",
+                                    "control": "ObjectSelectList",
+                                    "controlProps": {
+                                        "object": "package",
+                                        "method": "getList",
+                                        "params": {}
+                                    },
+                                    "controlOpts": {
+                                        "translate": {
+                                            "value": "id",
+                                            "name": "name"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Clear",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Apply",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "references": {
+        "objects": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Code",
+                        "field": "code",
+                        "width": 320
+                    },
+                    {
+                        "title": "Name",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code",
+                "filter": {
+                    "form": {
+                        "className": "vertical",
+                        "style": {
+                            "padding": "8px"
+                        },
+                        "$": {
+                            "@fields": {
+                                "className": "vertical",
+                                "$": {
+                                    "code": {
+                                        "label": "Code",
+                                        "control": "TextEdit"
+                                    },
+                                    "name": {
+                                        "label": "Name",
+                                        "control": "TextEdit"
+                                    }
+                                }
+                            },
+                            "@buttons": {
+                                "className": "horizontal",
+                                "$": {
+                                    ".btnClear": {
+                                        "control": "Button",
+                                        "label": "Clean",
+                                        "controlProps": {
+                                            "variant": "outlined",
+                                            "color": "primary"
+                                        },
+                                        "action": {
+                                            "js": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                                        }
+                                    },
+                                    ".btnApply": {
+                                        "control": "Button",
+                                        "label": "Apply",
+                                        "controlProps": {
+                                            "variant": "contained",
+                                            "color": "primary"
+                                        },
+                                        "action": {
+                                            "js": "actions.apply(mem);",
+                                            "params": {
+                                                "disableUpdate": true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "filterFirst": true,
+                "fastFilter": true
+            },
+            "method": {
+                "sql": {},
+                "script": {
+                    "py": "data = AO.aoa.getList(parameters)\n"
+                }
+            }
+        }
+    },
+    "js": {}
+}

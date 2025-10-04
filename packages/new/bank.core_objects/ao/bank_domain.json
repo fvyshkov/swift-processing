@@ -1,0 +1,58 @@
+{
+    "forms": {},
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": [
+                    "domain",
+                    "code"
+                ],
+                "sql": "select\n    constval \"code\",\n    longname \"name\"\nfrom c_vallist \nwhere code=:domain\n    and arcfl='0'\n    and nvl(:code, constval) = constval\norder by constval\n\n\n",
+                "sqlType": "query",
+                "database": "bank"
+            },
+            "script": {
+                "params": []
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "800px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 200
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code"
+            },
+            "method": {
+                "sql": {
+                    "params": [
+                        "domain",
+                        "code"
+                    ],
+                    "sqlType": "query",
+                    "database": "bank",
+                    "sql": "select\n    constval \"code\",\n    longname \"name\"\nfrom c_vallist \nwhere code=:domain\n    and arcfl='0'\n    and nvl(:code, constval) = constval\norder by constval\n\n\n"
+                },
+                "script": {
+                    "params": [],
+                    "py": ""
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

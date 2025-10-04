@@ -1,0 +1,190 @@
+<workflow id="APP_CREATE_TRANCHE" name="Выдача транша по кредитной линии">
+    <event name="onGetProcessObject">
+        <![CDATA[
+
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <script id="8f7daa12-5600-4740-a1fd-49488b973977" name="Инициализация">
+        <![CDATA[
+
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+]]>
+    </script>
+    <timer id="2e7b2879-9cf7-4a39-9ddd-d9c76b632d4e" name="Выдача транша" description="Выдача транша, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="ec649bb8-a9b7-4f94-ad84-011d7e97122c" name="Получение информации по линии">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from apng_core.db import fetchone
+import traceback
+
+with AuthenticatedUser() as au:
+    con = au.getConnection()
+    with con.cursor() as cursor:
+        idLineDep = po.get('line', {}).get('DEP_ID') or po.get('LINE_DEP_ID')
+        idLine = po.get('line', {}).get('ID') or po.get('LINE_ID')
+        p = {
+            'DEP_ID': idLineDep,
+            'ID': idLine,
+        }
+        
+        cursor.execute("""
+            select 
+                o.CODE
+            from T_ORD o, L_LDEA ll
+            where ll.DEP_ID=:DEP_ID and ll.ID=:ID
+                and o.DEP_ID=ll.DEP_ID and o.ID=ll.ID
+        """, p)
+        
+        r = fetchone(cursor)
+        if not r:
+            raise Exception('Кредитная линия не существует: DEP_ID=%s, ID=%s' % (idLineDep, idLine))
+            
+        pv['line'] = {
+            'CODE': r['CODE']
+        }
+
+
+    ]]>
+    </script>
+    <script id="fd1abd7d-4ff7-447a-b741-5961ed007a45" name="Выдача транша">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from django.db import transaction
+from apng_core.aoa.services import execObjectMethod
+import traceback
+from colvir_cbs.services import log
+import logging
+logger = logging.getLogger('loanapp')
+
+pv['last_error'] = None
+
+with AuthenticatedUser() as au:
+
+    try:
+        with transaction.atomic(using='cbs'):
+            # Выдача транша
+            pv['tranche'] = execObjectMethod({
+                'object': 'loanapp', 'method': 'createTranche',
+                'params': {
+                    'req_dep_id': pv['dep_id'],
+                    'req_id': pv['id'],
+                }
+            })
+            
+            if 'log' in pv['tranche']:
+                token.save_vars({'cbs_log': pv['tranche']['log']})
+                del pv['tranche']['log']
+
+            # Сохраняем обеспечение при договоре
+            execObjectMethod({
+                'object': 'cbsPledge',
+                'method': 'saveAppPledges',
+                'params': {
+                    'dep_id': pv['tranche']['dep_id'],
+                    'id': pv['tranche']['id'],
+                    'pledges': po.get('pledges'),
+                    'forceNew': True,
+                }
+            })
+            
+        
+            # Сохранение ссылки на договор при заявке
+            execObjectMethod({
+                'object': 'app', 'method': 'updateApplicationJson',
+                'params': {
+                    'DEP_ID': pv['dep_id'],
+                    'ID': pv['id'],
+                    'JSON': json.dumps({
+                        'dea': {
+                            'dep_id': pv['tranche']['dep_id'],
+                            'id': pv['tranche']['id'],
+                            'code': pv['tranche']['code'],
+                        },
+                    }, ensure_ascii=False)
+                }
+            })
+
+            # Перенос документов досье в транш
+            execObjectMethod({
+                'object': 'app', 'method': 'attachDocumentsToDea',
+                'params': {
+                    'req_dep_id': pv['dep_id'],
+                    'req_id': pv['id'],
+                    'dea_dep_id': pv['tranche']['dep_id'],
+                    'dea_id': pv['tranche']['id'],
+                }
+            })
+
+    except Exception as e:
+        log_text = log.readLog()
+
+        raise UserException({
+            'message': '%s' % e,
+            'description': traceback.format_exc(),
+            'trace': log_text,
+        })
+
+]]>
+    </script>
+    <split id="efd22f88-5fb7-4a1f-abe2-10dbcb7be76f" name="Результат выдачи">
+        <condition id="1fca4213-b66a-48b1-a7ea-63d43694a78b" name="Успешно" expression="pv.get(&apos;last_error&apos;) is None">
+            <script id="0bcbd633-9c37-45c0-8242-bc2059514e6b" name="Журнализация результата">
+                <journal time="leave">
+                    <![CDATA[Выдан транш {{pv.tranche.code}} по линии {{pv.line.CODE}}]]>
+                </journal>
+            </script>
+        </condition>
+        <condition id="8a3c72ae-b0b9-44f3-8325-dd08e7200d8c" name="Ошибка" expression="pv.get(&apos;last_error&apos;) is not None">
+            <task id="41f58e9e-58c5-4f8a-b36e-11fe09f36a2b" name="Показ ошибки выдачи транша" autoStart="true" description="Ошибка выдачи транша, заявка {{po.app.code}}, клиент {{po.client.name}}, договор линии {{pv.line.CODE}}">
+                <clientTask path="/easyflow/error-dialog" taskName="{{task.description}}">
+                    <p name="error" expression="pv.get(&apos;last_error&apos;)"/>
+                    <p name="actions" expression="[  {&apos;name&apos;: &apos;Повторить&apos;, &apos;value&apos;: &apos;repeat&apos;},  ]"/>
+                </clientTask>
+            </task>
+            <jump id="4dc85785-1ab2-45b5-bd90-28b2e02fef7c" name="Переход к Выдача транша" target_id="fd1abd7d-4ff7-447a-b741-5961ed007a45"/>
+        </condition>
+    </split>
+    <script id="740393f2-9693-4866-8df2-aa286d149c8b" name="Изменение состояния заявки: создан договор">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'stage': 'FIN',
+        'state': 'CREDEA',
+    }
+})
+
+]]>
+    </script>
+</workflow>

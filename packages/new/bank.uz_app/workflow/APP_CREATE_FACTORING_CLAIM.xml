@@ -1,0 +1,94 @@
+<workflow id="APP_CREATE_FACTORING_CLAIM" name="Создание требования по договору факторингу">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = pv.get('objectKey')
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser() as au:
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+]]>
+    </event>
+    <script id="bcf1d3dd-701f-4e38-830e-5c5addcd9d51" name="Инициализация">
+        <![CDATA[ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+]]>
+    </script>
+    <timer id="175e5347-9599-483a-98d7-af1b3261253c" name="Создание договора требования по факторингу" description="Создание договора требования по факторингу {{po.app.factoring.code}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="80ac3a72-93b0-49ff-9d16-6f38cfce9dba" name="Создание договора">
+        <journal time="leave">
+            <![CDATA[Создан  договор требования номер {{pv.dea.code}}]]>
+        </journal>
+        <![CDATA[from django.db import transaction
+
+with transaction.atomic(using='cbs'):
+    fd = execObjectMethod({
+        'object': 'appFactoring', 'method': 'createFoundationDocument',
+        'params': {
+            'req_dep_id': pv['dep_id'],
+            'req_id': pv['id'],
+        }
+    })
+    if fd.get('log'):
+        token.save_vars({
+            'createFDocumentLog': r['log']
+        })
+        del fd['log']
+    
+    r = execObjectMethod({
+        'object': 'appFactoring', 'method': 'createFactoringClaim',
+        'params': {
+            'req_dep_id': pv['dep_id'],
+            'req_id': pv['id'],
+            **fd
+        }
+    })
+    #raise UserException({'message': 'Отладка', 'trace': r.get('log')})
+    
+    if r.get('log'):
+        token.save_vars({
+            'createClaimLog': r['log']
+        })
+        del r['log']
+    
+    pv['dea'] = {
+        'dep_id': r['dep_id'],
+        'id': r['id'],
+        'code': r['code'],
+    }
+    
+    #raise UserException(json.dumps(pv['dea'], indent=4))
+    
+    
+    # Сохранение ссылки на договор при заявке        
+    execObjectMethod({
+        'object': 'app', 'method': 'updateApplicationJson',
+        'params': {
+            'DEP_ID': pv['dep_id'],
+            'ID': pv['id'],
+            'JSON': json.dumps({
+                'dea': {
+                    'dep_id': pv['dea']['dep_id'],
+                    'id': pv['dea']['id'],
+                    'code': pv['dea']['code'],
+                },
+                'pledges': po['pledges']
+            }, ensure_ascii=False)
+        }
+    })
+
+]]>
+    </script>
+</workflow>

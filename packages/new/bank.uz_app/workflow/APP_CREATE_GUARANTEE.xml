@@ -1,0 +1,151 @@
+<workflow id="APP_CREATE_GUARANTEE" name="Создание гарантии">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import getApplication
+from apng_core.aoa.services import execObjectMethod
+with AuthenticatedUser():
+    #token._po = getApplication({
+    #    'dep_id': int(pk[0]),
+    #    'id'    : int(pk[1]),
+    #})
+    token._po = execObjectMethod({
+        'object': 'app',
+        'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <script id="97ce8032-2270-482b-9b11-4ac687d5f7f8" name="Инициализация">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+process_vars['dep_id'] = int(pk[0])
+process_vars['id'] = int(pk[1])]]>
+    </script>
+    <script id="691ff576-ba56-474c-a82e-9577a28ec39d" name="Создание договора гарантии">
+        <journal time="leave">
+            <![CDATA[Создана гарантия {{pv.dea.code}}]]>
+        </journal>
+        <![CDATA[import traceback
+from django.db import transaction, connections
+from colvir_cbs.auth import AuthenticatedUser
+from apng_core.aoa.services import execObjectMethod
+from datetime import date
+
+pv['last_error'] = None
+
+try:
+
+    with AuthenticatedUser() as au:
+    
+        with transaction.atomic(using='cbs'):
+
+            # Создание договора
+            try:
+                
+                dea = execObjectMethod({
+                    'object': 'appGuarantee',
+                    'method': 'createGuarantee',
+                    'params': {
+                        'req_dep_id': pv['dep_id'],
+                        'req_id': pv['id'],
+                    }
+                })
+                pv['dea'] = {
+                    'dep_id': dea['dep_id'],
+                    'id': dea['id'],
+                    'code': dea['code'],
+                    'refer': dea['refer'],
+                }
+                pv['createGuaranteeLog'] = dea['log']
+                
+            except UserException as e:
+                raise UserException({
+                    'message': 'Ошибка создания договора по заявке %s\n%s' % (po['app']['code'], e)
+                }).withError(e.getError())
+            except Exception as e:
+                raise UserException({
+                    'message': 'Ошибка создания договора по заявке %s\n%s' % (po['app']['code'], e),
+                    'trace': traceback.format_exc()
+                })
+                
+                
+            for pledge in po['pledges']:
+                try:
+                    r = execObjectMethod({
+                        'object': 'cbsPledge', 'method': 'savePledge',
+                        'params': {
+                            'dea_dep_id'    : pv['dea']['dep_id'],
+                            'dea_id'        : pv['dea']['id'],
+                            'mrt_dep_id'    : None,
+                            'mrt_id'        : None,
+                            'pledge'        : pledge,
+                        }
+                    })
+                    pledge['cbs_code'] = r['code']
+                    pledge['cbs_refer'] = r['refer']
+                except Exception as e:
+                    raise UserException({
+                        'message': f'Ошибка сохранения обеспечения:\n{e}',
+                        'description': json.dumps(pledge, indent=4, ensure_ascii=False),
+                        'trace': traceback.format_exc()
+                    })
+                
+            # Сохранение ссылки на договор при заявке
+            execObjectMethod({
+                'object': 'app', 'method': 'updateApplicationJson',
+                'params': {
+                    'DEP_ID': pv['dep_id'],
+                    'ID': pv['id'],
+                    'JSON': json.dumps({
+                        'dea': {
+                            'dep_id': pv['dea']['dep_id'],
+                            'id': pv['dea']['id'],
+                            'code': pv['dea']['code'],
+                            'refer': pv['dea']['refer'],
+                        },
+                        'pledges': po['pledges']
+                    }, ensure_ascii=False)
+                }
+            })
+
+            execObjectMethod({
+                'object': 'app', 'method': 'attachDocumentsToDea',
+                'params': {
+                    'req_dep_id': pv['dep_id'],
+                    'req_id': pv['id'],
+                    'dea_dep_id': pv['dea']['dep_id'],
+                    'dea_id': pv['dea']['id'],
+                }
+            })
+except UserException as e:
+    raise UserException({
+        'message': 'Ошибка создания кредитного договора по заявке {appNo}\n{message}'.format(
+            appNo=po['app']['code'],
+            message=e
+        )
+    }).withError(e.getError())
+except Exception as e:
+    raise UserException({
+        'message': 'Ошибка создания кредитного договора по заявке {appNo}\n{message}'.format(
+            appNo=po['app']['code'],
+            message=e
+        ),
+        'trace': traceback.format_exc()
+    })
+
+]]>
+    </script>
+</workflow>

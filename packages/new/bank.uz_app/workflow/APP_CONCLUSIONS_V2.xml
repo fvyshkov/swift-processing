@@ -1,0 +1,311 @@
+<workflow id="APP_CONCLUSIONS_V2" name="Получение заключений по заявке v2">
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return process_vars['req']['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <event name="onGetProcessObject">
+        <![CDATA[ok = pv.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from loanapp.services.application import getApplication
+    token._po = getApplication({
+        'dep_id': int(pk[0]),
+        'id'    : int(pk[1]),
+    })
+    
+    token._po['dep_id'] = int(pk[0])
+    token._po['id'] = int(pk[1])
+
+]]>
+    </event>
+    <timer id="6b1055fc-bee0-4568-8e50-8b8ec5fdd3fd" name="Получение заключений по заявке" description="Получение заключений по заявке {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="144aa81e-83d9-498e-a620-50017a47abdd" name="Инициализация">
+        <![CDATA[from colvir_cbs.services.dectbl import evalByOrd
+from colvir_cbs.auth import AuthenticatedUser
+
+from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': po['dep_id'],
+        'id': po['id'],
+        'stage': 'CONCLUSIONS',
+    }
+})
+
+
+# Результат по умолчанию
+pv['conclusions_result'] = {
+    'status': 'continue',
+}
+pv['decisions'] = {}
+
+with AuthenticatedUser():
+
+    pv['decisions']['rating'] = evalByOrd({
+        'idDep': po['dep_id'],
+        'idOrd': po['id'],
+        'tblName': 'L_LIM_RATING',
+        'required': False,
+    }) == '1'
+    
+    pv['decisions']['underwriter'] = evalByOrd({
+        'idDep': po['dep_id'],
+        'idOrd': po['id'],
+        'tblName': 'L_LIM_UNDERWRITER',
+        'required': False,
+    }) == '1'
+    
+    pv['decisions']['riskmanager'] = evalByOrd({
+        'idDep': po['dep_id'],
+        'idOrd': po['id'],
+        'tblName': 'L_LIM_RISKMANAGER',
+        'required': False,
+    }) == '1'
+
+    # Требуется оценка залогов
+    pv['decisions']['pledge'] = evalByOrd({
+        'idDep': po['dep_id'],
+        'idOrd': po['id'],
+        'tblName': 'L_LIM_PLEDGE',
+        'required': False,
+    }) == '1'
+
+    # Требуется юридическое заключение
+    pv['decisions']['legal'] = evalByOrd({
+        'idDep': po['dep_id'],
+        'idOrd': po['id'],
+        'tblName': 'L_LIM_LEGAL',
+        'required': False,
+    }) == '1'
+]]>
+    </script>
+    <task id="dfec3221-f43f-45f0-a290-3af29212d310" name="Подготовка кредитного заключения" autoStart="true" description="Подготовка кредитного заключения по заявке: {{po.app.code}}, {{po.client.name}}">
+        <journal time="leave">
+            <![CDATA[Кредитное заключение: {{pv.resolution.name}}, {{pv.resolution.text}}]]>
+        </journal>
+        <event name="onComplete">
+            <![CDATA[from apng_core.easyflow.auth import Authentication
+from apng_core.aoa.services import execObjectMethod
+
+au = Authentication.getAuthenticatedUser()
+
+execObjectMethod({
+    'object': 'loanapp', 'method': 'updateConclusions',
+    'params': {
+        'dep_id': po['dep_id'],
+        'id': po['id'],
+        'conclusions': {
+            'creditReport': {
+                'conclusion': pv['resolution']['value'],
+                'description': pv['resolution']['text'],
+                'date': au.operday,
+                'user': {
+                    'code': au.code,
+                    'name': au.name,
+                }
+            }
+        }
+    }
+})
+
+]]>
+        </event>
+        <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+            <p name="objectKey" expression="{  &apos;dep_id&apos;: po[&apos;dep_id&apos;],  &apos;id&apos;: po[&apos;id&apos;]  }"/>
+            <p name="actionVar" expression="&apos;resolution&apos;"/>
+            <p name="actions" expression="[   { &apos;name&apos;: &apos;Положительное&apos;, &apos;value&apos;: &apos;accept&apos; },   {&apos;name&apos;: &apos;Отрицательное&apos;, &apos;value&apos;: &apos;decline&apos;}, {&apos;name&apos;: &apos;В доработку&apos;, &apos;value&apos;: &apos;review&apos;}   ]"/>
+            <p name="object" expression="&apos;app&apos;"/>
+            <p name="form" expression="&apos;appResolutionTask&apos;"/>
+        </clientTask>
+    </task>
+    <split id="5ef2799d-a04d-4d5c-8602-98743441bb4a" name="Результат кредитного заключения">
+        <condition id="55f6e34d-9a4b-467c-bbc6-24e13719eed4" name="Продолжить"/>
+        <condition id="dc520c00-9f86-4f33-93fb-452e456cf2d9" name="В доработку" expression="pv[&apos;resolution&apos;][&apos;value&apos;] == &apos;review&apos;">
+            <script id="5d8fe9c6-3f04-4cf3-9c53-8c99b749c6ad" name="Установка результата">
+                <![CDATA[pv['conclusions_result'] = {
+    'status': 'review',
+    'text': 'В доработку по результатам кредитного заключения'
+}]]>
+            </script>
+            <terminate id="63b1dfef-b6bd-4492-96f3-eb0916733a7b" name="Завершение"/>
+        </condition>
+    </split>
+    <script id="8c3dee59-6427-4fb4-b939-7c59a5272b59" name="Инициализация заключений">
+        <![CDATA[# Залоги
+pv['resolution_pledge'] = {'value': None}
+# Юридическая экспертиза
+pv['resolution_jur'] = {'value': None}
+]]>
+    </script>
+    <parallel id="710211a8-7575-4a59-91c7-41a0bbdff2d2" name="Заключения экспертов">
+        <flow id="afe83fac-51fe-47e4-a793-d169361fa634" name="Оценка залогов" expression="pv[&apos;decisions&apos;].get(&apos;pledge&apos;, False)">
+            <script id="4fe0c673-04e9-4662-ae18-1034c08df7bf" name="Проверка наличия залогов">
+                <![CDATA[pv['hasPledge'] = len(po.get('pledges')) > 0
+]]>
+            </script>
+            <split id="52a5199f-23f9-405e-a825-1e7af0ebcdbf" name="Есть залоги">
+                <condition id="fb04adb6-e000-4501-84e8-354e13b61b27" name="Да" expression="pv[&apos;hasPledge&apos;] == True">
+                    <task id="34ba1d98-4a43-4697-acf6-b4ad2286bd38" name="Оценка залогов" autoStart="true" description="Оценка залогов по заявке {{po.app.code}}, {{po.client.name}}">
+                        <journal time="leave">
+                            <![CDATA[Залоговая служба: {{pv.resolution_pledge.name}}, {{pv.resolution_pledge.text}}]]>
+                        </journal>
+                        <event name="onComplete">
+                            <![CDATA[from apng_core.easyflow.auth import Authentication
+from apng_core.aoa.services import execObjectMethod
+
+au = Authentication.getAuthenticatedUser()
+
+execObjectMethod({
+    'object': 'loanapp', 'method': 'updateConclusions',
+    'params': {
+        'dep_id': po['dep_id'],
+        'id': po['id'],
+        'conclusions': {
+            'pledgeConclusion': {
+                'conclusion': pv['resolution_pledge']['value'],
+                'description': pv['resolution_pledge']['text'],
+                'date': au.operday,
+                'user': {
+                    'code': au.code,
+                    'name': au.name,
+                }
+            }
+        }
+    }
+})
+
+]]>
+                        </event>
+                        <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                            <p name="objectKey" expression="{&apos;dep_id&apos;: po[&apos;dep_id&apos;], &apos;id&apos;: po[&apos;id&apos;]}"/>
+                            <p name="actions" expression="[{ &apos;name&apos;: &apos;Одобрить&apos;, &apos;value&apos;: &apos;accept&apos; }, {&apos;name&apos;: &apos;Отказать&apos;, &apos;value&apos;: &apos;reject&apos;},   {&apos;name&apos;: &apos;В доработку&apos;, &apos;value&apos;: &apos;review&apos;}  ]"/>
+                            <p name="actionVar" expression="&apos;resolution_pledge&apos;"/>
+                            <p name="object" expression="&apos;app&apos;"/>
+                            <p name="form" expression="&apos;appResolutionTask&apos;"/>
+                        </clientTask>
+                    </task>
+                </condition>
+                <condition id="a083aaaf-116d-4f46-8778-56cfcdbe3319" name="Нет" expression="pv[&apos;hasPledge&apos;] == False"/>
+            </split>
+        </flow>
+        <flow id="ecf7eb44-0197-4f64-856f-8bedcc47ec2e" name="Юридическое заключение" expression="pv[&apos;decisions&apos;].get(&apos;legal&apos;, False)">
+            <task id="e4456c67-af92-4e7e-83a1-272f1077b025" name="Юридическое заключение" autoStart="true" description="Юридическое заключение по заявке {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[Юридическая служба: {{pv.resolution_jur.name}}, {{pv.resolution_jur.text}}]]>
+                </journal>
+                <event name="onComplete">
+                    <![CDATA[from apng_core.easyflow.auth import Authentication
+from apng_core.aoa.services import execObjectMethod
+
+au = Authentication.getAuthenticatedUser()
+
+execObjectMethod({
+    'object': 'loanapp', 'method': 'updateConclusions',
+    'params': {
+        'dep_id': po['dep_id'],
+        'id': po['id'],
+        'conclusions': {
+            'legalOpinion': {
+                'conclusion': pv['resolution_jur']['value'],
+                'description': pv['resolution_jur']['text'],
+                'date': au.operday,
+                'user': {
+                    'code': au.code,
+                    'name': au.name,
+                }
+            }
+        }
+    }
+})
+
+]]>
+                </event>
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{&apos;dep_id&apos;: po[&apos;dep_id&apos;], &apos;id&apos;: po[&apos;id&apos;]}"/>
+                    <p name="actions" expression="[{ &apos;name&apos;: &apos;Одобрить&apos;, &apos;value&apos;: &apos;accept&apos; }, {&apos;name&apos;: &apos;Отказать&apos;, &apos;value&apos;: &apos;reject&apos;},  {&apos;name&apos;: &apos;В доработку&apos;, &apos;value&apos;: &apos;review&apos;}    ]"/>
+                    <p name="actionVar" expression="&apos;resolution_jur&apos;"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appResolutionTask&apos;"/>
+                </clientTask>
+            </task>
+        </flow>
+    </parallel>
+    <split id="3a2ff783-7d31-4885-833a-6973fdd67a57" name="Результат заключений">
+        <condition id="c1ecb6bd-f8ae-456d-b77b-5363e6df2be4" name="Продолжить"/>
+        <condition id="b5c37c73-e8d0-4733-911c-b2c5c9adf962" name="В доработку" expression="pv.get(&apos;resolution_pledge&apos;) and pv[&apos;resolution_pledge&apos;][&apos;value&apos;] == &apos;review&apos; or pv[&apos;resolution_jur&apos;][&apos;value&apos;] == &apos;review&apos;">
+            <script id="5af1bf1d-a891-4355-baa4-f03ce240d644" name="Установка результата">
+                <![CDATA[pv['conclusions_result'] = {
+    'status': 'review',
+    'text': 'В доработку по заключению экспертов'
+}]]>
+            </script>
+            <terminate id="24399569-3044-415e-b912-b458dd429a05" name="Завершение"/>
+        </condition>
+    </split>
+    <split id="76d39069-bf27-4a4d-a5ef-1533dc5d4bbe" name="Требуется заключение риск-менеджера">
+        <condition id="70c18bd2-6aba-4e2e-aed5-ed602737b217" name="Да" expression="pv[&apos;decisions&apos;][&apos;riskmanager&apos;] == True">
+            <task id="ddf953e3-b859-498b-a729-9d18fea9edc4" name="Заключение риск-менеджера" autoStart="true" description="Заключение риск-менеджера по заявке {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[Риск-менеджер: {{pv.resolution_risk.name}}, {{pv.resolution_risk.text}}]]>
+                </journal>
+                <event name="onComplete">
+                    <![CDATA[from apng_core.easyflow.auth import Authentication
+from apng_core.aoa.services import execObjectMethod
+
+au = Authentication.getAuthenticatedUser()
+
+execObjectMethod({
+    'object': 'loanapp', 'method': 'updateConclusions',
+    'params': {
+        'dep_id': po['dep_id'],
+        'id': po['id'],
+        'conclusions': {
+            'riskConclusion': {
+                'conclusion': pv['resolution_risk']['value'],
+                'description': pv['resolution_risk']['text'],
+                'date': au.operday,
+                'user': {
+                    'code': au.code,
+                    'name': au.name,
+                }
+            }
+        }
+    }
+})
+
+]]>
+                </event>
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{&apos;dep_id&apos;: po[&apos;dep_id&apos;], &apos;id&apos;: po[&apos;id&apos;]}"/>
+                    <p name="actions" expression="[{ &apos;name&apos;: &apos;Положительное&apos;, &apos;value&apos;: &apos;accept&apos; }, {&apos;name&apos;: &apos;Отрицательное&apos;, &apos;value&apos;: &apos;reject&apos;} ,  {&apos;name&apos;: &apos;В доработку&apos;, &apos;value&apos;: &apos;review&apos;}  ]"/>
+                    <p name="actionVar" expression="&apos;resolution_risk&apos;"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appResolutionTask&apos;"/>
+                </clientTask>
+            </task>
+            <split id="8e15c7df-a0f6-47d7-b249-3d6883611f9a" name="Результат заключения">
+                <condition id="e7da3771-15aa-4964-8ede-4b72a2ef31f4" name="Продолжить"/>
+                <condition id="548d1f41-12d3-415e-b82d-e90e8af172f7" name="В доработку" expression="pv[&apos;resolution_risk&apos;][&apos;value&apos;] == &apos;review&apos;">
+                    <script id="e4aaa238-282f-43cf-80db-ffeb81bfb87b" name="Установка результата">
+                        <![CDATA[pv['conclusions_result'] = {
+    'status': 'review',
+    'text': 'В доработку по заключению риск менеджера'
+}]]>
+                    </script>
+                    <terminate id="7d7240ee-3671-4fd4-a06a-6feadf15c527" name="Завершение"/>
+                </condition>
+            </split>
+        </condition>
+        <condition id="69eff7da-6ea2-4af0-a262-eb64ae82cc09" name="Нет" expression="pv[&apos;decisions&apos;][&apos;riskmanager&apos;] == False"/>
+    </split>
+</workflow>

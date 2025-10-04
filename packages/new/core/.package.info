@@ -1,0 +1,443 @@
+{
+    "packageId": "74818b4e-8585-432e-8f3f-7bc3f2ce6038",
+    "packageName": "core",
+    "configs": [
+        {
+            "id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "name": "Application object",
+            "model_name": "aoa.Object"
+        },
+        {
+            "id": "56954d1e-cf24-49b4-bc3f-32cd3492f808",
+            "name": "Object description",
+            "model_name": "aos.ObjectConfig"
+        },
+        {
+            "id": "292a0886-cc15-4a98-8b58-d6bed5d8d8b6",
+            "name": "Report template",
+            "model_name": "template.Template"
+        },
+        {
+            "id": "58d15866-38cd-483d-990d-7f99201822d3",
+            "name": "Workplace",
+            "model_name": "workplace.Workplace"
+        },
+        {
+            "id": "7769dfd9-2cb1-409a-8f81-1f1b927c354d",
+            "name": "User",
+            "model_name": "workplace.User"
+        }
+    ],
+    "content": [
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "41735747-2c00-4c45-83b1-690296e7a08f",
+            "object_name": "Application Models",
+            "object_attrs": {
+                "code": "aoa_model",
+                "name": "Application Models"
+            },
+            "file_name": "ao/aoa_model.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "20757b91-a105-465c-9c4b-b78aef95ce32",
+            "object_name": "Application objects",
+            "object_attrs": {
+                "code": "aoa",
+                "name": "Application objects"
+            },
+            "file_name": "ao/aoa.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "948e7ffa-2cec-4e2c-b7e6-2018d2c14b97",
+            "object_name": "Business Rules Evaluation",
+            "object_attrs": {
+                "code": "rule",
+                "name": "Business Rules Evaluation"
+            },
+            "file_name": "ao/rule.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "ffc0baac-1ada-44c4-8d9c-cb9edf682bb8",
+            "object_name": "Common UI fragments",
+            "object_attrs": {
+                "code": "flexui",
+                "name": "Common UI fragments"
+            },
+            "file_name": "ao/flexui.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "cef4a7f1-98b5-449b-aa2a-8132aea48514",
+            "object_name": "Default system settings",
+            "object_attrs": {
+                "code": "settings_default",
+                "name": "Default system settings"
+            },
+            "file_name": "ao/settings_default.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "f71b7b35-8008-4704-ae25-fdd13f9128e8",
+            "object_name": "Internationalization",
+            "object_attrs": {
+                "code": "intl",
+                "name": "Internationalization"
+            },
+            "file_name": "ao/intl.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "023f72cf-c910-4d36-a1d9-673a28f95d76",
+            "object_name": "Packages",
+            "object_attrs": {
+                "code": "package",
+                "name": "Packages"
+            },
+            "file_name": "ao/package.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "af48e5fc-b22e-4144-a0f0-59f162f54f48",
+            "object_name": "System settings",
+            "object_attrs": {
+                "code": "settings_system",
+                "name": "System settings"
+            },
+            "file_name": "ao/settings_system.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "cc7a256a-7143-459f-9477-c25290e663a5",
+            "object_name": "User record",
+            "object_attrs": {
+                "code": "user",
+                "name": "User record"
+            },
+            "file_name": "ao/user.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "211b0db8-60b0-4dc5-a276-ae07720f4ed1",
+            "object_name": "Worflow contexts",
+            "object_attrs": {
+                "code": "easyflow_context",
+                "name": "Worflow contexts"
+            },
+            "file_name": "ao/easyflow_context.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "b7c8c20d-fe09-4b2b-9547-c2888a0801f7",
+            "object_name": "workplace",
+            "object_attrs": {
+                "code": "workplace",
+                "name": "workplace"
+            },
+            "file_name": "ao/workplace.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "7ec15b2b-9c9a-406e-a6d4-00316aef5a9c",
+            "object_name": "Бизнес прцессы",
+            "object_attrs": {
+                "code": "easyflow",
+                "name": "Бизнес прцессы"
+            },
+            "file_name": "ao/easyflow.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "75ea1c07-e9f8-47f7-8ebc-86266550a164",
+            "object_name": "Измененные объекты",
+            "object_attrs": {
+                "code": "aos.ModifiedObjects",
+                "name": "Измененные объекты"
+            },
+            "file_name": "ao/aos.ModifiedObjects.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "977ccadb-a676-4a40-ab2d-9cd381925f0c",
+            "object_name": "Конфигурация объектов",
+            "object_attrs": {
+                "code": "aos.ObjectConfig",
+                "name": "Конфигурация объектов"
+            },
+            "file_name": "ao/aos.ObjectConfig.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "44d9a372-d826-481c-b994-f341a0439d9b",
+            "object_name": "Логи",
+            "object_attrs": {
+                "code": "logs",
+                "name": "Логи"
+            },
+            "file_name": "ao/logs.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "1cc26126-a355-4cdc-8b24-69f9ea26616d",
+            "object_name": "Настройки",
+            "object_attrs": {
+                "code": "settings",
+                "name": "Настройки"
+            },
+            "file_name": "ao/settings.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "69bd549f-555e-4b26-a34e-dd837690488f",
+            "object_name": "Тестирование компонент интерфейса",
+            "object_attrs": {
+                "code": "test_ui",
+                "name": "Тестирование компонент интерфейса"
+            },
+            "file_name": "ao/test_ui.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "d206491a-e17d-453b-b69c-16b072e10dfd",
+            "object_name": "Управление задачами и процессами",
+            "object_attrs": {
+                "code": "easyflow.taskmanage",
+                "name": "Управление задачами и процессами"
+            },
+            "file_name": "ao/easyflow.taskmanage.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "6e2069a1-4492-49df-b957-6d4435c232db",
+            "object_name": "Шаблон",
+            "object_attrs": {
+                "code": "template",
+                "name": "Шаблон"
+            },
+            "file_name": "ao/template.json"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Object description",
+            "object_id": "aca96d4f-8f23-4b75-abc6-29c88377b293",
+            "object_name": "Translations",
+            "object_attrs": null,
+            "file_name": "configuration/intl.ObjectTranslation.xml"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Report template",
+            "object_id": "88468971-1714-475b-a495-a10f307e158d",
+            "object_name": "easyflow.activetimers",
+            "object_attrs": {
+                "code": "easyflow.activetimers",
+                "name": "Активные таймеры"
+            },
+            "file_name": "template/easyflow.activetimers.html"
+        },
+        {
+            "model_name": "template.Template",
+            "model_title": "Report template",
+            "object_id": "0797bdf0-2ba7-4c20-80e6-37e4813a0f77",
+            "object_name": "easyflow.exectime",
+            "object_attrs": {
+                "code": "easyflow.exectime",
+                "name": "Время выполнения задач"
+            },
+            "file_name": "template/easyflow.exectime.html"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Workplace",
+            "object_id": "bb697095-b824-40fe-991c-7fa1c16d7bfc",
+            "object_name": "Administrator",
+            "object_attrs": {
+                "code": "admin",
+                "name": "Administrator"
+            },
+            "file_name": "workplace/admin.json"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Workplace",
+            "object_id": "9d9e1872-a1ab-48e1-90f5-fce024bd8cb1",
+            "object_name": "Developer",
+            "object_attrs": {
+                "code": "developer",
+                "name": "Developer"
+            },
+            "file_name": "workplace/developer.json"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Workplace",
+            "object_id": "41c97162-4a79-42bf-87c5-cfa935464219",
+            "object_name": "Test tasks",
+            "object_attrs": {
+                "code": "tests",
+                "name": "Test tasks"
+            },
+            "file_name": "workplace/tests.json"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "ff0e56f9-e0a5-45d4-90ea-688d34678dde",
+            "object_name": "Application data",
+            "object_attrs": null,
+            "file_name": "configuration/aoa.DataObject.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "object_name": "Application object",
+            "object_attrs": null,
+            "file_name": "configuration/aoa.Object.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "56954d1e-cf24-49b4-bc3f-32cd3492f808",
+            "object_name": "Object description",
+            "object_attrs": null,
+            "file_name": "configuration/aos.ObjectConfig.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "292a0886-cc15-4a98-8b58-d6bed5d8d8b6",
+            "object_name": "Report template",
+            "object_attrs": null,
+            "file_name": "configuration/template.Template.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "1b050d46-3cca-4dde-b86d-1ce70589186a",
+            "object_name": "Rule",
+            "object_attrs": null,
+            "file_name": "configuration/rule.Rule.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "7769dfd9-2cb1-409a-8f81-1f1b927c354d",
+            "object_name": "User",
+            "object_attrs": null,
+            "file_name": "configuration/workplace.User.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "d0d0ef2f-5ab4-440e-83e3-ccb6aaef08f8",
+            "object_name": "Workflow diagram",
+            "object_attrs": null,
+            "file_name": "configuration/easyflow.Deployment.xml"
+        },
+        {
+            "model_name": "aos.ObjectConfig",
+            "model_title": "Описание объекта",
+            "object_id": "58d15866-38cd-483d-990d-7f99201822d3",
+            "object_name": "Workplace",
+            "object_attrs": null,
+            "file_name": "configuration/workplace.Workplace.xml"
+        },
+        {
+            "model_name": "workplace.User",
+            "model_title": "Пользователь",
+            "object_id": "ADMIN",
+            "object_name": "System admin",
+            "object_attrs": null,
+            "file_name": "users/ADMIN.xml"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "c56004b1-eef0-4cf7-8379-0850eb6a492a",
+            "object_name": "gitlab",
+            "object_attrs": {
+                "code": "gitlab",
+                "name": "gitlab"
+            },
+            "file_name": "ao/gitlab.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "081de17d-4a6d-4908-a5a8-b9896f14feee",
+            "object_name": "nexus",
+            "object_attrs": {
+                "code": "nexus",
+                "name": "nexus"
+            },
+            "file_name": "ao/nexus.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "cddeec14-f51c-4392-b3b5-7b6941b3ddcb",
+            "object_name": "uwsgi",
+            "object_attrs": {
+                "code": "uwsgi",
+                "name": "uwsgi"
+            },
+            "file_name": "ao/uwsgi.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "e2325382-b6cb-41ce-a852-9489e82677c9",
+            "object_name": "Обновление системы",
+            "object_attrs": {
+                "code": "update",
+                "name": "Обновление системы"
+            },
+            "file_name": "ao/update.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "02b85b85-778e-4b41-8e33-f060063a9f80",
+            "object_name": "Планировщик заданий",
+            "object_attrs": {
+                "code": "cron",
+                "name": "Планировщик заданий"
+            },
+            "file_name": "ao/cron.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "6860369c-8e7c-4aa1-8d31-90a4775f2998",
+            "object_name": "Хранилище файлов",
+            "object_attrs": {
+                "code": "fileStorage",
+                "name": "Хранилище файлов"
+            },
+            "file_name": "ao/fileStorage.json"
+        }
+    ]
+}

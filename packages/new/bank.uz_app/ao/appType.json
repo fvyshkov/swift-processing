@@ -1,0 +1,476 @@
+{
+    "forms": {
+        "editAppTypeTask": {
+            "title": "Редактирование справочника видов заявок",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Сохранить",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveRefer"
+                                        },
+                                        "disabled$": "!context.modified"
+                                    },
+                                    {
+                                        "title": "Пакеты",
+                                        "action": {
+                                            "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: mem.id, model: 'aoa.DataObject'}, context: {}})"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "flexGrow": 1,
+                        "overflow": "hidden"
+                    },
+                    "form": "editAppTypeForm"
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'appType', method: 'getRefer'}).then((r)=>{updateMem(r); forceUpdate()})"
+                },
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "saveRefer": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'appType', method: 'saveRefer', params: mem}).then((r)=>{mem.modified=r.modified; context.modified=false; forceUpdate();})"
+                }
+            }
+        },
+        "editAppTypeForm": {
+            "title": "Редактирование справочника видов заявок",
+            "className": "vertical",
+            "style": {
+                "height": "100%"
+            },
+            "$": {
+                ".ap": {
+                    "control": "ActionPanel",
+                    "controlOpts": {
+                        "actions": [
+                            {
+                                "title": "Добавить",
+                                "icon": "add",
+                                "mini": true,
+                                "action": {
+                                    "js": "context.selected = null; frontend.dialog({object: 'appType', form: 'editAppTypeDialog'});"
+                                }
+                            },
+                            {
+                                "title": "Просмотреть",
+                                "icon": "view",
+                                "mini": true,
+                                "action": {
+                                    "js": "frontend.dialog({object: 'appType', form: 'editAppTypeDialog', mem: {...context.selected}});"
+                                }
+                            },
+                            {
+                                "title": "Удалить",
+                                "icon": "delete",
+                                "mini": true,
+                                "action": {
+                                    "name": "deleteRow",
+                                    "confirm": {
+                                        "title": "Удаление",
+                                        "message$": "`Удалить вид заявки ${context.selected.name}?`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    }
+                                },
+                                "disabled$": "!context.selected"
+                            }
+                        ]
+                    },
+                    "actions": {
+                        "save": {
+                            "name": "saveRow"
+                        }
+                    }
+                },
+                "|data": {
+                    "style": {
+                        "flexGrow": 1,
+                        "overflow": "auto"
+                    },
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "columns!": {
+                            "code": {
+                                "label": "Код",
+                                "width": 300
+                            },
+                            "name": {
+                                "label": "Наименование",
+                                "flex": 1
+                            }
+                        },
+                        "rowDrag": true
+                    },
+                    "actions": {
+                        "onChange": {
+                            "name": "onModified"
+                        },
+                        "onRowDoubleClicked": {
+                            "js": "frontend.dialog({object: 'appType', form: 'editAppTypeDialog', mem: {...context.selected}});"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSelectionChanged": {
+                    "js": "context.selected = selectedRow;"
+                },
+                "saveRow": [
+                    {
+                        "js": "if (context.selected){mem.data.splice(mem.data.indexOf(context.selected), 1, params.row);}else{mem.data.push(params.row)} mem.data=[...mem.data];"
+                    },
+                    {
+                        "name": "onModified"
+                    }
+                ],
+                "deleteRow": [
+                    {
+                        "js": "mem.data.splice(mem.data.indexOf(context.selected), 1); mem.data=[...mem.data];"
+                    },
+                    {
+                        "name": "onModified"
+                    }
+                ]
+            }
+        },
+        "editAppTypeDialog": {
+            "title": "Редактирование вида заявки",
+            "className": "vertical",
+            "style": {
+                "width": "800px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "padding": "4px"
+                    },
+                    "$": {
+                        "code": {
+                            "label": "Код",
+                            "control": "TextEdit",
+                            "required": true,
+                            "style": {
+                                "width": "200px"
+                            }
+                        },
+                        "name": {
+                            "label": "Наименование",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "@appForm": {
+                            "title": "Форма заявки",
+                            "className": "vertical",
+                            "$": {
+                                "appForm": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "object": {
+                                            "label": "Объект",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "form": {
+                                            "label": "Форма",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": true
+                        },
+                        "@appFormExt": {
+                            "title": "Дополнительная форма заявки",
+                            "className": "vertical",
+                            "$": {
+                                "appFormExt": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "object": {
+                                            "label": "Объект",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "form": {
+                                            "label": "Форма",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": false
+                        },
+                        "@prepareMethod": {
+                            "title": "Метод подготовки заявки",
+                            "className": "vertical",
+                            "$": {
+                                "prepareMethod": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "object": {
+                                            "label": "Объект",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "method": {
+                                            "label": "Метод",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": false
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "saveRow",
+                                    "params": {
+                                        "row$": "mem"
+                                    }
+                                },
+                                {
+                                    "js": "if (!validate()){throw 'Abort';}"
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "selectAppTypeDialog": {
+            "title": "Выбор вида заявки",
+            "className": "vertical",
+            "style": {
+                "width": "600px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "$": {
+                        "|data": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "code": {
+                                        "label": "Код",
+                                        "width": 200
+                                    },
+                                    "name": {
+                                        "label": "Наименование",
+                                        "flex": 1
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onRowDoubleClicked": [
+                                    {
+                                        "name": "selectAppType",
+                                        "params": {
+                                            "row$": "selectedRow"
+                                        }
+                                    },
+                                    {
+                                        "js": "actions.close()",
+                                        "disableUpdate": true
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "name": "selectAppType",
+                                    "params": {
+                                        "row$": "context.selected"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ],
+                            "readOnly$": "!context.selected"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onDialogCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'appType', method: 'getList'}, {useCache: true}).then((r)=>{mem.data =r; forceUpdate()})"
+                },
+                "onSelectionChanged": {
+                    "js": "context.selected=selectedRow;"
+                }
+            }
+        }
+    },
+    "methods": {
+        "saveRefer": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\nfrom datetime import datetime\n\ntry:\n    obj =  DataObject.objects.get(type='refer', code='appType')\n    if obj.modified != datetime.fromisoformat(parameters.get('modified')):\n        raise UserException('Объект изменен другим пользователем, сохранение не возможно')\nexcept DataObject.DoesNotExist:\n    obj = DataObject()\n    obj.type = 'refer'\n    obj.code = 'appType'\n\nobj.name = 'Виды заявок'\nobj.data = parameters.get('data')\nobj.save()\n\ndata = {\n    'modified': obj.modified\n}\n\n"
+            }
+        },
+        "getRefer": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\ndata = {}\ntry:\n    obj = DataObject.objects.get(type='refer', code='appType')\n    if obj:\n        data = {\n            'id': obj.id.__str__(),\n            'modified': obj.modified,\n            'data': obj.data\n        }\nexcept DataObject.DoesNotExist:\n    pass\n"
+            }
+        },
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.models import DataObject\ndata = []\ntry:\n    obj = DataObject.objects.get(type='refer', code='appType')\n    if obj.data:\n        data = obj.data\n        \nexcept DataObject.DoesNotExist:\n    pass\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.aoa.services import execObjectMethod\n\nlst = execObjectMethod({'object': 'appType', 'method': 'getList'})\n\ndata = next(filter(lambda x: x['code']==parameters.get('code'), lst), None)"
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "700px",
+                    "height": "400px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 100,
+                        "hide": false
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code"
+            },
+            "method": {
+                "sql": {
+                    "params": []
+                },
+                "script": {
+                    "params": [],
+                    "py": "from apng_core.aoa.services import execObjectMethod\ndata = execObjectMethod({'object': 'appType', 'method': 'getList'})"
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

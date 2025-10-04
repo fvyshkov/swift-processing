@@ -1,0 +1,26 @@
+{
+    "forms": {},
+    "methods": {
+        "isOperationAvailable": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "con = initDbSession(application='colvir_cbs')\n\nwith con.cursor() as cursor:\n    p = {\n        'dep_id': parameters['dep_id'],\n        'id': parameters['id'],\n        'oper': parameters['operation'],\n        'status': cursor.var(int),\n    }\n    try:\n        cursor.execute(\"\"\"\n            declare\n            begin\n                :status := T_PkgRunOprUtl.fOprAvailable(to_number(:dep_id), to_number(:id), :oper);\n            end;\n        \"\"\", p)\n    except Exception as e:\n        from colvir_cbs.services import log\n        raise UserException({\n            'message': 'Проверки доступности операции {oper} по документу ({dep_id}, {id})\\n{message}'.format(\n                oper = parameters['operation'],\n                dep_id = parameters['dep_id'],\n                id = parameters['id'],\n                message = e,\n            ),\n            'trace': log.readLog()\n        })\n    \n    data = p['status'].getvalue() == 2\n\n\n    "
+            }
+        },
+        "connectMember": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "SQL=\"\"\"\n    -- Добавление участника в процесс заявки\n    declare\n        pm T_PROCMEM%%rowtype;\n        op BS_OPERATION.SelfAttr;\n    begin\n        select * into pm from t_procmem where dep_id=:dep_id and ord_id=:id and mainfl='1';\n        BS_OPERATION.read_process(op, pm.id);\n        BS_OPERATION.add_mem(op, \n            P_IDDEP=>:mem_dep_id, p_idord=>:mem_id, \n            p_nmem=>BS_BOP.fGetPosId(pm.bop_id, :pos_code)\n        );\n    end;\n\"\"\"\n\ncon = initDbSession(application='colvir_cbs')\nwith con.cursor() as cursor:\n    p = {\n        'dep_id': parameters['dep_id'],\n        'id': parameters['id'],\n        'mem_dep_id': parameters['mem_dep_id'],\n        'mem_id': parameters['mem_id'],\n        'pos_code': parameters['pos_code'],\n    }\n\n    cursor.execute(SQL, p)\n    \n    \n\n"
+            }
+        }
+    },
+    "reference": {
+        "method": {}
+    }
+}

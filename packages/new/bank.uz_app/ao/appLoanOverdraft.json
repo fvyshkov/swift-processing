@@ -1,0 +1,1266 @@
+{
+    "lists": {},
+    "forms": {
+        "appEditForm": {
+            "title": "Форма редактирования заявки",
+            "className": "vertical",
+            "$": {
+                "app": {
+                    "className": "vertical",
+                    "$": {
+                        "@clientInfo": {
+                            "object": "app",
+                            "form": "clientInfoFizForm",
+                            "params": {
+                                "product$": "mem.product"
+                            },
+                            "readOnly$": "isReadOnly "
+                        },
+                        "@CardInfo": {
+                            "object": "appLoanOverdraft",
+                            "form": "cardInfo",
+                            "params": {
+                                "card$": "mem.overdraft.card"
+                            },
+                            "readOnly$": "isReadOnly && (task.params.readOnly!==true)"
+                        },
+                        "@LoanInfo": {
+                            "object": "appLoanOverdraft",
+                            "form": "appFizEditForm",
+                            "params": {
+                                "product$": "mem.product"
+                            },
+                            "readOnly$": "isReadOnly && (task.params.readOnly!==true)"
+                        },
+                        "@objectOfCredit": {
+                            "object": "appLoanOverdraft",
+                            "form": "objectOfCreditForm",
+                            "params": {
+                                "product$": "mem.product"
+                            },
+                            "visible$": "!!mem.product.options.typeOfObjectOfCredit"
+                        },
+                        "@pledges": {
+                            "object": "appPledge",
+                            "form": "pledgesForm",
+                            "params": {
+                                "client$": "mem.client",
+                                "coborrowers$": "mem.coborrowers",
+                                "disableWithoutPledge$": "!!mem.product.options.typeOfObjectOfCredit"
+                            }
+                        },
+                        "@afs": {
+                            "object": "app",
+                            "form": "afsProfileForm",
+                            "readOnly$": "isReadOnly && (task.params.readOnly!==false)",
+                            "visible$": "mem.afs?.description?.indicators?.length>0"
+                        },
+                        "@creditReport": {
+                            "object": "app",
+                            "form": "creditReportForm"
+                        },
+                        "@income": {
+                            "object": "appLoanOverdraft",
+                            "form": "incomeForm"
+                        },
+                        "@dossier": {
+                            "object": "app",
+                            "form": "dossierForm",
+                            "params": {
+                                "changepoint$": "mem.changepoint"
+                            },
+                            "visible$": "mem.dep_id && mem.id || false"
+                        }
+                    },
+                    "validate": [
+                        "(()=>{context.fpv=validator.$['@LoanInfo'].$['@app'].$.app.$['@productParameters'].$.parameters.$?.L_PAYFIRST?.$['@L_PAYFIRST']; if(context.fpv){context.firstpay=mem.app?.parameters?.L_PAYFIRST; context.fpp=mem?.product?.parameters?.L_PAYFIRSTPCN; context.app_sum=mem.app.amount; if(mem.product?.options?.percentOfFirstPayFrom == 'DEAL SUM'){context.app_sum=mem.objectOfCredit?.cost;} context.min_sum = context.app_sum * context.fpp.minValue / 100; context.max_sum = context.app_sum * context.fpp.maxValue / 100;}})()",
+                        "(()=>{if (context.fpv && context.firstpay < context.min_sum && !isNaN(context.min_sum)){context.fpv.error=true;  context.fpv.helperText=`Минимальная сумма ${formatters.currency(context.min_sum)}`; return false;} if (context.fpv && context.firstpay > context.max_sum && !isNaN(context.max_sum)){context.fpv.error=true;  context.fpv.helperText=`Максимальная сумма ${formatters.currency(context.max_sum)}`; return false;}})()"
+                    ],
+                    "actions": {
+                        "refreshApp": {
+                            "js": ";"
+                        },
+                        "onElementCreated": {
+                            "js": "context.onValidateAppAmount = ()=>mem.product.options.typeOfObjectOfCredit == 'REALTY' && !mem.product.options.disableCheckRealtySelfAmount && mem.app.amount != mem.objectOfCredit.cost - mem.objectOfCredit.own_amount && {helperText: 'Сумма кредита не равна \"Стоимость по договору\" - \"Сумма собственных средств\"'} || undefined"
+                        },
+                        "onCoborrowersChanged": {
+                            "comment": "Обновление при изменени созаёмщиков, чтобы работал контроль по поручителям",
+                            "js": ";"
+                        },
+                        "onCallCalculateDialog": {
+                            "js": "console.log('Card', arguments['0']), frontend.dialog({object: 'appLoanOverdraft', form: 'calculateDialog', mem: {...mem.overdraft.card}})"
+                        },
+                        "onCalculateInterest": {
+                            "js": "return backend.post('/colvir_cbs/calculateInterest', {clientCode: mem.client.code, productCode: mem.product.code, duration: 12, durationUnit: mem.app.durationUnit}).then(r=> {console.log(r); mem.app.interest=r;})"
+                        }
+                    }
+                }
+            }
+        },
+        "appFizEditForm": {
+            "$": {
+                "@app": {
+                    "title": "Параметры кредита",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "$": {
+                        "app": {
+                            "className": "vertical",
+                            "$": {
+                                "@product": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "code": {
+                                            "label": "Номер заявки",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "appId": {
+                                            "label": "Уникальный номер заявки",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@amount": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "amount": {
+                                            "label": "Сумма кредита",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "CurrencyField",
+                                            "readOnly$": "!params.enableAmount && isReadOnly",
+                                            "required": true,
+                                            "validate": [
+                                                "params.product?.constraints?.minAmount != undefined && params.product.constraints.minAmount > mem.amount && {helperText: `Минимальная сумма кредита ${params.product.constraints.minAmount}`} || undefined",
+                                                "params.product?.constraints?.maxAmount != undefined && params.product.constraints.maxAmount < mem.amount && {helperText: `Максимальная сумма кредита ${params.product.constraints.maxAmount}`} || undefined",
+                                                "context?.onValidateAppAmount?.()"
+                                            ],
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "onChangeAmount"
+                                                }
+                                            }
+                                        },
+                                        "currency": {
+                                            "label": "Валюта кредита",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        },
+                                        "btnCalculateDialog": {
+                                            "label": "Расчет суммы ",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "text",
+                                                "color": "primary"
+                                            },
+                                            "readOnly": false,
+                                            "action": {
+                                                "name": "onCallCalculateDialog"
+                                            }
+                                        }
+                                    }
+                                },
+                                "@duration": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "durationName": {
+                                            "label": "Срок овердрафта",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "interest": {
+                                            "label": "Ставка",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    },
+                                    "readOnly": true,
+                                    "action": {
+                                        "name": "onCalculateInterest"
+                                    }
+                                },
+                                "@purposeOfLoan": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "purposeOfLoan": {
+                                            "label": "Цель кредита",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "purposeOfLoan",
+                                                "params": {
+                                                    "productCode$": "mem?.productCode"
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "purposeOfLoanName": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@purposeOfLoan112": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "purpose112OfLoan": {
+                                            "label": "Цель кредита по классификатору",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "purposeOfLoan112",
+                                                "params": {
+                                                    "productCode$": "mem?.productCode"
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "purpose112OfLoanName": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@typeOfLending": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "typeOfLending": {
+                                            "label": "Вид кредитования",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "typeOfLending",
+                                                "params": {
+                                                    "productCode$": "mem?.productCode"
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "typeOfLendingName": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@typeOfLending110": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "typeOfLending110": {
+                                            "label": "Вид кредитования по классификатору",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "typeOfLending110",
+                                                "params": {
+                                                    "productCode$": "mem?.productCode"
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "typeOfLending110Name": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@legalAct": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "legalAct": {
+                                            "label": "Нормативно-правовой акт",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "legalAct"
+                                            },
+                                            "controlOpts": {
+                                                "valueField": "code",
+                                                "postfixFields": {
+                                                    "Name": "name"
+                                                }
+                                            },
+                                            "required": true
+                                        },
+                                        "legalActName": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "objectOfLoan": {
+                                    "label": "Объект ссуды",
+                                    "style": {
+                                        "width": "860px"
+                                    },
+                                    "control": "TextEdit",
+                                    "controlProps": {
+                                        "multiline": true,
+                                        "minRows": 2
+                                    },
+                                    "required": true
+                                },
+                                "@region": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "region": {
+                                            "label": "Область подачи заявки",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "regionName": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@district": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "district": {
+                                            "label": "Район подачи заявки",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit"
+                                        },
+                                        "districtName": {
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly": true
+                                },
+                                "@productParameters": {
+                                    "style": {
+                                        "width": "860px"
+                                    },
+                                    "object": "app",
+                                    "form": "productParametersForm"
+                                }
+                            },
+                            "actions": {
+                                "onChangeAmount": {
+                                    "js": "if (!params.product.options.interestEnabled){mem.interest=null; context.needCalculateInterest=true;}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "cardInfo": {
+            "$": {
+                "overdraft": {
+                    "$": {
+                        "@card": {
+                            "title": "Информация по карте",
+                            "className": "vertical",
+                            "$": {
+                                "card": {
+                                    "className": "vertical",
+                                    "$": {
+                                        "@1": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "CRD_CODE": {
+                                                    "label": "Вид карты",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                },
+                                                "CARDCODE": {
+                                                    "label": "Номер карты",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                }
+                                            }
+                                        },
+                                        "@2": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "CLI_DEA_CODE": {
+                                                    "label": "№ Договора",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                },
+                                                "CLI_DEA_DATE": {
+                                                    "label": "Дата договора",
+                                                    "control": "DateEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                },
+                                                "DCL_NAME": {
+                                                    "label": "Наименование продукта",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                }
+                                            }
+                                        },
+                                        "@3": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "WORK_NAME": {
+                                                    "label": "Работодатель",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                },
+                                                "WORK_CODE": {
+                                                    "label": "Код клиента",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                }
+                                            }
+                                        },
+                                        "@4": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "WORK_DEA_CODE": {
+                                                    "label": "№ договора работодателя",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                },
+                                                "WORK_DEA_DATE": {
+                                                    "label": "Дата договора работодателя",
+                                                    "control": "DateEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                },
+                                                "WORK_DCL_NAME": {
+                                                    "label": "Наименование продукта",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "readOnly": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "incomeForm": {
+            "title": "Доходы клиента",
+            "$": {
+                "@income": {
+                    "title": "Признак занятости",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "$": {
+                        "income": {
+                            "className": "vertical",
+                            "$": {
+                                "hasWork": {
+                                    "label": "Работающий",
+                                    "style": {
+                                        "width": "280px"
+                                    },
+                                    "control": "Checkbox",
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onChangeHasWork"
+                                        }
+                                    }
+                                },
+                                "@payments": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "hasPayments": {
+                                            "label": "Отчисления в ГНК",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "Checkbox",
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "onChangeHasWork"
+                                                }
+                                            },
+                                            "readOnly$": "isReadOnly || !mem.hasWork"
+                                        },
+                                        ".btnViewPayments": {
+                                            "label": "Просмотр отчислений",
+                                            "control": "Button",
+                                            "controlProps": {
+                                                "variant": "text",
+                                                "color": "primary"
+                                            },
+                                            "visible$": "!!mem.payments || !!mem.report_asoki_25",
+                                            "readOnly": false,
+                                            "action": {
+                                                "js": "frontend.dialog({object: 'appLoanOverdraft', form: 'incomePaymentsDialog', mem: {...mem}})"
+                                            }
+                                        }
+                                    }
+                                },
+                                "@retirementAccount": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "retirementAccount": {
+                                            "label": "Номер ИНП счета",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "masked": {
+                                                    "mask": [
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        "/\\d/"
+                                                    ],
+                                                    "placeholderChar": "_",
+                                                    "showMask": true,
+                                                    "guide": true
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "toValue": "((params.value||'').match(/\\d+/g) || []).join('')"
+                                            },
+                                            "validate": "mem.retirementAccount?.length>0 && mem.retirementAccount?.length<14 && {helperText: 'Номер счета дожен быть 14 знаков'}||undefined"
+                                        },
+                                        "retirementBnkCode": {
+                                            "label": "Код банка",
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "retirementBank",
+                                                "inputProps": {
+                                                    "maxLength": 5
+                                                },
+                                                "textReadOnly": true
+                                            }
+                                        }
+                                    },
+                                    "required$": "mem.hasWork",
+                                    "readOnly$": "isReadOnly || !mem.hasWork"
+                                },
+                                "@company": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "companyInn": {
+                                            "label": "ИНН организации",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "inputProps": {
+                                                    "maxLength": 9
+                                                },
+                                                "onKeyPress$": "(e) => {if (!/[0-9]/.test(String.fromCharCode(e.keyCode || e.which))) e.preventDefault();}"
+                                            }
+                                        },
+                                        "companyName": {
+                                            "label": "Наименование организации",
+                                            "style": {
+                                                "width": "570px"
+                                            },
+                                            "control": "TextEdit"
+                                        }
+                                    },
+                                    "readOnly$": "!mem.hasWork || mem.hasPayments",
+                                    "required$": "mem.hasWork && !mem.hasPayments"
+                                }
+                            },
+                            "actions": {
+                                "onChangeHasWork": {
+                                    "js": "if(!mem.hasWork){mem.hasPayments=false;} if(!mem.hasWork||mem.hasPayments){mem.income=null;}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "incomePaymentsDialog": {
+            "title": "Платежи по зарплате",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden",
+                "width": "1200px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@gnk_v1": {
+                            "visible$": "!!mem.payments && !mem.company_info",
+                            "style": {
+                                "height": "100%",
+                                "overflow": "auto"
+                            },
+                            "$": {
+                                "@form": {
+                                    "init$": "mem.payments",
+                                    "object": "ext.request.gnk",
+                                    "form": "salaryForm"
+                                }
+                            }
+                        },
+                        "@gnk_v2": {
+                            "visible$": "!!mem.payments && !!mem.company_info",
+                            "style": {
+                                "height": "100%",
+                                "overflow": "auto"
+                            },
+                            "$": {
+                                "@form": {
+                                    "init$": "{responseData: {data: {salaries: mem.payments, company_info: mem.company_info}}}",
+                                    "object": "ext.request.defen",
+                                    "form": "response-fiz-salary-Form"
+                                }
+                            }
+                        },
+                        "@asoki_25": {
+                            "visible$": "!!mem.report_asoki_25",
+                            "style": {
+                                "height": "100%",
+                                "overflow": "auto"
+                            },
+                            "$": {
+                                "report25Html": {
+                                    "style": {
+                                        "height": "100%",
+                                        "overflow": "auto"
+                                    },
+                                    "control": "Html",
+                                    "actions": {
+                                        "onElementCreated": {
+                                            "js": "console.log('init html', mem.report_asoki_25); backend.post('/template/evalTemplate', {template:'asoki.report.025', parameters: mem.report_asoki_25}).then((r)=>{mem.report25Html=r; forceUpdate();})"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        ".btnClose": {
+                            "label": "Закрыть",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "newAppOverTask": {
+            "title": "Кредитные продукты овердрафта",
+            "className": "task task-panel vertical panel",
+            "style": {
+                "overflow": "hidden",
+                "marginBottom": "8px"
+            },
+            "$": {
+                "@task": {
+                    "className": "vertical",
+                    "style": {
+                        "flexGrow": 1,
+                        "overflow": "hidden"
+                    },
+                    "$": {
+                        "@fields": {
+                            "style": {
+                                "flexGrow": 1,
+                                "overflowY": "auto",
+                                "marginBottom": "8px"
+                            },
+                            "$": {
+                                "@lookupClient": {
+                                    "title": "Идентификация клиента",
+                                    "className": "vertical",
+                                    "object": "appLoanOverdraft",
+                                    "form": "lookupOverdraftForm"
+                                },
+                                "@lookupProductOverdraftList": {
+                                    "title": "Карты клиента",
+                                    "className": "vertical",
+                                    "form": "lookupProductOverdraftList",
+                                    "visible$": "!!mem.client?.code && mem.checkErrors?.filter(e=>e.STATUS>=2).length==0"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnCreateApplication": {
+                                    "label": "Оформить заявку на овердрафт",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "color": "primary",
+                                        "variant": "contained"
+                                    },
+                                    "readOnly$": "!context.selectedCardInfo || context?.selectedCardInfo?.IS_OVERDRAFT_EXISTS === '1' || context?.selectedCardInfo?.isActive === false",
+                                    "action": [
+                                        {
+                                            "js": "return backend.post('/aoa/execObjectMethod', {object: 'app', method: 'prepareNewApplication', params:{ product: {code: context.selectedCardInfo.LOAN_CODE, currency: context.selectedCardInfo.VAL_CODE}, clientCode: context.client.code}}).then(r=>{context.app = r;})",
+                                            "disableUpdate": true
+                                        },
+                                        {
+                                            "js": "context.app.overdraft = {card: context.selectedCardInfo}"
+                                        },
+                                        {
+                                            "js": "context.app.app.duration = 12 ,context.app.app.durationCode = context.selectedCardInfo.PRD_CODE; context.app.app.durationName = context.selectedCardInfo.PRD_NAME; context.app.app.amount =  context.selectedCardInfo.averageIncome.OUTSUM; context.app.app.purposeOfLoan = context.selectedCardInfo.PUR_CODE; context.app.app.purposeOfLoanName =  context.selectedCardInfo.PUR_NAME; context.app.app.purpose112OfLoan = context.selectedCardInfo.PUR112_CODE; context.app.app.purpose112OfLoanName = context.selectedCardInfo.PUR112_NAME; context.app.app.typeOfLending = context.selectedCardInfo.VID; context.app.app.typeOfLending110 = context.selectedCardInfo.TYPECRED110; context.app.app.legalAct = context.selectedCardInfo.LEGAL_ACT; context.app.app.legalActName = context.selectedCardInfo.LEGAL_ACT_NAME"
+                                        },
+                                        {
+                                            "js": "context.app.income = {hasPayments : true, hasWork : true, companyInn: context.selectedCardInfo.WORK_TAXCODE, retirementAccount:context.app.client.retirementAccount, companyName: context.selectedCardInfo.WORK_NAME, income: context.selectedCardInfo && context.selectedCardInfo.averageIncome.AVRMONTH}; "
+                                        },
+                                        {
+                                            "js": "return backend.post('/colvir_cbs/calculateInterest', {clientCode: mem.client.code, productCode: context.selectedCardInfo.LOAN_CODE, duration: 12, durationUnit: 'M'}).then(r=> {console.log(r); context.app.app.interest=r;})"
+                                        },
+                                        {
+                                            "js": "tm.newTask({title: 'Заявка на Овердрафт', path: '/loanapp/edit-form', data: {forms: {...context.app}}})",
+                                            "disableUpdate": true
+                                        }
+                                    ]
+                                },
+                                "btnCalculateDialog": {
+                                    "label": "Расчет суммы ",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "variant": "text",
+                                        "color": "primary"
+                                    },
+                                    "readOnly$": "!context.selectedCardInfo || context?.selectedCardInfo?.IS_OVERDRAFT_EXISTS === '1' || context?.selectedCardInfo?.isActive === false",
+                                    "action": {
+                                        "js": "frontend.dialog({object: 'appLoanOverdraft', form: 'calculateDialog', mem: {...context.selectedCardInfo}})"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "refreshTask": {
+                    "js": ";"
+                }
+            }
+        },
+        "lookupOverdraftForm": {
+            "title": "Подбор клиента физлица для овердрафта",
+            "className": "vertical",
+            "$": {
+                "lookupFields": {
+                    "className": "vertical",
+                    "$": {
+                        "@mygroup": {
+                            "className": "horizontal",
+                            "$": {
+                                "pinfl": {
+                                    "label": "ПИНФЛ",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "width": "300px"
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "refresh"
+                                        }
+                                    }
+                                },
+                                "nibbd": {
+                                    "label": "НИББД",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "width": "300px"
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "refresh"
+                                        }
+                                    }
+                                },
+                                "cardCode": {
+                                    "label": "Номер Карты",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "width": "300px"
+                                    },
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "refresh"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "btnLookup": {
+                            "label": "Идентифицировать",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary",
+                                "style": {
+                                    "textTransform": "none"
+                                }
+                            },
+                            "readOnly$": "!mem.pinfl && !mem.nibbd && !mem.cardCode",
+                            "action": [
+                                {
+                                    "xjs": "return backend.post('/loanapp/identifyClient', {pinfl: mem.pinfl, nibbd: mem.nibbd, cardCode: mem.cardCode, withRegistrationAddress: true}).then(r=>{console.log(r); context.client=r;})",
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'identifyClient', params: {pinfl: mem.pinfl, nibbd: mem.nibbd, cardCode:mem.cardCode, withRegistrationAddress: true}}).then(r=>{context.client=r;})"
+                                },
+                                {
+                                    "name": "onIdentifyClient"
+                                }
+                            ]
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                },
+                "@lookupErrors": {
+                    "title": "Ошибки контроля",
+                    "style": {
+                        "color": "red"
+                    },
+                    "$": {
+                        "checkErrors": {
+                            "control": "ListTable",
+                            "controlProps": {
+                                "gridOptions": {
+                                    "headerHeight": 0
+                                }
+                            },
+                            "controlOpts": {
+                                "$": {
+                                    "TXT_ERR": {
+                                        "label": "Ошибка",
+                                        "flex": 1
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "visible$": "mem.checkErrors?.length>0"
+                },
+                "@lookupResult": {
+                    "title": "Данные клиента",
+                    "className": "vertical",
+                    "$": {
+                        "client": {
+                            "className": "vertical",
+                            "$": {
+                                "@name": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "lastname": {
+                                            "label": "Фамилия",
+                                            "control": "TextEdit",
+                                            "style": {
+                                                "width": "300px"
+                                            }
+                                        },
+                                        "firstname": {
+                                            "label": "Имя",
+                                            "control": "TextEdit",
+                                            "style": {
+                                                "width": "300px"
+                                            }
+                                        },
+                                        "secondname": {
+                                            "label": "Отчество",
+                                            "control": "TextEdit",
+                                            "style": {
+                                                "width": "300px"
+                                            }
+                                        }
+                                    }
+                                },
+                                "@dateOfB": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "birthday": {
+                                            "label": "Дата рождения",
+                                            "control": "DateEdit",
+                                            "style": {
+                                                "width": "300px"
+                                            }
+                                        },
+                                        "isResident": {
+                                            "label": "Резидент",
+                                            "control": "Checkbox",
+                                            "style": {
+                                                "width": "300px"
+                                            }
+                                        },
+                                        "inn": {
+                                            "label": "ИНН",
+                                            "control": "TextEdit",
+                                            "style": {
+                                                "width": "300px"
+                                            }
+                                        }
+                                    }
+                                },
+                                "registrationAddress": {
+                                    "className": "vertical",
+                                    "$": {
+                                        "@codeOfVil": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "region": {
+                                                    "label": "Код области",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    }
+                                                },
+                                                "regionName": {
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "600px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "@codeOfAddress": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "district": {
+                                                    "label": "Код района",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    }
+                                                },
+                                                "districtName": {
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "600px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "@address": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "address": {
+                                                    "label": "Адрес",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "900px"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "@code": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "code": {
+                                            "label": "Код клиента",
+                                            "control": "TextEdit",
+                                            "style": {
+                                                "width": "300px",
+                                                "marginBottom": "20px"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "visible$": "!!mem.client",
+                    "readOnly": true
+                }
+            },
+            "actions": {
+                "onIdentifyClient": [
+                    {
+                        "js": "if(!context.client){mem.client=null; context.client=null; mem.checkErrors=null; mem.cardInfo=null; context.selectedCardInfo=null; action({name: 'refreshTask'}); throw 'Abort';}"
+                    },
+                    {
+                        "js": "mem.relatedPerson = context?.client?.isRelatedPerson && 'Клиент является связанным лицом'"
+                    },
+                    {
+                        "js": "if (context.client){return backend.post('/colvir_cbs/checkClientRule', {code: context.client.code, rule: 'CLI_LOAN_APP'}).then(r=>{mem.checkErrors = r;})}"
+                    },
+                    {
+                        "js": "mem.client=context.client; if(context.client){mem.lookupFields = {pinfl: context.client.pinfl, nibbd: context.client.nibbd, cardCode: mem.lookupFields.cardCode};}"
+                    },
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'appLoanOverdraft', method: 'getCardInfo', params: {clientCode:mem.client.code}}).then(r=>{mem.cardInfo=r; forceUpdate()})"
+                    },
+                    {
+                        "name": "refreshTask"
+                    }
+                ]
+            }
+        },
+        "lookupProductOverdraftList": {
+            "title": "Карточка клиента",
+            "className": "vertical",
+            "$": {
+                "|cardInfo": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "columns!": {
+                            "CARDCODE": {
+                                "label": "Карта",
+                                "width": 170,
+                                "compact": true
+                            },
+                            "ACC_CODE": {
+                                "label": "Счет",
+                                "width": 200
+                            },
+                            "DCL_NAME": {
+                                "label": "Продукт",
+                                "width": 120
+                            },
+                            "STAT_NAME": {
+                                "label": "Статус",
+                                "width": 140
+                            },
+                            "averageIncome": {
+                                "label": "Расчетная сумма",
+                                "width": 140,
+                                "getter": "data?.averageIncome?.OUTSUM"
+                            },
+                            "WORK_NAME": {
+                                "label": "Работодатель",
+                                "width": 140
+                            },
+                            "IS_OVERDRAFT_EXISTS": {
+                                "label": "Оформлен овердрафт",
+                                "width": 140,
+                                "decode": {
+                                    "0": {
+                                        "value": "Нет"
+                                    },
+                                    "1": {
+                                        "value": "Да"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSelectionChanged": [
+                    {
+                        "js": "console.log('selectedCardInfo', arguments['0']), context.selectedCardInfo = selectedRow;"
+                    },
+                    {
+                        "name": "onIdentifyClient"
+                    },
+                    {
+                        "name": "refreshTask"
+                    }
+                ]
+            }
+        },
+        "calculateDialog": {
+            "title": "Расчет суммы овердрафта",
+            "className": "vertical",
+            "style": {
+                "margin": "2px",
+                "padding": "2px",
+                "overflow": "auto",
+                "width": "400px"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "flex": 1,
+                        "padding": "2px",
+                        "margin": "2px",
+                        "overflow": "auto"
+                    },
+                    "$": {
+                        "averageIncome": {
+                            "$": {
+                                "CALC": {
+                                    "control": "ListTable",
+                                    "controlOpts": {
+                                        "columns!": {
+                                            "F1": {
+                                                "label": "Показатель",
+                                                "width": 200,
+                                                "padding": "2px",
+                                                "margin": "2px"
+                                            },
+                                            "F2": {
+                                                "label": "Значение",
+                                                "width": 200,
+                                                "padding": "2px",
+                                                "margin": "2px"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        ".btnClose": {
+                            "label": "Закрыть",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "params": {
+                                    "disableUpdate": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getCardInfo": {
+            "sql": {},
+            "script": {
+                "py": "SQL_CARD_LIST = '''\r\nselect distinct\r\n    d_ckc.DEP_ID CKC_DEP_ID,\r\n    d_ckc.ID CKC_ID,\r\n    T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE') LOAN_CODE,\r\n    crd.CARDCODE,\r\n    ct.CODE as CRD_CODE,\r\n    G_PKGACCBLN.fGetCodeAccByIdAcc(so.ACC_ID, so.ACC_DEP_ID) as ACC_CODE,\r\n    o.code as CLI_DEA_CODE,\r\n    o.DORD as CLI_DEA_DATE,\r\n    T_PKGDEA.fDclName(d.DCL_ID) as DCL_NAME,\r\n    d.FROMDATE,\r\n    d.TODATE,\r\n    substr(colvir.C_PKGDEP.fGetCodeDep(d.SRV_DEP_ID), 1, 30) as SRV_DEP_CODE,\r\n    sal_ord.code as WORK_DEA_CODE,\r\n    sal_ord.DORD as WORK_DEA_DATE,\r\n    T_PKGDEA.fDclName(sal_dea.DCL_ID) as WORK_DCL_NAME,\r\n\r\n    -- Место работы заемщика\r\n    work_cli.code as work_code,\r\n    decode(work_cli.DEPCRD_ID,\r\n        null, work_clihst.longname,\r\n        C_pkgDep.IdDep2BnkName(work_cli.DEPCRD_ID)\r\n    ) as work_name,\r\n    work_clihst.taxcode as work_taxcode,\r\n    \r\n    \r\n    s.CODE STAT_CODE,\r\n    s.LONGNAME STAT_NAME,\r\n    s.COLOR STATCOLOR,\r\n    l_fClcAccMov(so.ACC_DEP_ID,so.ACC_ID, T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')) OVR_SUM,\r\n    T_pkgVal.fGetIsoCode(NVL(colvir.G_PKGACCBLN.fVal_Id(so.ACC_DEP_ID,so.ACC_ID), P_NATVAL)) as VAL_CODE,\r\n    \r\n    -- Признак наличия овердрафта\r\n    case \r\n        when N_PkgCrdOverdraft.fIsSLLoanExists(d_ckc.DEP_ID, d_ckc.ID) > 0 then '1'\r\n        else '0'\r\n    end IS_OVERDRAFT_EXISTS,\r\n    \r\n    (select p.CODE from colvir.T_DEALNKPRD l, colvir.T_DEAPRD p \r\n      where l.PRD_ID = p.ID and \r\n      l.DCL_ID=colvir.t_Pkgdea.fDclId(colvir.T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')) and rownum=1\r\n    ) as PRD_CODE,\r\n    \r\n    (select p.LONGNAME from colvir.T_DEALNKPRD l, colvir.T_DEAPRD p \r\n        where l.PRD_ID = p.ID \r\n        and l.DCL_ID=colvir.t_Pkgdea.fDclId(colvir.T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')) and rownum=1\r\n    ) as PRD_NAME,\r\n    \r\n    l_Pkgdeauniref.fGetClsRefValCode(t_pkgDea.fDclId(T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')),\r\n        u_Pkguniref.fRefCode2Id('UZ_VIDCRED',0)\r\n    ) VID,\r\n    \r\n    l_Pkgdeauniref.fGetClsRefValCode(t_pkgDea.fDclId(T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')),\r\n        u_Pkguniref.fRefCode2Id('UZ_TYPECRED_110',0)\r\n    ) TYPECRED110,    \r\n    \r\n    -- Нормативно правовой акт\r\n    L_PkgDeaUniRef.fGetClsRefValCode(\r\n        T_PKGDEA.fDclId(T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')), \r\n        U_PkgUniRef.fRefCode2Id( 'UZ_NPA')\r\n    ) legal_Act,\r\n    L_PkgDeaUniRef.fGetClsRefValLongname(\r\n        T_PKGDEA.fDclId(T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')), \r\n        U_PkgUniRef.fRefCode2Id( 'UZ_NPA')\r\n    ) legal_Act_Name,\r\n    \r\n    -- цель кредита\r\n    (select d.code\r\n      from L_DEAPUR l, L_PURDSC_STD d, T_DEACLS_STD t\r\n      where l.PUR_ID=d.ID and l.DCL_ID=t.ID and t.CODE=colvir.T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE') and rownum=1) as PUR_CODE, -- код цели\r\n      \r\n    (select d.LONGNAME\r\n      from L_DEAPUR l, L_PURDSC_STD d, T_DEACLS_STD t\r\n      where l.PUR_ID=d.ID and l.DCL_ID=t.ID and t.CODE=colvir.T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE') and rownum=1\r\n    ) as PUR_NAME, -- наименование\r\n\r\n    -- Цель кредита по классификатору\r\n    L_PkgDeaUniRef.fGetClsRefValCode(\r\n        T_PKGDEA.fDclId(T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')), \r\n        U_PkgUniRef.fRefCode2Id( 'UZ_PURPCRED_112')\r\n    ) PUR112_CODE,\r\n    L_PkgDeaUniRef.fGetClsRefValLongname(\r\n        T_PKGDEA.fDclId(T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')), \r\n        U_PkgUniRef.fRefCode2Id( 'UZ_PURPCRED_112')\r\n    ) PUR112_NAME,\r\n\r\n    l_Pkgdeauniref.fGetClsRefValCode(colvir.t_pkgDea.fDclId(colvir.T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')),\r\n        u_Pkguniref.fRefCode2Id('UZ_TZ',0)\r\n    ) CLI_TYPE,  -- тип клиента\r\n    \r\n    U_pkgUniRef.fLongNameByRefer('UZ_TZ',l_Pkgdeauniref.fGetClsRefValCode(colvir.t_pkgDea.fDclId(colvir.T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE')),\r\n        u_Pkguniref.fRefCode2Id('UZ_TZ',0)),0) as CLI_TYPE_NAME -- наименование    \r\n    \r\nfrom T_BOP_STAT s, T_PROCESS p, T_PROCMEM m, T_ORD o, T_DEA d,  \r\n     T_DEA d_ckc, PP_SALOBJ so, PP_SALDEA sd, N_CRD crd,\r\n     N_CRDTYPE ct, T_DEA sal_dea, T_ORD sal_ord, G_CLI work_cli, G_CLIHST work_clihst\r\nwhere\r\n    so.SAL_DEP_ID = sd.DEP_ID and so.SAL_ID = sd.ID\r\n    and d.DEP_ID = so.DEA_DEP_ID and d.ID = so.DEA_ID\r\n    and o.DEP_ID = d.DEP_ID and o.ID = d.ID\r\n    and ct.ID = crd.CRD_ID\r\n    and m.DEP_ID = o.DEP_ID and m.ORD_ID = o.ID and m.MAINFL = '1' \r\n    and p.ID = m.ID\r\n    and s.ID = p.BOP_ID and s.NORD= p.NSTAT\r\n    and exists (select 1 from DUAL where colvir.c_pkgGrant.fChkUsrOrd_2(so.DEA_DEP_ID, so.DEA_ID, 3) = 1 or so.DEA_ID is null)\r\n    and so.ARCH_FL = '0'\r\n    and crd.DEP_ID = d.DEP_ID and crd.ID = d.ID\r\n    and d.dea_dep_id=d_ckc.dep_id and d.dea_id=d_ckc.id\r\n    and sd.DEP_ID=sal_dea.DEP_ID and sd.ID=sal_dea.ID\r\n    and sal_ord.DEP_ID=sal_dea.DEP_ID and sal_ord.ID=sal_dea.ID\r\n    and sal_dea.cli_dep_id=work_cli.Dep_Id and  sal_dea.CLI_ID=work_cli.Id\r\n    and work_cli.Dep_Id=work_clihst.Dep_Id and  work_cli.Id=work_clihst.ID\r\n    and P_OPERDAY between work_clihst.fromdate and work_clihst.todate\r\n    and T_pkgDeaPrm.fClsParByCode(d_ckc.dcl_id,'LOAN_DCL_CODE') is not null\r\n    and (so.cli_dep_id, so.cli_id) = (select dep_id, id from g_cli where code=:clientCode)\r\n'''\r\nfrom apng_core.db import fetchall\r\ncon = initDbSession(application='colvir_cbs')\r\ndef getCardList(params):\r\n    with con.cursor() as cursor:\r\n        p = {\r\n            'clientCode': params.get('clientCode')\r\n        }\r\n        cursor.execute(SQL_CARD_LIST, p)\r\n        data = fetchall(cursor)\r\n        \r\n        for c in data:\r\n            if c.get('OVR_SUM'):\r\n                averageIncome = json.loads(c.get('OVR_SUM'))\r\n                c['averageIncome'] = averageIncome\r\n                del c['OVR_SUM']\r\n                \r\n            c['agreement'] = {\r\n                'dep_id': c['CKC_DEP_ID'],\r\n                'id': c['CKC_ID'],\r\n                'accountNo': c['ACC_CODE'],\r\n            }\r\n            del c['CKC_DEP_ID']\r\n            del c['CKC_ID']\r\n            \r\n            c['isActive'] = c['STAT_CODE'] == 'DELIVERED'\r\n\r\n    return data \r\n\r\ndata = getCardList(parameters)\r\n"
+            }
+        }
+    },
+    "references": {}
+}

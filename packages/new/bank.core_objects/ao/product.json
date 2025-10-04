@@ -1,0 +1,244 @@
+{
+    "forms": {
+        "productSelectDialog": {
+            "title": "Выбор банковского продукта",
+            "className": "vertical",
+            "style": {
+                "paddingTop": "4px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "$": {
+                        "@product": {
+                            "className": "horizontal",
+                            "$": {
+                                "product": {
+                                    "label": "Банковский продукт",
+                                    "style": {
+                                        "paddingTop": "1px",
+                                        "width": "200px"
+                                    },
+                                    "control": "ModuleComponent",
+                                    "controlProps": {
+                                        "componentPath": "/aoa/ObjectReference",
+                                        "object": "product"
+                                    },
+                                    "controlOpts": {
+                                        "valueField": "code",
+                                        "postfixFields": {
+                                            "Name": "name"
+                                        },
+                                        "referenceParams": {
+                                            "filterParent$": "params?.filterParent"
+                                        }
+                                    },
+                                    "required": true,
+                                    "actions": {
+                                        "onChange": {
+                                            "name": "onProductChange"
+                                        }
+                                    }
+                                },
+                                "productName": {
+                                    "label": "Наименование продукта",
+                                    "style": {
+                                        "paddingTop": "1px",
+                                        "width": "450px"
+                                    },
+                                    "control": "TextEdit",
+                                    "readOnly": true
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "comment": "Удалить это событие",
+                                    "name": "applyDialog"
+                                },
+                                {
+                                    "name": "onProductSelected",
+                                    "params": {
+                                        "product": {
+                                            "code$": "mem.product",
+                                            "name$": "mem.productName"
+                                        }
+                                    }
+                                },
+                                {
+                                    "js": "actions.close()",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "checkDuration": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "con = initDbSession(application='bank')\n\nif parameters.get('durationUnit') is None:\n    raise Exception('Не задана размерность срока продукта')\n\npd = execObjectMethod({\n    'object': 'product', 'method': 'getProductDuration',\n    'params': {\n        'productCode': parameters['code'],\n        'duration': parameters['duration'],\n        'durationUnit': parameters['durationUnit']\n    }\n})    \nif pd is None:\n\n    dr = execObjectMethod({\n        'object': 'product', 'method': 'getProductDurationRange',\n        'params': {\n            'productCode': parameters['code'],\n            'duration': parameters['duration'],\n            'durationUnit': parameters['durationUnit']\n        }\n    })    \n    raise UserError(\n        'Допустимые сроки для продукта {}: {} - {} {}'.format(\n            parameters['code'], dr['minvalue'], dr['maxvalue'],\n            {\n                'D': 'дней',\n                'M': 'месяцев',\n                'Y': 'лет'\n            }[parameters['durationUnit']]\n        )\n    )\n"
+            }
+        },
+        "checkDurationRange": {
+            "script": {
+                "py": "#\n# Проверка допустимости срока по диапазону\n#\n# параметры\n#   code\n#   duration\n#   durationUnit\n\ncon = initDbSession(application='bank')\n\nif parameters.get('duration') is None:\n    raise Exception('Не задан срока')\n\nif parameters.get('durationUnit') is None:\n    raise Exception('Не задана размерность срока')\n\ndr = execObjectMethod({\n    'object': 'product', 'method': 'getProductDurationRange',\n    'params': {\n        'productCode': parameters['code'],\n        'durationUnit': parameters['durationUnit']\n    }\n})\n\nisDurationOk = parameters['duration'] >= dr['minvalue'] and parameters['duration'] <= dr['maxvalue']\n\nif not isDurationOk:\n\n    raise UserError(\n        'Допустимые сроки для продукта {}: {} - {} {}'.format(\n            parameters['code'], dr['minvalue'], dr['maxvalue'],\n            {\n                'D': 'дней',\n                'M': 'месяцев',\n                'Y': 'лет'\n            }[parameters['durationUnit']]\n        )\n    )\n"
+            }
+        },
+        "checkSellClient": {
+            "sql": {},
+            "script": {
+                "py": "def checkSellClient(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'productCode': params.get('productCode'),\n            'clientCode': params.get('clientCode'),\n            'checkStatus': cursor.var(int),\n            'checkMessage': cursor.var(str),\n        }\n\n        cursor.execute(\"\"\"\n            declare\n                idCliDep number;\n                idCli number;\n                chkStatus integer;\n                chkMessage varchar2(500);\n            begin\n                G_PkgCli.pGetCliId(:clientCode, idCliDep, idCli);\n                T_PkgDclCliDis.pDclCliEnable(\n                    idDcl         => T_PkgDea.fDclId(:productCode), \n                    idCliDep      => idCliDep, \n                    idCli         => idCli, \n                    nExecRes      => chkStatus, \n                    cFuncName     => chkMessage\n                );\n                \n                :checkStatus := chkStatus;\n                :checkMessage := chkMessage;\n            end;\n        /\"\"\", p)\n    \n        return {\n            'canSell': p['checkStatus'].getvalue() != 0,\n            'message': p['checkMessage'].getvalue()\n        }\n\ndata = checkSellClient(parameters)\n"
+            }
+        },
+        "getProductSetup": {
+            "sql": {},
+            "script": {
+                "py": "\nfrontendParameters = [\n    'LPAYDAY',\n    'LPAYDAYOD',\n    'L_PNTGRACEOD',\n    'L_PNTGRACEPRC',\n    'L_PAYFIRST',\n    'L_PAYFIRSTPCN',\n    'L_GRACEPERIOD',\n    'L_MAXSUMM',\n    'L_TOTALAREA',\n    'L_SHOW_MARKET_TYPE',\n    'L_PCNTDELTA',\n    'J_GRNVOFL',\n    'L_DELAYAFTERDECLINE',\n]\n\nfrontendOptions = [\n    {\n        'name': 'appType',\n        'parameter': 'L_APP_TYPE',\n    },\n    {\n        'name': 'hasCoborrowers',\n        'parameter': 'L_PRSFL',\n    },\n    {\n        'name': 'borrowerMinAge',\n        'parameter': 'YEARCNTFROM',\n    },\n    {\n        'name': 'borrowerMaxAge',\n        'parameter': 'YEARCNTTO',\n    },\n    {\n        'name': 'hasGovernmentDecision',\n        'parameter': 'L_REQAGRGOV',\n    },\n    {\n        'name': 'typeOfObjectOfCredit',\n        'parameter': 'L_OBJECT_OF_CREDIT_TYPE'\n    },\n    {\n        'name': 'interestEnabled',\n        'parameter': 'L_PCNTIND',\n    },\n    {\n        'name': 'disableCheckRealtySelfAmount',\n        'parameter': 'L_KONTROLSS',\n    },\n    {\n        'name': 'disableIncomeAmount',\n        'parameter': 'L_DISABLE_INCOME_AMOUNT',\n    },\n    {\n        'name': 'reviewWorkflow',\n        'parameter': 'L_REQFRONTSCN',\n    },\n    {\n        'name': 'durationMethod',\n        'parameter': 'L_DURATION_METHOD'\n    },\n    {\n        'name': 'percentOfFirstPayFrom',\n        'parameter': 'L_INITIALFEE'\n    },\n    {\n        'name': 'disableApproveIncome',\n        'parameter': 'L_OFFBUSYCON'\n    },\n    {\n        'name': 'issueCardProduct',\n        'parameter': 'L_CARDPROD'\n    },\n    {\n        'name': 'dossierReadOnly',\n        'parameter': 'L_DOSSIER_READONLY'\n    },\n    {\n        'name': 'waitRegDea',\n        'parameter': 'L_WAIT_REGDEA'\n    },\n    {\n        'name': 'reportAppBorrower',\n        'parameter': 'L_APP_RPT_BORROWER'\n    },\n    {\n        'name': 'reportAppCoBorrower',\n        'parameter': 'L_APP_RPT_COBORROWER'\n    },\n    {\n        'name': 'reportAppConclusion',\n        'parameter': 'L_APP_RPT_CONCLUSION'\n    },\n    {\n        'name': 'reportAppDecision',\n        'parameter': 'L_APP_RPT_DECISION'\n    },\n    {\n        'name': 'checkIncomeWorkflow',\n        'parameter': 'L_APP_CHECK_INCOME_WORKFLOW'\n    },\n    {\n        'name': 'workplacesNumRequired',\n        'parameter': 'L_WPNUM_REQUIRED'\n    }\n]\n\ndef getProductSetup(params):\n    \n    p = {}\n    \n    if params.get('withProduct') == True:\n        product = execObjectMethod({\n            'object': 'product', 'method': 'getProductInfo',\n            'params': {'productCode': params.get('productCode')}\n        })\n        if product:\n            p = {\n                **p,\n                **product,\n            }\n    \n    allProductParameters = execObjectMethod({\n        'object': 'product', 'method': 'getAllProductParameters',\n        'params': {'productCode': params.get('productCode')}\n    })\n\n    if 'L_REQFRONTSCN' in allProductParameters:\n        p['reviewWorkflow'] = allProductParameters['L_REQFRONTSCN']['value']\n    \n    \n    if params.get('withParameters') == True:\n            \n        p['parameters'] = {}\n        for name in frontendParameters:\n            if name in allProductParameters:\n                p['parameters'][name] = allProductParameters[name]\n                \n        p['purpose'] = execObjectMethod({\n            'object': 'product', 'method': 'getProductPurpose',\n            'params': {'productCode': params.get('productCode')}\n        })\n\n    if params.get('withClassifiers') == True:\n        p['classifiers'] = execObjectMethod({\n            'object': 'product', 'method': 'getAllProductClassifiers',\n            'params': {'productCode': params.get('productCode')}\n        })\n\n    if params.get('withConstraints') == True:\n        p['constraints'] = execObjectMethod({\n            'object': 'product', 'method': 'getAllProductConstraints',\n            'params': {'productCode': params.get('productCode'), 'currency': params.get('currency')}\n        })\n\n    if params.get('withOptions') == True:\n        p['options'] = {}\n        for o in frontendOptions:\n            if o['parameter'] in allProductParameters:\n                p['options'][o['name']] = allProductParameters[o['parameter']]['value']\n            \n\n    return p\n\ndata = getProductSetup(parameters)"
+            }
+        },
+        "getPurposesOfLoan": {
+            "sql": {},
+            "script": {
+                "py": "#\n# Возможные цели кредита по продукту\n#\nfrom apng_core.db import fetchall\n\ndef getPurposesOfLoan(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': params.get('productCode'),\n        }\n\n        cursor.execute(\"\"\"\n            select \n                d.CODE ,\n                d.LONGNAME\n            from L_DEAPUR l, L_PURDSC_STD d, T_DEACLS_STD t\n            where l.PUR_ID=d.ID and l.DCL_ID=t.ID and t.CODE=:DCL_CODE\n        \"\"\", p)\n        \n        d  = fetchall(cursor)\n\n        l = []\n        if d:\n            for r in d:\n                l.append({\n                    'code': r['CODE'],\n                    'name': r['LONGNAME']\n                })\n                \n        return l\n\ndata = getPurposesOfLoan(parameters)\n"
+            }
+        },
+        "getAllProductParameters": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\ndef coerseValueType(valType, value):\n    if valType is None:\n        return value\n    if valType in ['C','S']:\n        return value\n    if valType == 'I':\n        try:\n            return int(value)\n        except:\n            return None\n    if valType == 'D':\n        # Пока не реализовано\n        return value\n    if valType == 'B':\n        return value == '1'\n    if valType in ('N', 'F'):\n        try:\n            value = value.replace(',', '.').replace(' ', '')\n            return float(value)\n        except Exception as e:\n            return None\n    \n    raise Exception('CBS3 type %s not implemented' % valType)\n\ndef oracleTypeToJavascript(type):\n    return type\n\ndef getAllProductParameters(params):\n    productCode = params.get('productCode')\n    if not productCode:\n        raise Exception('productCode parameter missing')\n    \n\n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': productCode\n        }\n\n        cursor.execute(\"\"\"\n\n            with all_parameters as (\n                select distinct\n                  dc.id dcl_id, \n                  dpd.id prm_id,\n                  dpd.code prm_code,\n                  dpd.longname prm_name,\n                  dom.dat ora_type,\n                  dom.code dom_code\n                from c_domain_std dom, t_deacls dc, t_deaprmdsc_std dpd, t_deaprmrul dcp\n                where dcp.dea_id=any(select ID from T_DEACLS_STD start with code=dc.code connect by prior id_HI = id)\n                    and dpd.id=dcp.par_id\n                    and dpd.groupfl=0\n                    and dom.code(+)=dpd.d_code\n                    and dc.code=:DCL_CODE\n            )\n            select \n                dc.code,\n                prm_dcl.code prm_dcl_code,\n                ap.*,\n                dcp.*\n            from all_parameters ap, t_deacls_std dc, t_deaprmrul dcp, t_deacls_std prm_dcl\n            where dc.id=ap.dcl_id\n                and dcp.par_id=ap.prm_id\n                and dcp.dea_id=any(\n                    select dea_id from (\n                        select p.dea_id from t_deaprmrul p, (select ID, CODE, level lvl from T_DEACLS_STD start with code=:DCL_CODE connect by prior id_HI = id) c where p.dea_id=c.id and p.par_id= ap.prm_id\n                        order by c.lvl\n                    ) where rownum=1\n                )\n                and prm_dcl.id=dcp.dea_id\n            \n        \"\"\", p)\n        data = fetchall(cursor)\n        \n        parameters = {}\n        \n        if data:\n            for p in data:\n                oratype = p['ORA_TYPE']\n                if p.get('DOM_CODE') == 'D_FLAG':\n                    oratype = 'B'\n                \n                value = p['PARVALUE']\n                if not value and p['LPARVALUE']:\n                    value = p['LPARVALUE']\n\n                parameters[p['PRM_CODE']] = {\n                    'value': coerseValueType(oratype, value),\n                    'type': oracleTypeToJavascript(oratype),\n                    'name': p['PRM_NAME'],\n                    'isRequired': p['MANDFL'] == 1,\n                    'isReadOnly': p['EDITFL'] == 0,\n                    'isHidden': p['HIDEFL'] == 1,\n                    'minValue': coerseValueType(oratype, p['MINVALUE']),\n                    'maxValue': coerseValueType(oratype, p['MAXVALUE']),\n                }\n\n    return parameters\n\ndata = getAllProductParameters(parameters)\n"
+            },
+            "sql": {}
+        },
+        "getAllProductClassifiers": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\ndef getAllProductClassifiers(params):\n    productCode = params.get('productCode')\n    if not productCode:\n        raise Exception('productCode parameter missing')\n    \n\n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': productCode\n        }\n\n        cursor.execute(\"\"\"\n            select\n              nvl(r.MANDFL,'1') MANDFL,\n              r.DEF_VALUE  DEF_VALUE,\n              U_PKGUNIREF.fCode(u.CODE, u.ENT_CODE, r.DEF_VALUE, 0)  DEF_VALUE_CODE,\n              U_PKGUNIREF.fLongname(u.CODE, u.ENT_CODE, r.DEF_VALUE, 0, 0) DEF_VALUE_NAME,\n              u.CODE||'.'||u.LONGNAME as LONGNAME,\n              u.CODE,\n              u.LONGNAME as NAME\n            from \n              L_DEAUNIREFRUL R, \n              U_UNIREF U, \n              T_DEACLS_STD S\n            where S.ID=R.DCL_ID\n              and R.REF_ID=U.ID\n              and R.DCL_ID in (select id from T_DEACLS_STD start with CODE= :DCL_CODE\n                                      connect by prior ID_HI=ID)\n              and L_PKGDEAUNIREF.fChkRef(r.DCL_ID, T_PkgDea.fDclId(:DCL_CODE), r.REF_ID, s.NLEVEL)=1\n        \"\"\", p)\n        rows = fetchall(cursor)\n        \n        classifiers = {}\n        \n        if rows:\n            for c in rows:\n                classifiers[c['CODE']] = {\n                    'value': c['DEF_VALUE_CODE'],\n                    'name': c['DEF_VALUE_NAME'],\n                    'isRequired': c['MANDFL'] == 1,\n                }\n\n    return classifiers\n    \ndata = getAllProductClassifiers(parameters)"
+            }
+        },
+        "getProductPurpose": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\ndef getProductPurpose(params):\n    productCode = params.get('productCode')\n    if not productCode:\n        raise Exception('productCode parameter missing')\n    \n\n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': productCode\n        }\n        \n        cursor.execute(\"\"\"\n            select l.*, d.CODE, d.LONGNAME\n            from L_DEAPUR l, L_PURDSC d\n            where l.PUR_ID = d.ID and l.DCL_ID = T_PkgDea.fDclId(:DCL_CODE)\n        \"\"\", p)\n        data = fetchall(cursor)\n        \n        purpose = {}\n        \n        if data and len(data) == 1:\n            for c in data:\n                purpose = {\n                    'code': c['CODE'],\n                    'name': c['LONGNAME'],\n                }\n\n    return purpose\n\ndata = getProductPurpose(parameters)"
+            }
+        },
+        "getAllProductConstraints": {
+            "script": {
+                "py": "\ndef getAllProductConstraints(params):\n    return {\n        'requiredPledges': execObjectMethod({'object': 'product', 'method': 'getRequiredPledges', 'params': params}),\n        **execObjectMethod({'object': 'product', 'method': 'getProductAmount', 'params': params}),\n    }\n\ndata = getAllProductConstraints(parameters)"
+            },
+            "sql": {}
+        },
+        "getProductParameterValue": {
+            "script": {
+                "py": "def getProductParameterValue(params):\n    productCode = params.get('productCode')\n    if not productCode:\n        raise Exception('productCode parameter missing')\n    \n    parameterCode = params.get('parameterCode')\n    if not parameterCode:\n        raise Exception('parameterCode parameter missing')\n\n\n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'productCode': productCode,\n            'parameterCode': parameterCode,\n            'value': cursor.var(str),\n        }\n\n        cursor.execute(\"\"\"\n            begin\n                :value := T_PkgDeaPrm.fClsParByCode(\n                    idDcl     => T_PkgDea.fDclId(:productCode), \n                    par_code  => :parameterCode\n                );\n            end;\n        \"\"\", p)\n        \n        return p['value'].getvalue()\n\ndata = getProductParameterValue(parameters)"
+            }
+        },
+        "getProductInfo": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getProductInfo(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': params.get('productCode'),\n        }\n    \n        cursor.execute(\"\"\"\n            select * from t_deacls where code=:DCL_CODE\n        \"\"\", p)\n        \n        d  = fetchone(cursor)\n        if d:\n            return {\n                'code': d['CODE'],\n                'name': d['LONGNAME'], \n            }\n        \n    return None\n\ndata = getProductInfo(parameters)"
+            }
+        },
+        "getProductAmount": {
+            "sql": {},
+            "script": {
+                "py": "import oracledb\n\ndef getProductAmount(params):\n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': params.get('productCode'),\n            'VAL_CODE': params.get('currency'),\n            'depCode' : params.get('depCode'),\n            'minAmount': cursor.var(oracledb.NUMBER),\n            'maxAmount': cursor.var(oracledb.NUMBER),\n        }\n        \n        cursor.execute(\"\"\"\n            begin\n                select \n                    min_sum, max_sum \n                into :minAmount, :maxAmount\n                from (\n                    select v.min_sum, v.max_sum\n                    from C_DEP_STD d, T_VALDEPCLS v\n                    where v.dcl_id = T_pkgDea.fDclId(:DCL_CODE)\n                        and v.val_id = nvl(T_pkgVal.fValCode2Id(:VAL_CODE, 0), p_natval)\n                        and v.dep_id=d.id\n                        and d.code=:depCode\n                    union\n                    select v.min_sum, v.max_sum\n                    from T_VALDEPCLS v\n                    where v.dcl_id = T_pkgDea.fDclId(:DCL_CODE)\n                       and v.val_id = nvl(T_pkgVal.fValCode2Id(:VAL_CODE, 0), p_natval)\n                       and v.allfl=1\n                )\n                where rownum=1;\n            exception when no_data_found then\n                null;\n            end;\n        \"\"\", p)\n        \n        return {\n            'minAmount': p['minAmount'].getvalue(),\n            'maxAmount': p['maxAmount'].getvalue(),\n        }\n\ndata = getProductAmount(parameters)\n"
+            }
+        },
+        "getMaxAmount": {
+            "script": {
+                "py": "import cx_Oracle\n\ndef getMaxAmount(params):\n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'DCL_CODE': params.get('productCode'),\n            'VAL_CODE': params.get('currency'),\n            'amount': cursor.var(cx_Oracle.NUMBER)\n        }\n    \n        cursor.execute(\"\"\"\n            begin\n                select max(max_sum) into :amount\n                from T_VALDEPCLS \n                where DCL_ID = T_PkgDea.fDclId(:DCL_CODE)\n                    and val_id = nvl(T_pkgVal.fValCode2Id(:VAL_CODE, 0), p_natval)\n                ;\n            end;\n        \"\"\", p)\n        \n        r = {\n            'amount': p['amount'].getvalue(),\n        }\n        \n        return r\n\ndata = getMaxAmount(parameters)"
+            },
+            "sql": {}
+        },
+        "getRequiredPledges": {
+            "sql": {},
+            "script": {
+                "py": "def getRequiredPledges(params):\n\n    productCode = params.get('productCode')\n\n    if not productCode:\n        raise Exception('productCode parameter missing')\n    \n    d = execObjectMethod({\n        'object': 'cbs.dectbl', 'method': 'eval',\n        'params': {\n            'tblName': 'L_DEAENSLIST',\n            'needAll': True,\n            'params': {\n                'DEA_CODE': productCode\n            }\n        }\n    })\n\n    pledges = []\n    for r in d:\n        pledges.append({\n            'type': r['value'],\n            'name': r['name'],\n        })\n    return pledges\n\ndata = getRequiredPledges(parameters)"
+            }
+        },
+        "getProductDurationRange": {
+            "sql": {},
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getProductDurationRange(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        p = {\n            'productCode': params.get('productCode'),\n            'durationUnit': params.get('durationUnit'),\n        }\n        \n        cursor.execute(\"\"\"\n            select \n                min(p.time_unit) as minvalue, \n                max(p.time_unit) as maxvalue\n            from T_DEALNKPRD m, T_DEAPRD_STD p, T_DEACLS_STD t\n            where m.PRD_ID = p.ID and m.DCL_ID = t.ID and t.code=:productCode  \n                and p.time_type= :durationUnit\n        \"\"\", p)\n        \n        d = fetchone(cursor)\n        \n        return {\n            'minvalue': d['MINVALUE'],\n            'maxvalue': d['MAXVALUE'],\n        }\n\ndata = getProductDurationRange(parameters)"
+            }
+        },
+        "getProductDuration": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\ndef getProductDuration(params):\n    \n    with initDbSession(application='bank').cursor() as cursor:\n        if params.get('durationCode'):\n            p = {\n                'productCode': params.get('productCode'),\n                'durationCode': params.get('durationCode'),\n            }\n            \n            cursor.execute(\"\"\"\n                select\n                    p.id,\n                    p.TIME_TYPE,\n                    p.TIME_UNIT\n                from T_DEALNKPRD m, T_DEAPRD_STD p, T_DEACLS_STD t\n                where m.PRD_ID = p.ID and m.DCL_ID = t.ID and t.code=:productCode  \n                    and p.code = :durationCode\n            \"\"\", p)\n            \n            d = fetchone(cursor)\n            if d:\n                return {\n                    'id': d['ID'],\n                    'duration': d['TIME_UNIT'],\n                    'durationUnit': d['TIME_TYPE'],\n                }\n            else:\n                return None             \n        else:\n            p = {\n                'productCode': params.get('productCode'),\n                'duration': params.get('duration'),\n                'durationUnit': params.get('durationUnit'),\n            }\n            \n            cursor.execute(\"\"\"\n                select\n                    p.id\n                from T_DEALNKPRD m, T_DEAPRD_STD p, T_DEACLS_STD t\n                where m.PRD_ID = p.ID and m.DCL_ID = t.ID and t.code=:productCode  \n                    and p.time_type = :durationUnit\n                    and p.time_unit = :duration\n            \"\"\", p)\n            \n            d = fetchone(cursor)\n        \n            return d\n\ndata = getProductDuration(parameters)"
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 320
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code",
+                "parentKey": "parentCode",
+                "isGroup": "item.groupFl=='1'"
+            },
+            "method": {
+                "sql": {
+                    "sqlType": "query",
+                    "database": "bank",
+                    "params": [
+                        "code",
+                        "parentCode",
+                        "filterParent",
+                        "filter"
+                    ],
+                    "sql": "select \n    c.CODE \"code\", \n    c.LONGNAME \"name\", \n    p.code \"parentCode\",\n    c.groupfl \"groupFl\"\nfrom t_deacls c, t_deacls_std p \nwhere c.arcfl='0' and c.id_hi=p.id(+) and c.code=nvl(:code, c.code)\n    and (:code is null and :parentCode is null and (\n                :filter is null and c.id_hi is null\n                or :filter is not null \n                or :filterParent is not null and c.code=any(select code from json_table(:filterParent, '$[*]' columns(code path '$')))\n            )\n        or :code is null and :parentCode is not null and (\n                :parentCode=p.code \n            ) \n        or :code is not null and :parentCode is null\n    )\n    and (:filterParent is null or :filterParent is not null and\n        c.id =any (\n            select id from t_deacls_std \n            start with code in (select code from json_table(:filterParent, '$[*]' columns(code path '$')))\n            connect by prior id =  id_hi\n        )\n    )\n    and (:filter is null\n        or :filter is not null \n            and exists(\n                select 1 from c_hiegrn nodes, c_hie filter\n                where nodes.id=filter.id and filter.name=:filter\n                    and nodes.id_node=c.id\n            )\n            and (\n                    :parentCode is null and not exists(\n                        select 1 from c_hiegrn nodes, c_hie filter\n                        where nodes.id=filter.id and filter.name=:filter\n                            and nodes.id_node=c.id_hi            \n                    )\n                    or\n                    :parentCode is not null and :parentCode=p.code\n                ) \n    )\norder by c.code\n"
+                },
+                "script": {
+                    "params": []
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

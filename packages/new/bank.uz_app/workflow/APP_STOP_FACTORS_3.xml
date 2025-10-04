@@ -1,0 +1,248 @@
+<workflow id="APP_STOP_FACTORS_3" name="Расчет стоп факторов 3">
+    <event name="onGetProcessObject">
+        <![CDATA[ok = pv.get('objectKey')
+if not ok:
+    raise Exception('Не задан ключ объекта для запуска сценария, objectKey');
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <script id="ad0f7948-062e-44ae-a8b6-0eb191fe1d6d" name="Инициализация">
+        <![CDATA[ok = pv.get('objectKey')
+if not ok:
+    raise Exception('Не задан ключ объекта для запуска сценария, objectKey');
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+]]>
+    </script>
+    <script id="029993e2-9e29-48c0-8324-152149cac7a1" name="Стадия рассмотрения">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'stage': 'STOPFACTORS3',
+    }
+})
+]]>
+    </script>
+    <timer id="b00907d9-185c-4e2c-9e2e-e19399c7752c" name="Расчет стоп факторов 3" description="Расчет стоп факторов 3, заявка {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:02:00" action="continue"/>
+    <script id="effdc21e-0479-4be6-8100-568f2c4442da" name="Стоп факторы 3">
+        <![CDATA[import traceback
+from apng_core.csl import Csl
+
+
+def ensureDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return '%02d.%02d.%04d' % (d.day, d.month, d.year)
+    return val
+
+def ensureIsoDate(val):
+    if isinstance(val, str):
+        from datetime import datetime
+        d = datetime.fromisoformat(val)
+        return d
+    return val
+
+def checkAfsResponse(response):
+    if response.get('RESULT') is None:
+        raise UserException({
+            'message': 'В ответе сервиса отсутствует атрибут RESULT',
+            'trace': json.dumps(response, indent=4, ensure_ascii=False)
+        })
+    if response.get('RESULT_CODE') is None:
+        raise UserException({
+            'message': 'В ответе сервиса отсутствует атрибут RESULT',
+            'trace': json.dumps(response, indent=4, ensure_ascii=False)
+        })
+
+pv['last_error'] = None
+
+method = po['afs'].get('method')
+
+with Csl('CSL_APP_URL') as csl:
+    response = csl.request(
+        '/ESProcessor/GetResults',
+        {
+            'path': 'MTH=>{},SHT=>SF3'.format(method),
+            'key': {
+                'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                'DOP': ensureIsoDate(po['app']['registrationDate'])
+            }
+        }
+    )
+    
+    if response.status_code != 200:
+        raise UserException(csl.extractLastError())
+    else:
+        r = json.loads(response.content)
+    
+        checkAfsResponse(r)
+        
+        pv['service_result'] = r
+        
+        pv['SF3_status'] = {
+            'status': r['RESULT_CODE']['sql_value'],
+            'statusName': r['RESULT'].get('sql_value'),
+        }
+    
+        if pv['SF3_status']['status'] == 'altAmount':
+            if r.get('SCRG_AMOUNT') and r['SCRG_AMOUNT'].get('value'):
+                pv['SF3_status']['altAmount'] = r['SCRG_AMOUNT']['value']
+    
+            if not pv['SF3_status']['altAmount']:
+                raise UserException({
+                    'message': 'Не расчитана альтернативная сумма',
+                    'trace': 'Ответ сервиса:\n%s' % json.dumps(r, indent=4, ensure_ascii=False)
+                })
+    
+        #
+        # Вызов подготовки отчета
+        #
+        response = csl.request(
+            '/ESProcessor/GetResults',
+            {
+                'path': 'MTH=>{},SHT=>SA'.format(method),
+                'key': {
+                    'OBJ': '{},{}'.format(pv['dep_id'], pv['id']),
+                    'DOP': ensureIsoDate(po['app']['registrationDate'])
+                }
+            }
+        )
+
+]]>
+    </script>
+    <script id="01b80035-f47e-4915-9915-931110371115" name="Сохранение результата расчета в заявку">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser():
+    r = execObjectMethod({
+        'object': 'app', 'method': 'getApplicationJson',
+        'params': {'dep_id': pv['dep_id'], 'id': pv['id'],}
+    })
+
+    r['afs']['results'] = {
+        **r['afs'].get('results', {}),
+        'SF3': pv['service_result']
+    }
+    execObjectMethod({
+        'object': 'app', 'method': 'saveApplicationJson',
+        'params': {'dep_id': pv['dep_id'], 'id': pv['id'], 'json': r}
+    })
+
+]]>
+    </script>
+    <timer id="e9914da9-14cb-4a6e-9345-9bc14e16db69" name="Получение отчета стоп факторы 3" description="Получение отчета стоп факторы 3, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:03:00" action="continue"/>
+    <script id="8ede36ec-03cc-4768-bf74-b2fbe1beea47" name="Получение отчета по стоп факторам">
+        <journal time="leave">
+            <![CDATA[Стоп факторы 3: {% if pv.SF3_status.status != 'ignore' %}{{pv.SF3_status.statusName}}/// {{pv.reportUrl}}{% else %}не требуется{% endif %}]]>
+        </journal>
+        <![CDATA[if pv['SF3_status']['status'] != 'ignore':
+
+    from apng_core.csl import Csl
+    import base64
+    
+    with Csl('CSL_APP_URL') as csl:
+    
+        mis_mth = po['afs']['method']
+        mis_rpt = 'SCRG_F3'
+    
+        pv['reportRequest'] = {
+            'path': 'MTH=>%s,RPT=>%s' % (mis_mth, mis_rpt),
+            'parameters': {
+                'OBJ': '%s,%s' % (pv['dep_id'], pv['id']),
+                'DOP': po['app']['registrationDate']
+            } 
+        }
+    
+        response = csl.request('/ESProcessor/GetReport', pv['reportRequest'])
+    
+        if response.status_code != 200:
+            raise UserException({
+                'description': json.dumps(pv['reportRequest'], indent=4),
+            }).withError(csl.extractLastError())
+            
+    
+        pv['reportData'] = base64.b64encode(response.content).decode('ascii')
+        
+    import urllib
+    pv['reportUrl'] = '/aoa/execObjectMethod?'+urllib.parse.urlencode({
+        'object': 'easyflow',
+        'method': 'downloadAttribute',
+        'params': json.dumps({
+            'tokenId': token.process.id.__str__(),
+            'attribute': 'reportData',
+            'content-type': 'application/pdf',
+            'filename': 'app-%s-stopfactors-3.pdf' % po['app']['code']
+        })
+    })
+]]>
+    </script>
+    <split id="5ac582fb-3592-49fc-ac8b-cc4dc60b8597" name="Результат стоп факторов 3">
+        <condition id="8144b06a-8c4e-49a4-9434-88bec4b78f1b" name="Альтернативная сумма" expression="pv[&apos;SF3_status&apos;][&apos;status&apos;] == &apos;altAmount&apos;">
+            <call id="63dcafdc-d6f5-46b6-aa60-f5e437e80283" name="Подтверждение альтернативной суммы" call="&apos;APP_ALTERNATIVE_AMOUNT&apos;" result_from="RESULT" result_to="ALT_RESULT">
+                <p name="altAmount" expression="pv[&apos;SF3_status&apos;][&apos;altAmount&apos;]"/>
+                <p name="autoModifyPledge" expression="pv.get(&apos;autoModifyPledge&apos;)"/>
+                <p name="updateExternalRegistration" expression="pv.get(&apos;updateExternalRegistration&apos;)"/>
+                <p name="disableModifyTask" expression="pv.get(&apos;disableModifyTask&apos;)"/>
+                <p name="checkClientPhoto" expression="pv.get(&apos;checkClientPhoto&apos;, False)"/>
+                <p name="canReview" expression="pv.get(&apos;canReview&apos;)"/>
+            </call>
+            <split id="95516935-8e6a-485b-adac-c56024b9b95c" name="Результат подтверждения альтернативной суммы">
+                <condition id="f1ce1740-1d5a-44f3-85a1-6826c11350e0" name="Альтернативная сумма согласована" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;accept&apos;"/>
+                <condition id="9bfbcd9a-2ec0-4216-8e49-0ab52739b208" name="Альтернативная сумма не согласована" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;decline&apos;">
+                    <script id="2b0a81e5-80fb-4702-b914-9221b0af56d0" name="Установка отказа">
+                        <![CDATA[pv['SF3_status'] = {
+    'status': 'declineClient',
+    'statusName': 'Отказать, альтернативная сумма не согласована'
+}
+
+]]>
+                    </script>
+                </condition>
+                <condition id="7eb6f623-8b86-43a0-ab1b-ca70b2abbd42" name="Повторное рассмотрение заявки с изменениями" expression="pv[&apos;ALT_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+                    <script id="94be0d5c-1093-4c4a-bb20-a0c5ac0185d9" name="Установка &quot;повторного рассмотрения&quot;">
+                        <![CDATA[pv['SF3_status'] = {
+    'status': 'review',
+    'statusName': 'Направлена на повторное рассмотрение после изменений'
+}
+
+]]>
+                    </script>
+                </condition>
+            </split>
+        </condition>
+        <condition id="25cf5fb9-6f07-4c2d-88a9-d1ad810d8c5a" name="Без альтернативной суммы" expression="pv[&apos;SF3_status&apos;][&apos;status&apos;] in (&apos;accept&apos;, &apos;decline&apos;)"/>
+        <condition id="ac3100a7-55eb-4e09-86ed-20fe7ed278f5" name="Отчет не требуется" expression="pv[&apos;SF3_status&apos;][&apos;status&apos;] == &apos;ignore&apos;"/>
+    </split>
+    <timer id="30bbf736-9115-4f72-95a5-5cc105b51419" name="Стоп факторы 3 расчитаны" description="" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+</workflow>

@@ -1,0 +1,304 @@
+{% load locals %}
+{% load functions %}
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+<style>
+    .bordered-table, .bordered-table th, .bordered-table tr, .bordered-table td  {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    .table-title {
+        font-size: 1.5rem;
+    }
+    .table-head {
+        font-size: 1.2rem;
+    }
+    .tar {
+        text-align: right;
+    }
+    .tac {
+        text-align: center;
+    }
+    td[task] {
+        cursor: pointer;
+    }
+</style>
+
+
+<h1>
+    Список заявок
+</h1>
+<h2>
+{{parameters.fromDate|date}} - {{parameters.toDate|date}}
+</h2>
+
+<table class="bordered-table">
+    <tr class="table-head">
+        <th style="width: 30px" format="int">№ п/п</th>
+        <th>Дата заявки</th>
+        <th>Номер заявки</th>
+        <th>Id заявки</th>
+        <th>Подр.</th>
+        <th>Клиент</th>
+        <th>НИББД</th>
+        <th>Вид кредитования</th>
+        <th>Код продукта</th>
+        <th>Продукт</th>
+        
+        <th>Состояние</th>
+        <th>Стадия рассмотрения</th>
+        <th>Причина отказа</th>
+        
+        
+        <th format="currency">Сумма</th>
+        <th>Валюта</th>
+        
+        <th>Номер договора</th>
+        <th>Признак новообразования</th>
+        
+        <th>Исполнитель</th>
+        <th>ФИО Исполнителя</th>
+    </tr>
+    
+    {% for r in data %}
+        <tr>
+            <td class="tar">{{forloop.counter}}</td>
+            <td>{{r.registrationDate|date}}</td>
+            <td
+                task="{{r|makeTask|escape}}"
+            >{{r.code}}</td>
+            <td>{{r.APPID}}</td>
+            <td>{{r.depCode}}</td>
+            
+            <td>{{r.clientName}}</td>
+            <td>{{r.clientNibbd}}</td>
+            
+            <td>{{r.typeOfLendingName}}</td>
+            <td>{{r.productCode}}</td>
+            <td>{{r.productName}}</td>
+            
+            <td>{{r.STATE|appState}}</td>
+            <td>{{r.REVIEWSTAGE|appStage}}</td>
+            <td>
+                {% if r.declineReason %}
+                    {{r.declineReason}}/{{r.declineText}}
+                {% endif %}
+            </td>
+            
+            <td class="tar" style="white-space: nowrap;">{{r.amount|currency}}</td>
+            <td class="tar" >{{r.currency}}</td>
+            
+            <td>{{r.deaNo}}</td>
+            <td  class="tac" >{{r.newObjectType}}</td>
+            
+            <td>{{r.user}}</td>
+            <td>{{r.userName}}</td>
+        </tr>
+    {% endfor %}
+    
+    <tr>
+        <td></td>
+        <td></td>
+        <td>ИТОГО</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="tar" style="white-space: nowrap;">{{data|sum:'amountNat'|currency}} UZS</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>&nbsp;</td>
+    </tr>
+</table>
+
+<!-- 7E5BC701-DDCB-5E05-76C2-11220A03F3A1 -->
+{
+    "method": {
+        "sql": {
+            "params": [
+                "state",
+                "depCode",
+                "user_name",
+                "toDate",
+                "fromDate",
+                "product_list",
+                "newObjectType"
+            ],
+            "sql": "select\n    r.dep_id \"dep_id\",\n    r.id \"id\",\n    json_value(r.json, '$.baseComponent') \"baseComponent\",\n    d.code \"depCode\",\n    json_value(r.json, '$.app.registrationDate') \"registrationDate\",\n    json_value(r.json, '$.app.code') \"code\",\n    re.appid,\n    case\n        when json_value(r.json, '$.client.isJur') = 'true' then json_value(r.json, '$.client.name') \n        else json_value(r.json, '$.client.lastname') || ' ' || json_value(r.json, '$.client.firstname') || ' ' || json_value(r.json, '$.client.secondname')\n    end \"clientName\",\n    json_value(r.json, '$.client.nibbd') \"clientNibbd\",\n    \n    nvl(json_value(r.json, '$.app.typeOfLendingName'),' ') \"typeOfLendingName\",\n    json_value(r.json, '$.app.productName') \"productName\",\n    json_value(r.json, '$.app.productCode') \"productCode\",\n    \n    re.state,\n    re.reviewstage,\n    json_value(r.json, '$.app.amount') \"amount\",\n    T_PkgVal.fCrossRate(\n        to_number(nvl(json_value(r.json, '$.app.amount'), 0)),\n        T_PkgVal.fValCode2Id(nvl(json_value(r.json, '$.app.currency'), 'UZS'))\n    ) \"amountNat\",\n    json_value(r.json, '$.app.currency') \"currency\",\n    \n    nvl(json_value(r.json, '$.dea.code'),'&nbsp;') \"deaNo\",\n    nvl(decode(json_value(r.json, '$.app.newObjectType'), '1', 'V','&nbsp;') ,'&nbsp;') \"newObjectType\",\n    \n    json_value(L_PkgReqJson.fGetDecision(r.json, 'decline'), '$.declineReason') \"declineReason\",\n    json_value(L_PkgReqJson.fGetDecision(r.json, 'decline'), '$.text') \"declineText\",\n    \n    \n    json_value(r.json, '$.user.code') \"user\", json_value(r.json, '$.user.name') \"userName\"\nfrom c_dep_std d, l_reqdea r, l_reqdea_ext re\nwhere r.dep_id=re.dep_id and r.id=re.id\n    and r.dop between to_date(substr(:fromDate, 1,10), 'yyyy-mm-dd') and to_date(substr(:toDate, 1, 10), 'yyyy-mm-dd')\n    and d.id=r.dep_id\n    and json_value(r.json, '$.client.isJur')='true'\n    and nvl(:user_name, json_value(r.json, '$.user.code')) = json_value(r.json, '$.user.code')\n    and nvl(:depCode, d.code) = d.code\n    and nvl(:state, re.state) = re.state\n    and coalesce(:newObjectType, json_value(r.json, '$.app.newObjectType'), '*') = nvl(json_value(r.json, '$.app.newObjectType'), '*')\n    and (json_value(r.json, '$.app.productCode') in nvl2(:product_list,null,json_value(r.json, '$.app.productCode')) or\n          json_value(r.json, '$.app.productCode') in (select * from json_table(:product_list , '$.product' COLUMNS(product path '$'))))\norder by re.appno asc",
+            "sqlType": "query",
+            "database": "cbs"
+        },
+        "script": {
+            "params": [],
+            "py": "execObjectMethod({'object': 'app', 'method': 'registerTemplateLibrary'})\n"
+        }
+    },
+    "parameters": {
+        "style": {
+            "width": "100%"
+        },
+        "title": "Параметр отчета",
+        "className": "panel vertical",
+        "$": {
+            "fromDate": {
+                "label": "Дата с",
+                "control": "DateEdit",
+                "default$": "user.operday.substring(0,10)"
+            },
+            "toDate": {
+                "label": "Дата по",
+                "control": "DateEdit",
+                "default$": "user.operday.substring(0,10)"
+            },
+            "depCode": {
+                "label": "Подразделение",
+                "control": "TextEdit"
+            },
+            "state": {
+                "label": "Состояние",
+                "control": "SelectList",
+                "controlProps": {
+                    "list": [
+                        {
+                            "name": "<Все>",
+                            "value": ""
+                        },
+                        {
+                            "name": "Создана",
+                            "value": "START"
+                        },
+                        {
+                            "name": "На рассмотрении",
+                            "value": "ON_REVIEW"
+                        },
+                        {
+                            "name": "Создан договор",
+                            "value": "CREDEA"
+                        },
+                        {
+                            "name": "Договор подписан",
+                            "value": "DEA_REGISTERED"
+                        },
+                        {
+                            "name": "Отказ банка",
+                            "value": "REFUSAL_BANK"
+                        },
+                        {
+                            "name": "Отказ клиента",
+                            "value": "REFUSAL_CLI"
+                        }
+                    ]
+                }
+            },
+            "newObjectType": {
+                "label": "Признак новообразования",
+                "control": "SelectList",
+                "controlProps": {
+                    "list": [
+                        {
+                            "name": "<Все>",
+                            "value": ""
+                        },
+                        {
+                            "name": "Существующий объект",
+                            "value": "0"
+                        },
+                        {
+                            "name": "Вновь создаваемый объект",
+                            "value": "1"
+                        }
+                    ]
+                }
+            },
+            "|product_list": {
+                "className": "vertical",
+                "$": {
+                    ".ap": {
+                        "control": "ActionPanel",
+                        "params": {
+                            "app$": "params.app"
+                        },
+                        "controlOpts": {
+                            "actions": [
+                                {
+                                    "title": "Добавить",
+                                    "icon": "add",
+                                    "mini": true,
+                                    "action": {
+                                        "js": "backend.post('/aoa/execObjectMethod', {object: 'settings', method: 'get'}, {useCache: true, silent: true}).then((r)=>{context.productsRootFolder = r?.loanapp?.productsRootFolder;forceUpdate(); context.selectedProduct = null; frontend.dialog({object: 'product', form: 'productSelectDialog', mem: {}, params: {filterParent: context.productsRootFolder} });});"
+                                    }
+                                },
+                                {
+                                    "title": "Удалить",
+                                    "icon": "delete",
+                                    "mini": true,
+                                    "action": {
+                                        "name": "deleteProduct",
+                                        "confirm": {
+                                            "title": "Удаление",
+                                            "message$": "`Удалить продукт`",
+                                            "yes": "Да",
+                                            "no": "Нет"
+                                        }
+                                    },
+                                    "disabled$": "!context.selectedProduct"
+                                }
+                            ]
+                        }
+                    },
+                    ".list": {
+                        "control": "ListTable",
+                        "controlOpts": {
+                            "$": {
+                                "product": {
+                                    "label": "Список продуктов",
+                                    "width": 250
+                                }
+                            }
+                        }
+                    }
+                },
+                "actions": {
+                    "clean": {
+                        "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                    },
+                    "closeDialog": {
+                        "js": "dialog.actions.close();"
+                    },
+                    "applyDialog": [
+                        {
+                            "js": "if (!dialog.actions.validate()) return; if (mem.indexOf(context.selectedProduct)>=0) {mem.splice(mem.indexOf(context.selectedProduct), 1, dialog.mem)} else mem.push(dialog.mem); dialog.actions.close(); forceUpdate();"
+                        },
+                        {
+                            "name": "onProductChange"
+                        }
+                    ],
+                    "onSelectionChanged": {
+                        "js": "context.selectedProduct = selectedRow;"
+                    },
+                    "deleteProduct": [
+                        {
+                            "jsScript": "mem.splice(mem.indexOf(context.selectedProduct), 1); context.selectedProduct = null; forceUpdate()"
+                        },
+                        {
+                            "name": "onProductsChange"
+                        }
+                    ]
+                }
+            },
+            "user_name": {
+                "label": "Исполнитель",
+                "control": "TextEdit"
+            }
+        }
+    }
+}

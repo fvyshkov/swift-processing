@@ -1,0 +1,479 @@
+<workflow id="APP_REVIEW_ONLINE_MICRO" name="Рассмотрение заявки онлайн микрозайм">
+    <script id="8d8e1fde-60c9-46b1-ba06-d0fdff5ece0d" name="Инициализация">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+process_vars['dep_id'] = int(pk[0])
+process_vars['id'] = int(pk[1])
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+from apng_core.db import fetchall
+with AuthenticatedUser() as au:
+    
+    from loanapp.services.application import getApplication
+    process_vars['req'] = getApplication({
+        'dep_id': process_vars['dep_id'],
+        'id'    : process_vars['id'],
+    })
+    
+    # Зачитаем информацию по карте
+    with au.getConnection().cursor() as cursor:
+            r = None
+            
+            params = {
+                'DEP_ID' : process_vars['dep_id'], 
+                'ID'   : process_vars['id'], 
+            }
+                
+            cursor.execute("""
+                    select
+                        colvir.L_pkgReq_Django.fAttrAdd(:DEP_ID, :ID, 'CARD_IDN') CARD_IDN,
+                        colvir.L_pkgReq_Django.fAttrAdd(:DEP_ID, :ID, 'PAY_AMOUNT') PAY_AMOUNT,
+                        colvir.L_pkgReq_Django.fAttrAdd(:DEP_ID, :ID, 'NOTIFY_PHONE') NOTIFY_PHONE
+                    from dual
+                """,
+                params
+            )
+            r = fetchall(cursor)
+            process_vars['CARD_IDN'] = r[0]['CARD_IDN']
+            process_vars['PAY_AMOUNT'] = r[0]['PAY_AMOUNT']
+            process_vars['NOTIFY_PHONE'] = r[0]['NOTIFY_PHONE']
+            ]]>
+    </script>
+    <script id="a751786a-d8ae-42d3-9f2b-3d1ac125166e" name="Проверка возможности запуска">
+        <![CDATA[#
+# Наличие запущенных процессов
+#
+from apng_core.easyflow.models import TokenVar
+from apng_core.easyflow.services import RuntimeService as rs
+
+filter = {
+    'name': 'objectKey',
+    'value': json.dumps(process_vars['objectKey']),
+    'token__parent': None,
+    'token__flow_id': process_vars['req']['app']['reviewWorkflow'],
+    'token__state__in': ['active', 'suspended']
+}
+
+processes = [tv.token for tv in TokenVar.objects.filter(**filter).exclude(token__id=token.process.id)]
+if len(processes) > 0:
+    raise UserException({
+        'message': 'Заявка {appNo} уже отправлена на рассмотрении'.format(
+            appNo = process_vars['req']['app']['code']
+        )
+    }) from None
+
+]]>
+    </script>
+    <script id="93ee91e7-5e2e-41ff-948a-863fddd5541c" name="Состояние заявки: на рассмотрении">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import setState
+
+with AuthenticatedUser() as au:
+    setState({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'state': 'ON_REVIEW',
+        'stage': 'START',
+    })
+
+]]>
+    </script>
+    <timer id="8aab0cc4-9226-4c6a-b40e-f0a404081cf2" name="Обработка заявки" description="Обработка заявки {{process_vars.req.CODE}}, {{process_vars.req.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <script id="128742ef-d6db-4ffb-8342-2a41177f7c83" name="Информирование клиента">
+        <journal time="leave">
+            <![CDATA[Информирование клиента, SMS: {{process_vars.client.phone}}]]>
+        </journal>
+        <![CDATA[
+        
+    ]]>
+    </script>
+    <timer id="ce5d9a04-910b-4dbd-b76d-62442d803ed0" name="Регистрация во внешних системах" description="Регистрация во внешних системах, заявка {{process_vars.req.app.code}}, {{process_vars.req.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <call id="b08a8d3d-04ac-4621-b0db-211e094a15b1" name="Регистрация заявки во внешних системах" call="&apos;APP_REGISTER_EXT&apos;" result_from="REGISTER_RESULT" result_to="REGISTER_RESULT">
+        <p name="objectKey" expression="process_vars[&apos;objectKey&apos;]"/>
+        <p name="req" expression="process_vars.get(&apos;req&apos;)"/>
+    </call>
+    <split id="d26d6a71-95c5-4cb5-9a6b-5ba6eae4eca0" name="Статус регистрации заявки">
+        <condition id="fddec2a5-bf06-4aa9-8100-0eeb41d22689" name="Успешно"/>
+        <condition id="16356130-bbf5-4d61-84f5-672de8f100e0" name="В доработку" expression="process_vars[&apos;REGISTER_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+            <task id="b4eed4a7-2ee2-45e9-a47d-ca896d50192f" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{pv.req.app.code}}, {{pv.req.client.name}}">
+                <journal time="leave">
+                    <![CDATA[{{task.description}}]]>
+                </journal>
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{  &apos;dep_id&apos;: process_vars[&apos;dep_id&apos;],  &apos;id&apos;: process_vars[&apos;id&apos;] }"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+            </task>
+            <script id="c5d2e20d-aa64-4a9a-8259-8f6c467cf3ef" name="Перезачитывание заявки">
+                <![CDATA[#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from loanapp.services.application import getApplication
+    with AuthenticatedUser():
+        process_vars['req'] = getApplication({
+            'dep_id': process_vars['dep_id'],
+            'id'    : process_vars['id'],
+        })
+]]>
+            </script>
+            <jump id="2ad42e6f-9f33-4555-878f-172a1f4a80ed" name="Переход к Регистрация во внешних системах" target_id="ce5d9a04-910b-4dbd-b76d-62442d803ed0"/>
+        </condition>
+    </split>
+    <script id="c0521f31-2961-4a11-bac4-a7d624901e17" name="Подготовка решения">
+        <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+process_vars['decision'] = {
+    'decision': 'accept', 
+    'code': '01',
+    'number': '0001',
+    'date': decision_date,
+    'text': 'Автоматическое одобрение',
+    'declineReason': '',
+    'show_dialog': False,
+}]]>
+    </script>
+    <call id="36ec5342-d864-4e69-a453-5442c0b426e6" name="Регистрация итогового решения" call="&apos;APP_REGISTER_DECISION&apos;">
+        <p name="objectKey" expression="process_vars[&apos;objectKey&apos;]"/>
+        <p name="decision" expression="process_vars[&apos;decision&apos;]"/>
+        <p name="show_dialog" expression="False"/>
+    </call>
+    <script id="1ca4c88c-3c84-4985-9403-60842c23359e" name="Стадия рассмотреня: Завершение">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import setState
+
+with AuthenticatedUser() as au:
+    setState({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'stage': 'FIN',
+    })
+
+]]>
+    </script>
+    <timer id="0cc98be8-9e79-4c72-bc36-c1c8096b653e" name="Подготовка к созданию договора" description="" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <script id="d44e9f8c-f792-4388-923a-2fcb895a5755" name="Формирование досье заявки">
+        <![CDATA[from loanapp.services import application as app
+from apng_core.template.services import evalTemplate
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser():
+
+    t = evalTemplate({
+        'template': 'loanapp_om_conclusion',
+        'context': process_vars['req'],
+    })
+    
+    from loanapp.services.dossier import saveDossierFile
+    saveDossierFile({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'docType': 'CRED.ZA',
+        'fileName': 'Заключение.html',
+        'fileData': t,
+    })
+    
+    
+    t = evalTemplate({
+        'template': 'loanapp_om_application',
+        'context': process_vars['req'],
+    })
+    
+    from loanapp.services.dossier import saveDossierFile
+    saveDossierFile({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'docType': 'CRED.Z',
+        'fileName': 'Заявление.html',
+        'fileData': t,
+    })
+    
+    t = evalTemplate({
+        'template': 'loanapp_om_oferta',
+        'context': process_vars['req'],
+    })
+    
+    from loanapp.services.dossier import saveDossierFile
+    saveDossierFile({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'docType': 'CRED.OFERTA',
+        'fileName': 'Оферта.html',
+        'fileData': t,
+    })
+    ]]>
+    </script>
+    <script id="00d24049-f422-4eae-b482-a61a55e35da0" name="Установка исполнителя">
+        <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_auth.models import ColvirUser
+
+Authentication.setAuthenticatedUser(
+    ColvirUser(username=token.process.initiator)
+)
+]]>
+    </script>
+    <call id="0c6f77ef-381d-4cfd-a9c5-beb7f09d563e" name="Создание договора" call="&apos;APP_CREATE_LOAN&apos;" result_from="dea" result_to="dea">
+        <p name="objectKey" expression="process_vars[&apos;objectKey&apos;]"/>
+    </call>
+    <script id="52e62389-78a9-48ee-807a-385ed2952db0" name="Изменение состояния заявки: создан договор">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import setState
+
+with AuthenticatedUser() as au:
+    setState({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'state': 'CREDEA',
+    })
+
+
+# Обновим информацию о договоре при процессе, внутри заявки
+process_vars['req']['dea'] = process_vars['dea']]]>
+    </script>
+    <script id="96199100-0e7c-4390-8e3f-2de4143087c8" name="Информирование клиента">
+        <journal time="leave">
+            <![CDATA[Информирование клиента, SMS: {{process_vars.req.client.phone}}]]>
+        </journal>
+        <![CDATA[
+        
+    ]]>
+    </script>
+    <timer id="e1bf7e44-a11d-47a7-9dd1-0d83620a7ff3" name="Регистрация договора" description="Регистрация договора {{process_vars.dea.code}}" duration="00:00:00" errorDuration="00:10:00" action="continue"/>
+    <script id="00cfd33c-cccd-407c-b9bb-ae8a5951527f" name="Регистрация договора">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from colvir_cbs import oracle
+from colvir_cbs.services.log import readLog
+from apng_core.easyflow.exceptions import EasyflowUserException
+from django.db import transaction
+from django.utils import timezone
+import traceback
+
+import logging
+logger = logging.getLogger('loanapp')
+
+#raise Exception(json.dumps(process_vars, indent=4, ensure_ascii=False))
+
+process_vars['last_error'] = None
+
+with AuthenticatedUser() as au:
+    con = au.getConnection()
+    with con.cursor() as cursor:
+        r = None
+        
+          
+        try:
+            with transaction.atomic(using='cbs'):
+                params = {
+                    'DEP_ID' : process_vars['dea']['dep_id'], 
+                    'ID'   : process_vars['dea']['id'],
+                    'STATE': cursor.var(str)
+                }
+                # Регистрация договора
+                cursor.execute("""
+                    declare
+                        tdea colvir.T_DEA%%rowtype;
+                        accbln colvir.G_ACCBLN%%rowtype;
+                        line_state varchar2(30);
+                    begin
+                        colvir.t_log.penable; colvir.t_log.clean;
+                        
+                        line_state := colvir.c_fprm('N_CHECK_SCADPS_FL');
+                        
+                        if line_state = 0 then
+                            -- Регистрация договора
+                            if T_PkgRunOprUtl.fOprAvailable(:DEP_ID, :ID, 'REG') = 2 then
+                                T_PkgRunOprUtl.pRunOprByMainOrd(:DEP_ID, :ID, 'REG', '');
+                            end if;
+
+                            -- Расчет эффективной ставки                                
+                            if T_PkgRunOprUtl.fOprAvailable(:DEP_ID, :ID, 'CREDITRATE') = 2 then
+                                if T_PkgRunOprUtl.fOprExist(T_PkgProcess.fGetIdByMainOrd(:DEP_ID, :ID), 'CREDITRATE') = 0 then
+                                    T_PkgRunOprUtl.pRunOprByMainOrd(:DEP_ID, :ID, 'CREDITRATE', '');
+                                end if;
+                            end if;
+                            
+                            -- Актуализация
+                            if T_PkgRunOprUtl.fOprAvailable(:DEP_ID, :ID, 'RUN') = 2 then
+                                declare
+                                    nikiStatus varchar2(60);
+                                    nikiErr varchar2(4000);
+                                begin
+                                    -- Проверим состояние запроса в НИКИ
+                                    L_PKGIENIKI_API.pGetStatus(:DEP_ID, :ID, 'NIKI', '03', nikiStatus, nikiErr);
+                                    if nikiStatus = L_PKGIENIKI_API.STATUS_CONFIRMED then
+                                        -- Актуализация договора только после подтверждения от ники
+                                        T_PkgRunOprUtl.pRunOprByMainOrd(:DEP_ID, :ID, 'RUN', '');
+                                    end if;
+                                end;
+                            end if;
+                        end if;
+                        
+                        -- Получаем состояние договора чтобы решить что делать дальше
+                        :STATE := T_PkgProcess.fGetStatCodeByMainOrd(:DEP_ID, :ID);
+                    end;/""",
+                    params
+                )
+                
+            #
+            # Сохраняем состояние договора и ждём пока он станет актуальным (ACTUAL)
+            #
+            process_vars['dea']['state'] = params['STATE'].getvalue()
+            
+            cbs_log = readLog()
+            #logger.debug('%s', cbs_log)
+
+        except Exception as e:
+            log_text = readLog()
+
+            raise EasyflowUserException({
+                'message': 'Ошибка выполнения операций по договору {deaNo}, заявка {appNo}\n{message}'.format(
+                    deaNo = process_vars['dea']['code'],
+                    appNo = process_vars['req']['app']['code'],
+                    message = e
+                ),
+                'description': log_text,
+                'trace': 'days: %s' % (timezone.now() - token.parent.created).days
+            })
+
+    
+]]>
+    </script>
+    <split id="bdbe335b-be34-478f-ae7d-1cb2559fea8f" name="Результат регистрации">
+        <condition id="8590a000-690f-4573-9ec9-d9db816938db" name="Актуален" expression="process_vars[&apos;last_error&apos;] is None and process_vars[&apos;dea&apos;][&apos;state&apos;] == &apos;ACTUAL&apos;"/>
+        <condition id="32201241-6bc0-4982-80b1-3686b6889f61" name="Ожидание" expression="process_vars[&apos;last_error&apos;] is None and process_vars[&apos;dea&apos;][&apos;state&apos;] != &apos;ACTUAL&apos;">
+            <timer id="2d913f74-0b8f-48fb-9ab7-30278d014fa1" name="Ожидание регистрации договора" description="Ожидание регистрации договора {{process_vars.dea.code}}, состояние {{process_vars.dea.state}}" duration="00:05:00" errorDuration="00:05:00" action="continue"/>
+            <jump id="e70bb555-4477-4d40-bf32-e828831de951" name="Переход к Регистрация договора" target_id="00cfd33c-cccd-407c-b9bb-ae8a5951527f"/>
+        </condition>
+        <condition id="d49d85f4-06f5-47c5-b8e7-a260dc285add" name="Ошибка" expression="process_vars[&apos;last_error&apos;] is not None">
+            <task id="7dc4f8cd-6178-4d22-8fa4-68147acf9772" name="Показ ошибки регистрации договора" autoStart="true" description="Ошибка регистрации договора, {{process_vars.dea.code}}, заявка {{process_vars.req.app.code}}, {{process_vars.req.client.name}}">
+                <clientTask path="/easyflow/error-dialog" taskName="{{task.description}}">
+                    <p name="error" expression="process_vars[&apos;last_error&apos;]"/>
+                    <p name="actions" expression="[  {&apos;name&apos;: &apos;Повторить&apos;, &apos;value&apos;: &apos;repeat&apos;},  ]"/>
+                </clientTask>
+            </task>
+            <jump id="593fed66-b1d7-4150-991c-a7f09573bff9" name="Переход к Регистрация договора" target_id="00cfd33c-cccd-407c-b9bb-ae8a5951527f"/>
+        </condition>
+    </split>
+    <timer id="ffa6234f-7634-44a5-a6e8-4c3db23071ad" name="Выдача транша" description="Выдача транша по договору, заявка {{process_vars.req.app.code}}, договор {{process_vars.dea.code}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="f6d4e5e0-30df-4767-92ef-f1b95fbeac8b" name="Выдача транша">
+        <![CDATA[from apng_core.auth import AuthenticatedUser
+from colvir_cbs import oracle
+from colvir_cbs.services.log import readLog
+from django.db import transaction
+import traceback
+
+import logging
+logger = logging.getLogger('loanapp')
+
+process_vars['last_error'] = None
+
+#
+# Установка пользователя
+#
+from colvir_auth.models import ColvirUser
+Authentication.setAuthenticatedUser(
+    ColvirUser(username=token.process.initiator)
+)
+
+#if process_vars['dea']['code'] == '576F002298':
+#    raise StopScriptExecution()
+
+#with AuthenticatedUser(user='MOBILEAPI') as au:
+with AuthenticatedUser() as au:
+    con = au.getConnection()
+    with con.cursor() as cursor:
+        r = None
+        
+          
+        try:
+            with transaction.atomic(using='cbs'):
+                params = {
+                    'DEP_ID'    : process_vars['dea']['dep_id'], 
+                    'ID'        : process_vars['dea']['id'],
+                    'nAMOUNT'   : process_vars['req']['app']['payAmount'],
+                    'CARD_IDN'  : process_vars['req']['app']['cardIdn'],
+                }
+                # Регистрация договора
+                cursor.execute("""
+                    declare
+                        tdea T_DEA%%rowtype;
+                        accbln G_ACCBLN%%rowtype;
+                        line_state varchar2(30);
+                    begin
+                        t_log.penable; t_log.clean;
+                        
+                        -- Ищем номер счета по карте
+                        begin
+                            select ab.*
+                            into accbln
+                            from g_accbln ab, s_deaacc da, n_crd c
+                            where c.cardidn = :CARD_IDN
+                              and da.dep_id=c.deaacc_dep_id and da.id=deaacc_id
+                              and ab.dep_id = da.acc_dep_id and ab.id = da.acc_id
+                            ;
+                        exception when no_data_found then
+                            raise_application_error(-20000, colvir.LocalFrmt(
+                                'Номер счета по карте %%0:s не найден',
+                                vargs(:CARD_IDN)
+                            ));
+                        end;
+
+                        select * into tdea from T_DEA where DEP_ID=:DEP_ID and ID=:ID;
+                        --T_PkgDeaPrm.pSetPrm(:ID, :DEP_ID, 'DLASTLOAN', to_date(tdea.TODATE-1));
+                        
+                        T_PkgRunOprUtl.pRunOprByMainOrd(:DEP_ID, :ID, 'NEWDEA', 'amount=>'||to_char(:nAMOUNT)||', ACC_CODE=>'||accbln.CODE);
+                    end;/""",
+                    params
+                )
+        except Exception as e:
+            log_text = readLog()
+            from apng_core.easyflow.exceptions import EasyflowUserException
+            #raise Exception('Ошибка выдачи транша по договору %s\n%s\n%s' % (process_vars['dea']['code'], e, log_text))
+            raise EasyflowUserException({
+                'message': 'Ошибка выдачи транша по договору %s\n%s' % (
+                    process_vars['dea']['code'], e
+                ),
+                'description': log_text,
+                'trace': traceback.format_exc()
+            })
+
+
+]]>
+    </script>
+    <script id="5ddc6ce3-2757-47ab-8588-b17ba626872b" name="Журнализация выдачи">
+        <journal time="leave">
+            <![CDATA[По кредитному договору {{process_vars.dea.code}} выдан транш]]>
+        </journal>
+        <![CDATA[
+                
+            ]]>
+    </script>
+    <script id="6af6c685-22c8-41a2-bab3-50ddfe1fa2af" name="Стадия рассмотрения: завершено">
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from loanapp.services.application import setState
+
+with AuthenticatedUser() as au:
+    setState({
+        'dep_id': process_vars['dep_id'],
+        'id': process_vars['id'],
+        'state': 'DEA_REGISTERED',
+        'stage': 'COMPLETED',
+    })
+
+
+]]>
+    </script>
+</workflow>

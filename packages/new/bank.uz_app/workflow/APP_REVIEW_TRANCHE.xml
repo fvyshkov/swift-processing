@@ -1,0 +1,200 @@
+<workflow id="APP_REVIEW_TRANCHE" name="Рассмотрение заяки. транш">
+    <event name="onGetProcessObject">
+        <![CDATA[
+
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser(user='COLVIR'):
+    token._po = execObjectMethod({
+        'object': 'app',
+        'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <script id="c8b514f1-cf11-401e-9123-2bde02607a49" name="Инициализация">
+        <journal time="leave">
+            <![CDATA[Начало рассмотрения заявки {{po.app.code}}, {{po.client.name}}]]>
+        </journal>
+        <![CDATA[
+ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+    
+#
+# Проверяем и устанавливаем инициатора заявки
+#
+if token.process.initiator != po['user']['code']:
+    #
+    # Процесс запустил не пользователь, который создал заявку, поменяем
+    #
+    user = po['user']['code']
+    token.process.initiator = user
+    token.process.save()
+
+    from apng_core.easyflow.auth import Authentication
+    from apng_core.auth import ColvirUser
+    Authentication.setAuthenticatedUser(ColvirUser(username=user))
+]]>
+    </script>
+    <script id="8d3666df-a181-44c0-8fc5-d2b9e06e02cf" name="Состояние заявки: на рассмотрении">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'state': 'ON_REVIEW',
+        'stage': 'START',
+    }
+})
+
+
+]]>
+    </script>
+    <timer id="e4c9a00a-59e8-49f8-bb65-f86802b70d7a" name="Обработка заявки" description="Обработка заявки {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+    <call id="fc056d1c-cd03-4a64-b7f6-371bcc877184" name="Регистрация заявки во внешних системах" call="&apos;APP_REGISTER_EXT&apos;" result_from="REGISTER_RESULT" result_to="REGISTER_RESULT">
+        <p name="objectKey" expression="pv[&apos;objectKey&apos;]"/>
+    </call>
+    <split id="c8a114e1-9e2a-432d-9bbb-e2552017c809" name="Статус регистрации">
+        <condition id="12fa47e0-3bb7-4eaf-ba1f-c843aa7f9222" name="В доработку" expression="pv[&apos;REGISTER_RESULT&apos;][&apos;status&apos;] == &apos;review&apos;">
+            <task id="01b94701-8a6f-490c-8501-fb401fc676d9" name="Коррекция заявки" autoStart="true" description="Коррекция заявки. Заявка {{po.app.code}}, {{po.client.name}}">
+                <journal time="leave">
+                    <![CDATA[{{task.description}}]]>
+                </journal>
+                <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+                    <p name="objectKey" expression="{  &apos;dep_id&apos;: pv[&apos;dep_id&apos;],  &apos;id&apos;: pv[&apos;id&apos;] }"/>
+                    <p name="actions" expression="[   {&apos;name&apos;: &apos;Продолжить&apos;, &apos;value&apos;: &apos;continue&apos;},  ]"/>
+                    <p name="readOnly" expression="False"/>
+                    <p name="object" expression="&apos;app&apos;"/>
+                    <p name="form" expression="&apos;appEditTask&apos;"/>
+                </clientTask>
+            </task>
+            <jump id="b4a36496-5d2a-4690-88df-2fe9ff7f1d28" name="Переход к Регистрация заявки во внешних системах" target_id="fc056d1c-cd03-4a64-b7f6-371bcc877184"/>
+        </condition>
+        <condition id="e4423fbc-acb5-47aa-b38c-25c557ba1fcb" name="Успешно"/>
+    </split>
+    <script id="88380d5f-0b4c-49eb-9ccb-ae0b96eb8fa6" name="Состояние заявки: завершение">
+        <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'stage': 'FIN',
+    }
+})
+
+
+]]>
+    </script>
+    <script id="daef91ac-8f2a-4d1e-8965-814208657673" name="Установка положительного решения">
+        <![CDATA[from apng_core.easyflow.auth import Authentication
+from datetime import datetime
+
+decision_date = Authentication.getAuthenticatedUser().operday
+if not decision_date:
+    decision_date = datetime.now()
+
+pv['decision'] = {
+    'decision': 'accept',
+    'code': '01',
+    'number': '',
+    'date': decision_date,
+    'text': 'Разрешить',
+    'declineReason': '',
+    'show_dialog': True,
+}
+    ]]>
+    </script>
+    <call id="06c11a52-b28b-4445-bd00-e373c80f9c4b" name="Регистрация решеня" call="&apos;APP_REGISTER_DECISION&apos;" result_from="decision_registered" result_to="decision_registered">
+        <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+        <p name="decision" expression="pv.get(&apos;decision&apos;)"/>
+    </call>
+    <call id="d1dc7dc2-d0b4-4cdd-88f3-41f47325cdf2" name="Выдача транша" call="&apos;APP_CREATE_TRANCHE&apos;" result_from="tranche" result_to="dea">
+        <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+    </call>
+    <call id="80a58ee9-3f07-4fed-98a2-0e082b2d2add" name="Ожидание регистрации договора" call="&apos;APP_WAIT_DEA&apos;" result_from="result" result_to="register_result">
+        <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+        <p name="dea" expression="pv.get(&apos;dea&apos;)"/>
+    </call>
+    <split id="ef5d2ba3-570d-4631-9415-6f3c34789aae" name="Договор зарегистрирован?">
+        <condition id="3f6bea89-82a0-4aa7-aeb8-5ff95604bc64" name="Зарегистрирован" expression="pv[&apos;register_result&apos;][&apos;status&apos;] == &apos;registered&apos;">
+            <script id="758022c0-23c3-44aa-a3b3-e397ab8191c1" name="Изменение состояния заявки: Договор заркгистрирован">
+                <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'stage': 'COMPLETED',
+        'state': 'DEA_REGISTERED',
+    }
+})
+
+]]>
+            </script>
+        </condition>
+        <condition id="dbac8ac7-ab01-4a09-beac-7cf27d1fb8b9" name="Удалён" expression="pv[&apos;register_result&apos;][&apos;status&apos;] == &apos;deleted&apos;">
+            <script id="4a17a925-4eb3-420e-a033-e092292c081a" name="Установка состояния заявки: отказ клиента">
+                <![CDATA[from apng_core.aoa.services import execObjectMethod
+execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'state': 'REFUSAL_CLI',
+    }
+})
+
+]]>
+            </script>
+            <script id="c935ab40-4ab8-4ff2-9243-87964abb6a06" name="Установка решения: Отказ клиента">
+                <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+pv['decision'] = {
+    'decision': 'decline', 
+    'code': '01',  
+    'number': '1',
+    'date': decision_date,
+    'text': 'Отказ клиента',                 
+    'declineReason': '08',
+    'show_dialog': False,
+}
+
+]]>
+            </script>
+            <call id="6e08aca5-2359-4244-a7ed-ef596694d4a8" name="Регистрация итогового решения" call="&apos;APP_REGISTER_DECISION&apos;" result_from="decision_registered" result_to="decision">
+                <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+                <p name="decision" expression="pv[&apos;decision&apos;]"/>
+            </call>
+            <call id="7e06a402-6d1b-483e-9ca6-845cc658156d" name="Регистрация отказа во внешних системах" call="&apos;APP_REJECT_EXT&apos;">
+                <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+                <p name="decision_registered" expression="pv.get(&apos;decision&apos;)"/>
+            </call>
+        </condition>
+    </split>
+</workflow>

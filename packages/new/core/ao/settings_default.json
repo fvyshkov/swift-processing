@@ -1,0 +1,18 @@
+{
+    "lists": {},
+    "forms": {
+        "editCategoryValuesForm": {
+            "title": "Параметры категории",
+            "className": "vertical",
+            "$": {
+                "@categoryForm": {
+                    "object$": "`settings_${params.category.code}`",
+                    "form$": "`settingsForm`"
+                }
+            }
+        }
+    },
+    "js": {},
+    "methods": {},
+    "references": {}
+}

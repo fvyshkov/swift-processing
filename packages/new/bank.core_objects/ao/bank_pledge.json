@@ -1,0 +1,379 @@
+{
+    "forms": {
+        "lookupPledgeDialog": {
+            "title": "Подбор карточки обеспечения",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden",
+                "width": "900px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "4px",
+                        "overflow": "auto"
+                    },
+                    "$": {
+                        "lookupFields": {
+                            "$": {
+                                "@lookupFields": {
+                                    "form": "lookupPledgeFields"
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnFind": {
+                                    "label": "Найти",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "lookupPledge"
+                                    }
+                                },
+                                "btnClear": {
+                                    "label": "Очистить",
+                                    "control": "Button",
+                                    "controlProps": {
+                                        "variant": "text",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clearLookup"
+                                    }
+                                }
+                            }
+                        },
+                        "@lookupResult": {
+                            "form": "lookupResultList",
+                            "visible$": "mem.pledges && mem.pledges.length>0"
+                        }
+                    },
+                    "actions": {
+                        "lookupPledge": {
+                            "js": "validate() && backend.post('/aoa/execObjectMethod', {object: 'cbsPledge', method:'lookup', params: mem.lookupFields}).then((r)=>{context.selectedClient = null; updateMem({pledges: r});});"
+                        },
+                        "clearLookup": [
+                            {
+                                "js": "mem.lookupFields = {pledgeType: mem.lookupFields.pledgeType, pledgeTypeName: mem.lookupFields.pledgeTypeName}; mem.pledges=[]; context.selectedPledge = null;"
+                            },
+                            {
+                                "name": "onSelectPledge"
+                            }
+                        ]
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "name": "closeDialog"
+                            }
+                        },
+                        "btnSelect": {
+                            "label": "Выбрать",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!context.selectedPledge",
+                            "action": {
+                                "name": "selectPledge",
+                                "params": {
+                                    "pledge$": "context.selectedPledge"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onSelectPledge": {
+                    "js": ";"
+                }
+            }
+        },
+        "lookupPledgeFields": {
+            "title": "Атрибуты подбора карточки обеспечения",
+            "className": "vertical",
+            "$": {
+                "pledgeTypeName": {
+                    "label": "Вид объекта",
+                    "control": "TextEdit",
+                    "readOnly": true
+                },
+                "@ids": {
+                    "className": "horizontal",
+                    "$": {
+                        "code": {
+                            "label": "Код объекта",
+                            "style": {
+                                "width": "200px"
+                            },
+                            "control": "TextEdit"
+                        },
+                        "refer": {
+                            "label": "Референс",
+                            "style": {
+                                "width": "200px"
+                            },
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "@fairValue": {
+                    "className": "horizontal",
+                    "$": {
+                        "fairValue": {
+                            "label": "Справедливая (рыночная) стоимость",
+                            "style": {
+                                "width": "300px"
+                            },
+                            "control": "CurrencyField"
+                        },
+                        "fairValueCurrency": {
+                            "label": "Валюта",
+                            "style": {
+                                "width": "120px"
+                            },
+                            "control": "ModuleComponent",
+                            "controlProps": {
+                                "componentPath": "/aoa/ObjectReference",
+                                "object": "currency"
+                            },
+                            "controlOpts": {
+                                "postfixFields": {
+                                    "Name": "name"
+                                }
+                            }
+                        },
+                        "fairValueCurrencyName": {
+                            "style": {
+                                "width": "400px"
+                            },
+                            "control": "TextEdit",
+                            "readOnly": true
+                        }
+                    }
+                },
+                "@mortgageValue": {
+                    "className": "horizontal",
+                    "$": {
+                        "mortgageValue": {
+                            "label": "Залоговая стоимость",
+                            "style": {
+                                "width": "300px"
+                            },
+                            "control": "CurrencyField"
+                        },
+                        "mortgageValueCurrency": {
+                            "label": "Валюта",
+                            "style": {
+                                "width": "120px"
+                            },
+                            "control": "ModuleComponent",
+                            "controlProps": {
+                                "componentPath": "/aoa/ObjectReference",
+                                "object": "currency"
+                            },
+                            "controlOpts": {
+                                "postfixFields": {
+                                    "Name": "name"
+                                }
+                            }
+                        },
+                        "mortgageValueCurrencyName": {
+                            "style": {
+                                "width": "400px"
+                            },
+                            "control": "TextEdit",
+                            "readOnly": true
+                        }
+                    }
+                },
+                "@rightHolder": {
+                    "className": "horizontal",
+                    "$": {
+                        "rightHolder": {
+                            "label": "Правообладатель",
+                            "style": {
+                                "width": "200px"
+                            },
+                            "control": "ButtonTextEdit",
+                            "controlProps": {
+                                "textReadOnly": true
+                            },
+                            "readOnly": false,
+                            "action": {
+                                "js": "frontend.dialog({object: 'identifyClient', form: 'identifyClientDialog', mem: {} });"
+                            }
+                        },
+                        "rightHolderName": {
+                            "label": "",
+                            "style": {
+                                "width": "450px"
+                            },
+                            "control": "TextEdit",
+                            "readOnly": true
+                        }
+                    },
+                    "readOnly": true,
+                    "actions": {
+                        "closeDialog": {
+                            "js": "dialog.actions.close();"
+                        },
+                        "selectClient": {
+                            "js": "updateMem({rightHolder: params.client.code, rightHolderName: params.client.name}); dialog.actions.close();"
+                        }
+                    }
+                }
+            }
+        },
+        "lookupResultList": {
+            "title": "Результат поиска",
+            "className": "vertical",
+            "$": {
+                "|pledges": {
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "$": {
+                            "typeName": {
+                                "label": "Вид объекта",
+                                "flex": 1
+                            },
+                            "code": {
+                                "label": "Код",
+                                "width": 100
+                            },
+                            "stateName": {
+                                "label": "Состояние",
+                                "width": 150
+                            },
+                            "fairValue": {
+                                "label": "Справедливая стоимость",
+                                "width": 200,
+                                "cellStyle": {
+                                    "textAlign": "right"
+                                },
+                                "fields|": {
+                                    "fairValue": {
+                                        "format": "currency"
+                                    },
+                                    "fairValueCurrency": {}
+                                }
+                            },
+                            "mortgageValue": {
+                                "label": "Залоговая стоимость",
+                                "width": 200,
+                                "cellStyle": {
+                                    "textAlign": "right"
+                                },
+                                "fields|": {
+                                    "mortgageValue": {
+                                        "format": "currency"
+                                    },
+                                    "mortgageValueCurrency": {}
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onSelectionChanged": [
+                            {
+                                "js": "context.selectedPledge = selectedRow;"
+                            },
+                            {
+                                "name": "onSelectPledge"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "lookup": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "#\n# Поиск объекта обеспечения\n#\n\nfrom django.conf import settings\nfrom django.db import connections\nfrom apng_core.db import fetchall\n\n# Инициализация сессии\ncon = initDbSession(application='bank')\n\nSQL = \"\"\"\n    select \n        ed.code \"typeCode\", \n        ed.longname \"typeName\",\n        m.code \"code\",\n        m.refer \"refer\",\n        bs.longname \"stateName\",\n\n        m.MORTG_COST \"mortgageValue\",\n        T_pkgVal.fGetCode(m.MRT_VAL_ID) \"mortgageValueCurrency\",\n\n        m.MARKET_COST \"fairValue\",\n        T_pkgVal.fGetCode(m.MRK_VAL_ID) \"fairValueCurrency\",\n        \n        null dummy\n    from t_bop_stat bs, t_process p, t_procmem pm, l_mortgage m, l_ensdsc ed\n    where ed.id=m.ens_id\n        and pm.dep_id=m.dep_id and pm.ord_id=m.id and pm.mainfl='1'\n        and p.id=pm.id\n        and bs.id=p.bop_id and bs.nord=p.nstat\n\"\"\"\n\n\nwith con.cursor() as cursor:\n    \n    p = {\n        \n    }\n\n    if parameters.get('refer'):\n        SQL += ' and m.refer = :refer '\n        p['refer'] = parameters['refer']\n    else:    \n        if parameters.get('code'):\n            SQL += \" and m.code like '%%' || :code || '%%' \"\n            p['code'] = parameters['code']\n            \n        if parameters.get('pledgeType'):\n            SQL += ' and ed.code = :pledgeType '\n            p['pledgeType'] = parameters['pledgeType']\n    \n        if parameters.get('fairValue'):\n            SQL += ' and m.MARKET_COST = :fairValue '\n            p['fairValue'] = parameters['fairValue']\n            \n        if parameters.get('fairValueCurrency'):\n            SQL += ' and m.MRK_VAL_ID = T_PkgVal.fValCode2Id(:fairValueCurrency)'\n            p['fairValueCurrency'] = parameters['fairValueCurrency']\n\n        if parameters.get('mortgageValue'):\n            SQL += ' and m.MORTG_COST = :mortgageValue '\n            p['mortgageValue'] = parameters['mortgageValue']\n            \n        if parameters.get('mortgageValueCurrency'):\n            SQL += ' and m.MRT_VAL_ID = T_PkgVal.fValCode2Id(:mortgageValueCurrency)'\n            p['mortgageValueCurrency'] = parameters['mortgageValueCurrency']\n            \n        if parameters.get('rightHolder'):\n            SQL += ' and (m.dep_id, m.id)=any(select mo.mrt_dep_id, mo.mrt_id from L_MRTOWN mo, G_CLI c where mo.cli_dep_id=c.dep_id and mo.cli_id=c.id and c.code=:rightHolder)'\n            p['rightHolder'] = parameters['rightHolder']\n        \n    cursor.execute(SQL, p)\n    data = fetchall(cursor)\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from apng_core.db import fetchone\n\ncon = initDbSession(application='bank')\n\nwith con.cursor() as cursor:\n    \n    p = {\n        'refer': parameters['refer']\n    }\n    \n    cursor.execute(\"\"\"\n        select \n            mortg_cost \"mortgageValue\",\n            T_PkgVal.fGetCode(mrt_val_id) \"mortgageValueCurrency\",\n            T_PkgVal.fGetLongName(mrt_val_id) \"mortgageValueCurrencyName\",\n            L_BSMORTG.fGetAddAttr(dep_id, id, 'DOP_MORD') \"additionalPledge\",\n            L_BSMORTG.fGetAddAttr(dep_id, id, 'SUB_DEP') \"subsequentPledge\"\n            --case nvl(ensmainfl, '1') when '1' then '0' else '1' end \"subsequentPledge\"\n        from l_mortgage\n        where refer=:refer\n    \"\"\", p)\n        \n    d = fetchone(cursor)\n    \n    # Преобразование\n    d['additionalPledge'] = d['additionalPledge'] == '1'\n    d['subsequentPledge'] = d['subsequentPledge'] == '1'\n\ndata = d\n"
+            }
+        },
+        "saveAppPledges": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "def savePledges(params):\n    \n    if not params.get('dep_id'):\n        raise Exception('Не передано подразделение документа, dep_id')\n    if not params.get('id'):\n        raise Exception('Не передан идентификатор документа, id')\n\n    if params.get('pledges') is None:\n        return\n    \n    forceNew = params.get('forceNew') == True\n    \n    for p in params['pledges']:\n        \n        if p.get('JSON'):\n            # Старый формат залогов\n            pledge = p['JSON']\n        else:\n            pledge = p\n        \n        try:\n            r = execObjectMethod({\n                'object': 'bank_pledge', 'method': 'savePledge',\n                'params': {\n                    'dea_dep_id'    : params['dep_id'],\n                    'dea_id'        : params['id'],\n                    'mrt_dep_id'    : None if forceNew else pledge.get('MRT_DEP_ID'),\n                    'mrt_id'        : None if forceNew else pledge.get('MRT_ID'),\n                    'pledge'        : pledge,\n                }\n            })\n        except Exception as e:\n            raise UserException({\n                'message': 'Ошибка сохранения залога',\n                'description': 'Залог:\\n%s' % json.dumps(pledge, indent=4, ensure_ascii=False),\n            }).withError(e)\n            \n        pledge['MRT_DEP_ID'] = r['dep_id']\n        pledge['MRT_ID'] = r['id']\n        pledge['MRT_CODE'] = r['code']\n\nsavePledges(parameters)\n"
+            }
+        },
+        "savePledge": {
+            "script": {
+                "py": "from django.db import transaction\nfrom datetime import datetime\nfrom django.conf import settings\n\nimport logging\nlogger = logging.getLogger('bank')\n\ncon = initDbSession(application='bank')\n\ndef evalDescriptionRealtyResidental(pledge):\n    if pledge.get('description'):\n        return pledge['description']\n    if pledge.get('name') and pledge.get('owner') and pledge['owner'].get('name'):\n        return '%s, %s' % (pledge['owner']['name'], pledge['name'])\n    else:\n        return ''\n\ndef evalDescriptionAuto(pledge):\n    if pledge.get('description'):\n        return pledge['description']\n    elif pledge.get('name') and pledge.get('owner'):\n        return '%s, %s' % (pledge.get('name'), pledge['owner'].get('name'))\n    elif pledge.get('name'):\n        return '%s' % pledge.get('name')\n    else:\n        return ''\n                           \ndef evalDescriptionSurety(pledge):\n    return '%s' % (pledge['owner']['name'])\n\ndef evalDepositDescriiption(pledge):\n    if pledge['deposit']['depositType'] == 'internal':\n        return pledge['deposit']['product_name']\n    elif pledge['deposit']['depositType'] == 'external':\n        return '%s, %s' % (pledge['deposit'].get('bank_name'), pledge['deposit'].get('depositor_name'))\n    elif pledge['deposit']['depositType'] == 'future':\n        return 'Предстоящий'\n    else:\n        return ''\n\ndef evalInsuranceDescription(pledge):\n    return pledge['company'].get('name') if pledge.get('company') else ''\n\ndef evalEquipmentDescription(pledge):\n    return pledge.get('description') or pledge.get('name')\n\ndef evalGoodDescription(pledge):\n    return pledge.get('description') or pledge.get('name')\n\ndef evalSteadDescription(pledge):\n    return pledge.get('description') or pledge.get('name')\n\ndef evalOtherDescription(pledge):\n    return pledge.get('description') or pledge.get('name')\n\ndef evalBondDescription(pledge):\n    return pledge.get('description') or pledge.get('name')\n\ndef saveRealty(mrt_dep_id, mrt_id, pledge):\n    dea_date = None\n    \n    if pledge.get('dea_date'):\n        dea_date = datetime.fromisoformat(pledge['dea_date'])\n        \n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID'        : mrt_dep_id,\n            'MRT_ID'            : mrt_id,\n            'name'              : pledge.get('name') or pledge.get('description'),\n            'cadastr_no'        : pledge.get('cadastr_no'),\n            'cadastr_no_land'   : pledge.get('cadastr_no_land'),\n            'square_com'        : pledge.get('square_com'),\n            'square_land'       : pledge.get('square_land'),\n            'square_live'       : pledge.get('square_live'),\n            'apartments'        : pledge.get('apartments'),\n            'dea_num'           : pledge.get('dea_num'),\n            'dea_date'          : dea_date,\n            'owner_code'        : pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE'),\n            'pledge_type'       : pledge['type']\n        }\n        \n        if pledge.get('address'):\n            address = pledge['address']\n            p = {**p,\n                'address'           : address.get('address'),\n                'address_region'    : address.get('region'),\n                'address_district'  : address.get('district'),\n            }\n        else:\n            p = {**p,\n                'address'           : None,\n                'address_region'    : None,\n                'address_district'  : None,\n            }\n            \n        \n        cursor.execute(\"\"\"\n            declare\n                idAdr number;\n                idOwn number;\n                idCliDep number;\n                idCli number;\n                realtyType varchar2(250);\n            begin\n                G_PkgAddress.pUpdFullAddr(\n                    P_CNTR_NM    => T_PkgReg.fGetLongnameCode(T_PkgReg.fOwnCode),\n                    P_CNTR_CODE  => T_PkgReg.fOwnCode,\n                    P_FULLADR    => :address,\n                    P_ADR_ID     => idAdr\n                );\n                \n                G_PkgAddress_UZ.pSave(\n                    pId        => idAdr,\n                    pRN_CODE   => :address_district,\n                    pOBL_CODE  => :address_region\n                );\n                \n                L_BSMORTG.pSaveRealty(\n                    P_DEP_ID                 => :MRT_DEP_ID,\n                    P_ID                     => :MRT_ID,\n                    P_CADNUM_OBJECT          => :cadastr_no,\n                    P_OBJECT_AREA            => :square_com,\n                    P_GROUND_AREA            => :square_land,\n                    P_GROUND_AREA_MSR_ID     => null,\n                    P_CADNUM_GRND            => :cadastr_no_land,\n                    P_ROOMS                  => :apartments,\n                    P_CONTRACT_NUM           => null,\n                    P_CONTRACT_DATE          => null,\n                    P_ADDR_ID                => idAdr,\n                    P_LIVING_SPACE           => :square_live,\n                    P_FLOOR                  => null,\n                    P_WALL_STUFF             => null,\n                    P_HOUSE_TYPE             => null,\n                    P_COUNT_FLOOR            => null,\n                    P_YEAR_BUILD             => null,\n                    P_MATERIAL               => null,\n                    P_TYPE_PURPOSE           => null\n                );\n                \n                -- Домен CT_BUILDTYPEPURPOSE\n                if :pledge_type = 'REALTY-RESIDENTAL' then\n                    realtyType := '1';\n                else\n                    realtyType := '2';\n                end if;\n                \n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => substr(:name, 1, 250),\n                    sForm           => null\n                );\n\n                -- Номер договора купли-продажи\n                if :dea_num is not null then\n                    L_BSMORTG.pSaveAdd(\n                        nDEP_ID         => :MRT_DEP_ID,\n                        nID             => :MRT_ID,\n                        sCODE           => 'NUMPAYDEA',\n                        sVALUE          => substr(:dea_num, 1, 250),\n                        sForm           => null\n                    );\n                end if;\n\n                -- Дата договора купли-продажи\n                if :dea_date is not null then\n                    L_BSMORTG.pSaveAdd(\n                        nDEP_ID         => :MRT_DEP_ID,\n                        nID             => :MRT_ID,\n                        sCODE           => 'DATEPAYDEA',\n                        sVALUE          => to_char(:dea_date, 'DD.MM.YYYY'),\n                        sForm           => null\n                    );\n                end if;\n                \n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'VID_NED',\n                    sVALUE          => bs_dom.DLONGNAME('CT_BUILDTYPEPURPOSE', realtyType),\n                    sForm           => null\n                );\n                \n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                    \n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n        )\n\n\ndef saveAuto(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID'    : mrt_dep_id,\n            'MRT_ID'        : mrt_id,\n            'name'          : pledge.get('name'),\n            'vehicle_type'  : pledge.get('vehicle_type'),\n            'vehicle_model' : pledge.get('vehicle_model'),\n            'issue_year'    : pledge.get('issue_year'),\n            'reg_num'       : pledge.get('reg_num'),\n            'reg_ser'       : pledge.get('reg_ser'),\n            'owner_code'    : (pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE')) if pledge.get('owner') else None,\n        }\n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n                L_BSMORTG.pSaveVehicle(\n                    P_DEP_ID                 => :MRT_DEP_ID,\n                    P_ID                     => :MRT_ID,\n                    P_REGSIGN                => null,\n                    P_VIN                    => null,\n                    P_MARK                   => :vehicle_model,\n                    P_VTYPE                  => null,\n                    P_VCAT                   => :vehicle_type,\n                    P_ENGINE_NUM             => null,\n                    P_CHASSIS_NUM            => null,\n                    P_BODY_NUM               => null,\n                    P_PSP_SER                => :reg_ser,\n                    P_PSP_NUM                => :reg_num,\n                    P_RELEASE_YEAR           => :issue_year,\n                    P_COLOR                  => null,\n                    P_ENG_CAPACITY           => null,\n                    P_ENG_VOLUME             => null,\n                    P_PTS_SER                => null,\n                    P_PTS_NUM                => null,\n                    P_PTS_DATE               => null,\n                    P_PTS_GIVER              => null,\n                    P_MADEIN                 => null,\n                    P_PSP_DATE               => null,\n                    P_PSP_GIVER              => null\n                );\n\n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => :name,\n                    sForm           => null\n                );\n                \n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                    \n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n        )\n\ndef saveSurety(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'owner_code': pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE'),\n        }\n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n            \n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                end if;\n            \n                L_BSMORTG.pSaveGuarantee(\n                    P_DEP_ID         => :MRT_DEP_ID,  \n                    P_ID             => :MRT_ID, \n                    P_DEA_DEP_ID     => null, \n                    P_DEA_ID         => null, \n                    P_GRNT_DEP_ID    => idCliDep,\n                    P_GRNT_ID        => idCli, \n                    P_AMOUNT         => null, \n                    P_VAL_ID         => null, \n                    P_CNT_NUM        => null, \n                    P_DATE_FROM      => null,\n                    P_DATE_TO        => null, \n                    P_LIMITS         => null, \n                    P_DEA_NAME       => null\n                );            \n            \n                if idCli is not null then\n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n        )\n\ndef saveInsurance(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'company_code': pledge['company'].get('code') if pledge.get('company') else None,\n            'company_name': pledge['company'].get('name') if pledge.get('company') else None,\n        }\n        cursor.execute(\"\"\"\n            declare\n                idCliDep number;\n                idCli number;\n                idOwn number;\n            begin\n            \n                if :company_code is not null then\n                    begin\n                        select CLI_DEP_ID, CLI_ID\n                        into idCliDep, idCli\n                        from L_INSURCMP\n                        where CODE = :company_code and CLI_ID is not null;\n                    exception when no_data_found then\n                        raise_application_error(-20000, LocalFrmt(\n                            'Не найдена страховая компания с кодом %%0:s либо у неё не задан контрагент',\n                            vargs(:company_code)\n                        ));\n                    end;\n                    \n                    L_BSMORTG.pSaveAdd(\n                        nDEP_ID         => :MRT_DEP_ID,\n                        nID             => :MRT_ID,\n                        sCODE           => 'CODEESC',\n                        sVALUE          => :company_code,\n                        sForm           => null\n                    );\n                    L_BSMORTG.pSaveAdd(\n                        nDEP_ID         => :MRT_DEP_ID,\n                        nID             => :MRT_ID,\n                        sCODE           => 'NAMESC',\n                        sVALUE          => :company_name,\n                        sForm           => null\n                    );\n                    \n                end if;\n                \n                if idCli is not null then\n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n                 \n\n            end;\n            /\"\"\", p\n        )\n\ndef saveDeposit(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        deposit_end_date = pledge['deposit'].get('endDate')\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'deposit_type': pledge['deposit']['depositType'],\n            'deposit_dep_id': pledge['deposit'].get('DEP_ID'),\n            'deposit_id': pledge['deposit'].get('ID'),\n            'deposit_number': pledge['deposit'].get('number'),\n            'deposit_end_date': datetime.fromisoformat(deposit_end_date) if deposit_end_date else None,\n            'deposit_amount': pledge['deposit'].get('amount'),\n            'owner_code': (pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE')) if pledge.get('owner') else None,\n        }\n        cursor.execute(\"\"\"\n            declare\n                idDepositDep number;\n                idDeposit number;\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n                if :deposit_type = 'internal' then\n                    idDepositDep := :deposit_dep_id;\n                    idDeposit    := :deposit_id;\n                end if;\n\n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                    \n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n                \n                L_BSMORTG.pSaveDepo(\n                    P_DEP_ID         => :MRT_DEP_ID, \n                    P_ID             => :MRT_ID, \n                    P_DEA_DEP_ID     => idDepositDep, \n                    P_DEA_ID         => idDeposit, \n                    P_AMOUNT         => :deposit_amount, \n                    P_VAL_ID         => null,\n                    P_ACC_CODE       => null, \n                    P_BNK_BIC        => null, \n                    P_CNTDEPO_NUM    => :deposit_number, \n                    P_END_DATE       => :deposit_end_date,\n                    P_DEA_NAME       => null\n                );\n\n            end;\n            /\"\"\", p\n        )\n\ndef saveEquipment(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        issue_year  = pledge['equipment'].get('issue_year')\n        issue_month = pledge['equipment'].get('issue_month')\n\n        d = None\n        if issue_year:\n            d = '%02d.%04d' % (int(issue_month) if issue_month else 1, int(issue_year))\n        \n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'equipment_issue_date': d,\n            'equipment_content': pledge['equipment'].get('content'),\n            'equipment_name': pledge.get('description') or pledge.get('name'),\n            'owner_code': (pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE')) if pledge.get('owner') else None,\n        }\n        \n        \n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n                L_BSMORTG.pSaveEquipment(\n                    P_DEP_ID         => :MRT_DEP_ID,\n                    P_ID             => :MRT_ID,\n                    P_RELEASE_YEAR   => :equipment_issue_date,\n                    P_FACTORY_NUM    => null,\n                    P_REG_NUM        => null,\n                    P_ACCESSORIES    => :equipment_content,\n                    P_MODEL          => null,\n                    P_COUNTRY_ID     => null\n                );\n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => :equipment_name,\n                    sForm           => null\n                );\n                \n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                    \n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n                \n            end;\n            \n            \n            /\"\"\", p\n        )\n\ndef saveGood(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'owner_code': pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE'),\n            'name': pledge.get('name')\n        }\n\n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                end if;\n\n                L_BSMORTG.pSaveGoods(\n                    P_DEP_ID         => :MRT_DEP_ID,  \n                    P_ID             => :MRT_ID,\n                    P_QUANTITY       => null,\n                    P_MEAS_UNIT      => null\n                );\n                \n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => :name,\n                    sForm           => null\n                );\n\n                if idCli is not null then\n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n                       )\n\ndef saveStead(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'owner_code': pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE'),\n            'cadastr_no_land': pledge.get('cadastr_no_land'),\n            'square_land': pledge.get('square_land'),\n            'name': pledge.get('name')\n        }\n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                end if;\n\n                L_BSMORTG.pSaveStead(\n                    nDEP_ID         => :MRT_DEP_ID,  \n                    nID             => :MRT_ID,\n                    sCADNUMBER      => :cadastr_no_land,\n                    nAREA           => :square_land,\n                    IN_AREA_MSR_ID  => null\n                );\n\n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => :name,\n                    sForm           => null\n                );\n\n                if idCli is not null then\n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n                       )\n\n\ndef saveOther(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'owner_code': pledge['owner']['code'] if 'code' in pledge['owner'] else pledge['owner'].get('CODE'),\n            'name': pledge.get('name')\n        }\n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n            begin\n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                end if;\n            \n                L_BSMORTG.pSaveOther(\n                    P_DEP_ID         => :MRT_DEP_ID,  \n                    P_ID             => :MRT_ID\n                );\n                \n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => :name,\n                    sForm           => null\n                );\n\n                if idCli is not null then\n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n                       )\n\n\ndef saveBond(mrt_dep_id, mrt_id, pledge):\n    with con.cursor() as cursor:\n        p = {\n            'MRT_DEP_ID': mrt_dep_id,\n            'MRT_ID': mrt_id,\n            'owner_code': pledge['owner'].get('code') if 'code' in pledge['owner'] else pledge['owner'].get('CODE'),\n            'issuer_code': pledge['issuer'].get('code') or pledge['issuer'].get('CODE'),\n            'name': pledge.get('name')\n        }\n        cursor.execute(\"\"\"\n            declare\n                idOwn number;\n                idCliDep number;\n                idCli number;\n                idIssuerDep number;\n                idIssuer number;\n            begin\n                if :owner_code is not null then\n                    G_PkgCli.pGetCliId(:owner_code, idCliDep, idCli);\n                end if;\n                \n                if :issuer_code is not null then\n                    G_PkgCli.pGetCliId(:issuer_code, idIssuerDep, idIssuer);\n                end if;\n                \n                L_BSMORTG.pSaveBonds(\n                    P_DEP_ID         => :MRT_DEP_ID,  \n                    P_ID             => :MRT_ID,\n                    P_BNDTYPE        => null,\n                    P_ISS_DEP_ID     => idIssuerDep,\n                    P_ISS_ID         => idIssuer,\n                    P_QUANTITY       => null,\n                    P_AMOUNT         => null, \n                    P_VAL_ID         => null, \n                    P_NIN            => null, \n                    P_DEPO_DEP_ID    => null,\n                    P_DEPO_ID        => null,\n                    P_DEPO_ACC       => null\n                );\n\n                L_BSMORTG.pSaveAdd(\n                    nDEP_ID         => :MRT_DEP_ID,\n                    nID             => :MRT_ID,\n                    sCODE           => 'NAMEZAL',\n                    sVALUE          => :name,\n                    sForm           => null\n                );\n\n                if idCli is not null then\n                    L_BSMORTG.pSaveOwner(\n                        nID         => idOwn,\n                        nMRT_DEP_ID => :MRT_DEP_ID,\n                        nMRT_ID     => :MRT_ID,\n                        nCLI_DEP_ID => idCliDep, \n                        nCLI_ID     => idCli,\n                        sPRTYPE     => null\n                    );\n                end if;\n            end;\n            /\"\"\", p\n                       )\n\n\nENS_CODES = {\n    'REALTY-RESIDENTAL': {\n          'description': evalDescriptionRealtyResidental,\n          'save': saveRealty,\n    },\n    'REALTY-NON-RESIDENTAL': {\n          'description': evalDescriptionRealtyResidental,\n          'save': saveRealty,\n    },\n    'AUTO': {\n        'description': evalDescriptionAuto,\n        'save': saveAuto,\n    },\n    'SURETY': {\n        'description': evalDescriptionSurety,\n        'save': saveSurety,\n    },\n    'DEPO': {\n        'description': evalDepositDescriiption,\n        'save': saveDeposit,\n    },\n    'INSURANCE': {\n        'description': evalInsuranceDescription,\n        'save': saveInsurance,\n    },\n    'EQUIP': {\n        'description': evalEquipmentDescription,\n        'save': saveEquipment\n    },\n    'GOOD': {\n        'description': evalGoodDescription,\n        'save': saveGood\n    },\n    'STEAD': {\n        'description': evalSteadDescription,\n        'save': saveStead\n    },\n    'OTHER': {\n        'description': evalOtherDescription,\n        'save': saveOther\n    },\n    'BOND': {\n        'description': evalBondDescription,\n        'save': saveBond\n    }\n}\n\n\ndef savePledge(params):\n    logger.debug('savePledge: %s', params)\n    \n    dea_dep_id = params.get('dea_dep_id') or params.get('req_dep_id')\n    dea_id     = params.get('dea_id') or params.get('req_id')\n    \n    mrt_dep_id = params.get('mrt_dep_id')\n    mrt_id     = params.get('mrt_id')\n    \n    pledge = params.get('pledge')\n    \n    pledge_description = ENS_CODES[pledge['type']]['description'](pledge)\n    # Ограничение длины атрибута Наименование залога до 200 символов, для устранения ошибки вставки в таблицу\n    pledge_description = (pledge_description[:198] + '..') if len(pledge_description) > 200 else pledge_description\n    \n    with transaction.atomic(using=settings.APPS_DB['bank']):\n        with con.cursor() as cursor:\n            p = {\n                'dep_id': cursor.var(int),\n                'id': cursor.var(int),\n                'dscr': pledge_description,\n                'ens_code': pledge.get('ens_code'),\n                'mrt_cost': pledge.get('mortgage_value'),\n                'mrt_cost_val': pledge.get('mortgage_value_currency'),\n                'fair_value': pledge.get('fair_value'),\n                'fair_value_val': pledge.get('fair_value_currency'),\n                'json': json.dumps(pledge, ensure_ascii=False),\n                'mrt_code': cursor.var(str),\n                'refer': cursor.var(str)\n            }\n            \n            p['dep_id'].setvalue(0, mrt_dep_id)\n            p['id'].setvalue(0, mrt_id)\n            \n    \n            SQL = \"\"\"\n                declare\n                    idEns number;\n                    cPLEDGERFL char(1 byte);\n                    bNew boolean;\n                    idMrtDep number;\n                    idMrt number;\n                    cCode varchar2(60);\n                    idValMortgage number;\n                    idValFair number; \n                begin\n                     \n                    begin\n                        select ID, PLEDGEFL \n                        into idEns, cPLEDGERFL \n                        from L_ENSDSC_STD \n                        where code=:ens_code;\n                    exception when no_data_found then\n                        raise_application_error(-20000, LocalFrmt(\n                            'Вид обеспечения %%0:s не найден в справочнике',\n                            vargs(:ens_code)\n                        ));\n                    end;\n                    \n                    idMrtDep := :dep_id;\n                    idMrt     := :id;\n                    \n                    bNew := :id is null;\n                    \n                    if not bNew then\n                        select code into cCode from L_MORTGAGE where DEP_ID = idMrtDep and ID=idMrt;\n                    end if;\n                    \n                    idValMortgage := P_NATVAL;\n                    if :mrt_cost_val is not null then\n                        idValMortgage := T_PkgVal.fValCode2Id(:mrt_cost_val);\n                    end if;\n\n                    idValFair := idValMortgage;\n                    if :fair_value_val is not null then\n                        idValFair := T_PkgVal.fValCode2Id(:fair_value_val);\n                    end if;\n                    \n                    L_BSMORTG.pSave(\n                        P_DEP_ID        => idMrtDep, \n                        P_ID            => idMrt,\n                        P_CODE          => cCode, \n                        P_DSCR          => :dscr, \n                        P_ENS_ID        => idEns,\n                        P_PRIM          => null, \n                        P_PRTYPE        => null,\n                        P_LOCATION      => null, \n                        P_MORTG_COST    => :mrt_cost,\n                        P_MRT_VAL_ID    => idValMortgage,\n                        P_MARKET_COST   => :fair_value,\n                        P_MRK_VAL_ID    => idValFair,                  \n                        P_ADDDTL        => null,\n                        P_PROPDOCTYPE   => null, \n                        P_PROPDOCNUM    => null, \n                        P_PROPDOCDATE   => null,\n                        P_PLEDGEFL      => cPLEDGERFL\n                    );\n                    \n                    :dep_id := idMrtDep;\n                    :id := idMrt;\n                    \n                    update L_MORTGAGE set OBJ_JSON=:json where DEP_ID=idMrtDep and ID=idMrt\n                    returning refer into :refer\n                    ;\n                    \n                    for r in (\n                        select * from L_MRTOWN where MRT_DEP_ID = idMrtDep and MRT_ID = idMrt\n                    ) loop\n                        L_BSMORTG.pDelOwner(r.ID);\n                    end loop;\n                    \n                    \n                    select CODE into :mrt_code from L_MORTGAGE where DEP_ID = idMrtDep and ID = idMrt;\n                end;\n            /\"\"\"\n            \n            cursor.execute(SQL, p)\n        \n            idMrtDep = p['dep_id'].getvalue()\n            idMrt = p['id'].getvalue()\n            codeMrt = p['mrt_code'].getvalue()\n            referMrt = p['refer'].getvalue()\n\n        if ENS_CODES[pledge['type']].get('save'):\n            ENS_CODES[pledge['type']]['save'](idMrtDep, idMrt, pledge)\n        \n        #\n        # И обновляем описание залога, потому что модуль не может сам нормально описать залог\n        #\n        with con.cursor() as cursor:\n            p = {\n                'mrt_dep_id': idMrtDep,\n                'mrt_id': idMrt,\n                'dea_dep_id': dea_dep_id,\n                'dea_id': dea_id,\n                'mrt_cost': pledge.get('mortgage_value'),\n                'mrt_cost_val': pledge.get('mortgage_value_currency'),\n                'pledge_description': pledge_description,\n                'pledger_code': None,\n            }\n            \n            # Подставляем залогодателя из владельца залога\n            if pledge.get('owner'):\n                if pledge['owner'].get('code'):\n                    p['pledger_code'] = pledge['owner']['code']\n                elif pledge['owner'].get('CODE'):\n                    # Оставлено для совместимости, подлежит удалению\n                    p['pledger_code'] = pledge['owner']['CODE']\n            \n            cursor.execute(\"\"\"\n                declare\n                    \n                begin\n                    update L_MORTGAGE set DSCR = :pledge_description where DEP_ID = :mrt_dep_id and ID = :mrt_id;\n                    \n                    declare\n                        idMrtDeaDep number;\n                        idMrtDea number;\n                        idPledgerDep number;\n                        idPledger number;\n                        idValMortgage number;\n                    begin\n                        -- Определим залогодателя\n                        if :pledger_code is not null then\n                             G_PkgCli.pGetCliId(:pledger_code, idPledgerDep, idPledger);\n                        end if;\n                        \n                        idValMortgage := P_NATVAL;\n                        if :mrt_cost_val is not null then\n                            idValMortgage := T_PkgVal.fValCode2Id(:mrt_cost_val);\n                        end if;\n                        \n                        \n                        idMrtDeaDep := :mrt_dep_id;\n                        L_BSMRTDEA.pSave(\n                            P_DEP_ID              => idMrtDeaDep, \n                            P_ID                  => idMrtDea,\n                            P_DEA_DEP_ID          => :dea_dep_id, \n                            P_DEA_ID              => :dea_id,\n                            P_MRT_DEP_ID          => :mrt_dep_id, \n                            P_MRT_ID              => :mrt_id,\n                            P_CLI_DEP_ID          => idPledgerDep, \n                            P_CLI_ID              => idPledger,\n                            P_AMOUNT              => :mrt_cost, \n                            P_VAL_ID              => idValMortgage,\n                            P_DEA_CODE            => null, \n                            P_DEA_DATE            => null,\n                            P_ADDDTL_BASEL        => null, \n                            P_PRIM                => null\n                        );\n                    end;\n              \n                    \n                end;\n            /\"\"\", p)\n        \n    data = {\n        'dep_id'    : idMrtDep,\n        'id'        : idMrt,\n        'code'  : codeMrt,\n        'refer' : referMrt\n    }\n\n    return data\n\ndata = savePledge(parameters)\n"
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "800px"
+                },
+                "columns": [
+                    {
+                        "title": "Код",
+                        "field": "code",
+                        "width": 100
+                    },
+                    {
+                        "title": "Наименование",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "code"
+            },
+            "method": {
+                "sql": {
+                    "params": [],
+                    "sqlType": "query",
+                    "database": "cbs",
+                    "sql": "select \r\n    ed.code \"code\", \r\n    ed.longname \"name\",\r\n    m.refer \"refer\"\r\nfrom l_mortgage m, l_ensdsc ed\r\nwhere ed.id=m.ens_id\r\n"
+                },
+                "script": {
+                    "params": []
+                }
+            }
+        }
+    },
+    "lists": {},
+    "js": {}
+}

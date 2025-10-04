@@ -1,0 +1,28 @@
+<workplace code="app.manager" name="Loan applications">
+  <menu name="Loan applications">
+    <menu name="Application list" call="/aoa/ObjectListTask">
+      <p name="object" value="loanapp" />
+      <p name="list" value="default" />
+    </menu>
+    <menu name="Individuals" call="/aoa/ObjectTask">
+      <p name="object" value="loanapp" />
+      <p name="form" value="newAppFizTask" />
+    </menu>
+    <menu name="Legal entities" call="/aoa/ObjectTask">
+      <p name="object" value="loanappAloqa" />
+      <p name="form" value="newAppJurTask" />
+    </menu>
+    <menu name="Reports">
+      <menu name="Applications by department" call="/aoa/ObjectTask">
+        <p name="template" value="applications" />
+        <p name="object" value="template" />
+        <p name="form" value="previewTemplateTask" />
+      </menu>
+      <menu name="Applications" call="/aoa/ObjectTask">
+        <p name="object" value="template" />
+        <p name="form" value="previewTemplateTask" />
+        <p name="template" value="loanapp_list" />
+      </menu>
+    </menu>
+  </menu>
+</workplace>

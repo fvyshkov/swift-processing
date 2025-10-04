@@ -1,0 +1,306 @@
+{
+    "forms": {
+        "editCategoryValuesForm": {
+            "title": "Параметры категории",
+            "className": "vertical",
+            "$": {
+                "@categoryForm": {
+                    "form$": "`editCategory-${context.selectedCategory.code}-Form`"
+                }
+            }
+        },
+        "editCategory-loanapp-Form": {
+            "title": "Кредитные заявки",
+            "className": "vertical",
+            "$": {
+                "@products": {
+                    "title": "Продукты",
+                    "className": "vertical",
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "Добавить",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": {
+                                            "js": "context.selectedProduct = null; frontend.dialog({object: 'product', form: 'productSelectDialog'})"
+                                        }
+                                    },
+                                    {
+                                        "title": "Удалить",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "deleteProduct",
+                                            "confirm": {
+                                                "title": "Удаление",
+                                                "message$": "`Удалить Продукт ${context.selectedProduct}?`",
+                                                "yes": "Да",
+                                                "no": "Нет"
+                                            }
+                                        },
+                                        "disabled$": "!context.selectedProduct"
+                                    }
+                                ]
+                            },
+                            "actions": {
+                                "onProductSelected": {
+                                    "name": "addProduct"
+                                }
+                            }
+                        },
+                        "|productsRootFolder": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "columns!": {
+                                    "name": {
+                                        "label": "Продукт",
+                                        "flex": 1,
+                                        "getter": "data"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "addProduct": {
+                            "js": "mem.productsRootFolder.push(params.product.code); mem.productsRootFolder=[...mem.productsRootFolder];"
+                        },
+                        "deleteProduct": {
+                            "js": "mem.productsRootFolder.splice(mem.productsRootFolder.indexOf(context.selectedProduct), 1); context.selectedProduct=null; mem.productsRootFolder=[...mem.productsRootFolder];"
+                        },
+                        "onSelectionChanged": {
+                            "js": "context.selectedProduct = selectedRow;"
+                        }
+                    }
+                },
+                "@identify": {
+                    "title": "Идентификация клиента",
+                    "className": "vertical",
+                    "$": {
+                        "@g": {
+                            "className": "horizontal",
+                            "$": {
+                                "identifyPin": {
+                                    "label": "ПИНФЛ",
+                                    "control": "Checkbox"
+                                },
+                                "identifyMyId": {
+                                    "label": "MyId",
+                                    "control": "Checkbox"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@pledge": {
+                    "title": "Контроль обеспечения",
+                    "className": "vertical",
+                    "$": {
+                        "checkPledge": {
+                            "className": "vertical",
+                            "$": {
+                                "relatedPerson": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        ".label": {
+                                            "control": "Text",
+                                            "style": {
+                                                "display": "flex",
+                                                "alignItems": "center"
+                                            },
+                                            "getter": "'Связанные лица'"
+                                        },
+                                        "object": {
+                                            "label": "Объект",
+                                            "control": "TextEdit"
+                                        },
+                                        "method": {
+                                            "label": "Метод",
+                                            "control": "TextEdit"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@printApplication": {
+                    "title": "Печать заявления",
+                    "className": "vertical",
+                    "$": {
+                        "printApplication": {
+                            "className": "horizontal",
+                            "$": {
+                                ".label": {
+                                    "control": "Text",
+                                    "style": {
+                                        "display": "flex",
+                                        "alignItems": "center"
+                                    },
+                                    "getter": "'Метод печати'"
+                                },
+                                "object": {
+                                    "label": "Объект",
+                                    "control": "TextEdit"
+                                },
+                                "method": {
+                                    "label": "Метод",
+                                    "control": "TextEdit"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@registration": {
+                    "title": "Сценарии регистрации заявок",
+                    "$": {
+                        "appRegistrationWorkflows": {
+                            "label": "",
+                            "control": "TextEdit",
+                            "controlProps": {
+                                "inputProps": {
+                                    "spellCheck": false
+                                },
+                                "multiline": true,
+                                "minRows": 3
+                            }
+                        }
+                    }
+                },
+                "@grki": {
+                    "title": "Интеграция с ГРКИ",
+                    "$": {
+                        "grki": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingTop": "8px"
+                            },
+                            "$": {
+                                "offlineWorkTime": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "timeBeg": {
+                                            "label": "Время работы с",
+                                            "style": {
+                                                "width": "200px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "masked": {
+                                                    "mask": [
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        ":",
+                                                        "/\\d/",
+                                                        "/\\d/"
+                                                    ],
+                                                    "placeholderChar": "_",
+                                                    "showMask": true,
+                                                    "guide": true
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "toValue": "((params.value||'').match(/\\d+/g) || []).join('')"
+                                            },
+                                            "validate": "mem.timeBeg.length == 0 && mem.timeBeg.length<4 && {helperText: 'Укажите правильный формат времени'}||undefined"
+                                        },
+                                        "timeEnd": {
+                                            "label": "Время работы по",
+                                            "style": {
+                                                "width": "200px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "masked": {
+                                                    "mask": [
+                                                        "/\\d/",
+                                                        "/\\d/",
+                                                        ":",
+                                                        "/\\d/",
+                                                        "/\\d/"
+                                                    ],
+                                                    "placeholderChar": "_",
+                                                    "showMask": true,
+                                                    "guide": true
+                                                }
+                                            },
+                                            "controlOpts": {
+                                                "toValue": "((params.value||'').match(/\\d+/g) || []).join('')"
+                                            },
+                                            "validate": "mem.timeBeg.length == 0 && mem.timeEnd.length<4 && {helperText: 'Укажите правильный формат времени'}||undefined"
+                                        }
+                                    }
+                                },
+                                "waitResponseTime": {
+                                    "label": "Период опроса состояния",
+                                    "style": {
+                                        "width": "200px"
+                                    },
+                                    "control": "TextEdit"
+                                },
+                                "emulator": {
+                                    "label": "Эмулятор (отключить обращение)",
+                                    "control": "Checkbox"
+                                },
+                                "offline": {
+                                    "label": "Отправлять запросы ОФЛАЙН",
+                                    "control": "Checkbox"
+                                },
+                                "online": {
+                                    "label": "Отправлять запросы ОНЛАЙН",
+                                    "control": "Checkbox"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@asoki": {
+                    "title": "Интеграция с АСОКИ",
+                    "$": {
+                        "katm": {
+                            "className": "vertical",
+                            "$": {
+                                "emulator": {
+                                    "label": "Эмулятор (отключить обращение)",
+                                    "control": "Checkbox"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@ext.requests": {
+                    "title": "Запросы во внешние систсемы",
+                    "$": {
+                        "ext.requests": {
+                            "className": "vertical",
+                            "$": {
+                                "disableSalaryRequest": {
+                                    "label": "Отключить запрос доходов физлиц",
+                                    "control": "Checkbox"
+                                },
+                                "disableBalanceRequest": {
+                                    "label": "Отключить запрос баланса юрлиц",
+                                    "control": "Checkbox"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@parameters": {
+                    "title": "Параметры",
+                    "object": "settings",
+                    "form": "parametersForm",
+                    "context$": "{}"
+                }
+            }
+        }
+    },
+    "methods": {},
+    "lists": {},
+    "references": {},
+    "js": {}
+}

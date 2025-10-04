@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<model id="workplace.Workplace" name="Workplace">
+	<task path=""/>
+	<description><![CDATA[description['code'] = obj.code
+description['name'] = obj.name
+description['file_name'] = '%s.%s' % (obj.code, 'xml')
+description['file_path'] = 'workplace'
+]]></description>
+	<export><![CDATA[ 
+import xml.etree.ElementTree as ET
+root = ET.fromstring(obj.data.replace('\r', ''))
+if not 'code' in root.attrib:
+    root.set('code', obj.code)
+file['data'] = ET.tostring(root, encoding='unicode', method='xml')
+]]></export>
+	<import><![CDATA[ 
+import xml.etree.ElementTree as ET
+from apng_core.workplace.models import Workplace
+root = ET.fromstring(file_data)
+obj_code = None
+if 'code' in root.attrib:
+    obj_code = root.attrib.get('code')
+if obj_code:
+    obj = Workplace.objects.filter(code=obj_code).first()
+else:
+    obj_code = root.get('name')
+if obj is None:
+    try:
+        obj = Workplace.objects.get(id=object_id)
+    except Workplace.DoesNotExist:
+        obj = Workplace()
+        obj.id = object_id
+obj.code = obj_code
+obj.data = ET.tostring(root, encoding='unicode', method='xml')
+obj._isImport = True
+obj.save()
+]]></import>
+	<lookup><![CDATA[
+]]></lookup>
+</model>

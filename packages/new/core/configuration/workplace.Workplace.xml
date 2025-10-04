@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<model id="workplace.Workplace" name="Workplace">
+	<task path=""/>
+	<description><![CDATA[description['code'] = obj.code
+description['name'] = obj.name
+
+# Detect extension
+ext = 'xml' if obj.data.startswith('<workplace') else 'json'
+
+description['file_name'] = '%s.%s' % (obj.code, ext)
+description['file_path'] = 'workplace'
+description['attrs'] = {
+    'code': obj.code,
+    'name': obj.name,
+}
+]]></description>
+	<load><![CDATA[]]></load>
+	<export><![CDATA[ 
+import xml.etree.ElementTree as ET
+
+menu = None
+toolbar = []
+
+if obj.data.startswith('<workplace'):
+    xmenu = ET.fromstring(obj.data.replace('\r', ''))
+    if not 'code' in xmenu.attrib:
+        xmenu.set('code', obj.code)
+    jdata = {
+        'menu': ET.tostring(xmenu, encoding='unicode', method='xml'),
+        'toolbar': []
+    }
+else:
+    jdata = json.loads(obj.data)
+
+file['data'] = json.dumps(jdata, indent=4)
+]]></export>
+	<import><![CDATA[ 
+import xml.etree.ElementTree as ET
+from beflex.workplace.models import Workplace
+
+obj_code = object_attrs.get('code')
+
+if file_data.startswith('<workplace'):
+    # Old format
+    jdata = {
+        "menu": file_data,
+        "toolbar": []
+    }
+    if obj_code is None:
+        root = ET.fromstring(file_data)
+    
+        if 'code' in root.attrib:
+            obj_code = root.attrib.get('code')
+            
+        if obj_code is None:
+            obj_code = root.get('name')
+else:
+    jdata = json.loads(file_data)
+
+if obj_code is None:
+    raise Exception('Workplace code not defined')
+    
+obj = Workplace.objects.filter(code=obj_code).first()
+
+if obj is None:
+    try:
+        obj = Workplace.objects.get(id=object_id)
+    except Workplace.DoesNotExist:
+        obj = Workplace()
+        obj.id = object_id
+        
+obj.code = obj_code
+obj.name = object_attrs.get('name')
+obj.data = json.dumps(jdata)
+obj._isImport = True
+obj.save()
+]]></import>
+	<lookup><![CDATA[
+]]></lookup>
+</model>

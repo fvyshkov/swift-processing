@@ -1,0 +1,177 @@
+{% load locals %}
+{% load functions %}
+
+<style>
+    .bordered-table, .bordered-table th, .bordered-table tr, .bordered-table td  {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    .table-title {
+        font-size: 1.5rem;
+    }
+    .table-head {
+        font-size: 1.2rem;
+    }
+    .tar {
+        text-align: right;
+    }
+    td[task] {
+        cursor: pointer;
+    }
+</style>
+
+<h1>
+    Регистрация заявок во внешних системах, НИКИ/АСОКИ
+</h1>
+
+<table class="bordered-table">
+    <tr>
+        <th style="width: 30px">&nbsp;</th>
+        <th>Номер заявки</th>
+        <th>Id заявки</th>
+        <th>Дата</th>
+        <th>Процесс</th>
+        <th>Дейсвие</th>
+        <th>Сообщение</th>
+        <th>Исполнитель</th>
+        <th>Подразделение</th>
+    </tr>
+    
+    {% for r in data %}
+        <tr>
+            <td class="tar">{{forloop.counter}}</td>
+            <td
+                task="{{r|makeTask|escape}}"
+            >{{r.code}}</td>
+            <td>{{r.appId}}</td>
+            <td>{{r.registrationDate|date}}</td>
+            <td>{{r.sysName}}</td>
+            <td >{{r.taskName}}</td>
+            <td>{{r.message}}</td>
+            <td>{{r.user}} </td>
+            <td>
+                {% with d=r.dep_id|departmentInfoById %}
+                    {{d.code}}   
+                {% endwith %}
+            </td>
+        </tr>
+    {% endfor %}
+    
+    
+</table>
+
+
+<!-- 7E5BC701-DDCB-5E05-76C2-11220A03F3A1 -->
+{
+    "method": {
+        "script": {
+            "py": "execObjectMethod({'object': 'app', 'method': 'registerTemplateLibrary'})\nexecObjectMethod({'object': 'cbs.bank', 'method': 'registerTemplateLibrary'})\n\nimport json\nfrom apng_core.easyflow.models import Token\nfrom apng_core.aoa.services import execObjectMethod\n\ncon = initDbSession(application='colvir_cbs')\n\nappSettings = execObjectMethod({\n    'object': 'settings',\n    'method': 'get'\n})['loanapp']\n\n# Сценарии регистрации заявок по умлочанию\nappRegistrationWorkflows = ('NIKI_REGISTER', 'NIKI_REGISTER_ONLINE', 'KATM_REGISTER', 'NIKI_REJECT', 'NIKI_REJECT_ONLINE', 'KATM_REJECT', 'ASOKI_REGISTER_APP', 'ASOKI_REGISTER_LINKED', 'ASOKI_REPORT_REQUEST')\nif appSettings.get('appRegistrationWorkflows'):\n    appRegistrationWorkflows = [x.strip() for x in appSettings['appRegistrationWorkflows'].split(',')]\n\n#raise UserException(appRegistrationWorkflows)\n\nfilter = {\n    'deployment__code__in': appRegistrationWorkflows,\n    'state': 'active'\n}\n\nif parameters.get('fromDate'):\n    filter['created__gte'] = parameters['fromDate']\n    \nif parameters.get('flowId'):\n    filter['flow_id'] = parameters['flowId']\n\nl = Token.objects.filter(**filter)\n#print (l)\n\ndata = []\n\nfor t in l:\n    vars = t.process.vars_dict\n    tvars = t.vars_dict\n    \n    ok = vars.get('objectKey')\n    kv = ok.split(':')\n    pk = kv[1].split(',')\n    objectKey = {\n        'dep_id': int(pk[0]),\n        'id': int(pk[1]),\n    }\n    \n    req = vars.get('req')\n    if req is None:\n        try:\n            req = t.evalExpression('po')\n            req.get('dummy') # для того, чтобы вызвать загрузку по событию\n        except:\n            req = None\n    if req is None:\n        req = {}\n\n    user = req['user'].get('code') if req else ''\n    \n    if parameters is not None:\n        if parameters.get('user_name') and parameters['user_name'] != user:\n            continue\n        if parameters.get('depCode') and parameters['depCode'] != req['app']['depCode']:\n            continue\n        if parameters.get('clientType') and req.get('client'):\n            addFl = False\n            if parameters['clientType'] == '00' and not req['client']['isJur'] and not req['client']['isIE'] :\n                addFl = True\n            if parameters['clientType'][0] == '1' and req['client']['isJur']:\n                addFl = True\n            if parameters['clientType'][1] == '1' and not req['client']['isJur'] and req['client']['isIE'] :\n                addFl = True\n            if not addFl : \n                continue\n\n    msg = ''\n    if tvars.get('error'):\n        msg = tvars['error'].get('message')\n    if vars.get('last_error'):\n        msg = vars['last_error'].get('message')\n    elif vars.get('niki_error'):\n        msg = vars['niki_error']\n    elif vars.get('cb_error'):\n        msg = vars['cb_error']\n    elif vars.get('grkiOfflineStatus', {}).get('error'):\n        msg = vars['grkiOfflineStatus']['error']\n    elif vars.get('grkiOnlineStatus', {}).get('error'):\n        msg = vars['grkiOnlineStatus']['error']\n    elif vars.get('grkiOnlineStatus', {}).get('claim',{}).get('error'):\n        msg = vars['grkiOnlineStatus']['claim']['error']\n    elif vars.get('grkiOnlineStatus', {}).get('coborrowers',{}).get('error'):\n        msg = vars['grkiOnlineStatus']['coborrowers']['error']\n    elif vars.get('asoki_response', {}).get('result', {}).get('message'):\n        if vars['asoki_response']['result'].get('code') != '05000':\n            msg = vars['asoki_response']['result']['message']\n    elif vars.get('asoki_response', {}).get('data', {}).get('resultMessage'):\n        msg = vars['asoki_response']['data']['resultMessage']\n    elif vars.get('response', {}).get('response', {}).get('errorMessage'):\n        msg = vars['response']['response']['errorMessage']\n    elif vars.get('response', {}).get('response', {}).get('resultMessage'):\n        msg = vars['response']['response']['resultMessage']\n    elif vars.get('response', {}).get('resultMessage'):\n        if vars['response']['result'] != '05050':\n            msg = vars['response']['resultMessage']\n\n        \n        \n    if parameters.get('errorsType') == '0' and (msg is None or len(msg)==0 or msg=='Прием запрещен'):\n        continue\n    \n    if parameters.get('errorsType') == '1' and not(msg is None or len(msg)==0 or msg=='Прием запрещен'):\n        continue\n    \n    data.append({\n        'dep_id': objectKey['dep_id'],\n        'id': objectKey['id'],\n        'baseComponent': req.get('baseComponent'),\n        'clientName': '',\n        'code': req['app'].get('code') if req else '',\n        'appId': req['app'].get('appId')  if req else t.id.__str__(),\n        'registrationDate': req['app'].get('registrationDate')  if req else '',\n        'sysName': t.process.flow.name,\n        'taskName': t.flow.name if t.flow else t.flow_id,\n        'message': msg,\n        'user': req['user'].get('code') if req else '',\n    })\n    \nfrom operator import itemgetter\ndata = sorted(\n    data,\n    key=itemgetter('code')\n)\n\n\n"
+        },
+        "sql": {
+            "params": [],
+            "database": "",
+            "sqlType": "query"
+        }
+    },
+    "parameters": {
+        "style": {
+            "width": "100%"
+        },
+        "title": "Параметр отчета",
+        "className": "panel vertical",
+        "$": {
+            "fromDate": {
+                "label": "Дата с",
+                "control": "DateEdit"
+            },
+            "depCode": {
+                "label": "Подразделение",
+                "control": "TextEdit"
+            },
+            "user_name": {
+                "label": "Исполнитель",
+                "control": "TextEdit"
+            },
+            "@appDate": {
+                "className": "vertical",
+                "title": "Дата заявки",
+                "$": {
+                    "@fields": {
+                        "className": "horizontal",
+                        "$": {
+                            "dateFrom": {
+                                "label": "С",
+                                "control": "DateEdit"
+                            },
+                            "dateTo": {
+                                "label": "С",
+                                "control": "DateEdit"
+                            }
+                        }
+                    }
+                },
+                "visible": false
+            },
+            "clientType": {
+                "label": "Тип клиента",
+                "control": "SelectList",
+                "controlProps": {
+                    "list": [
+                        {
+                            "value": "",
+                            "name": "<Все>"
+                        },
+                        {
+                            "value": "00",
+                            "name": "Физические лица"
+                        },
+                        {
+                            "value": "10",
+                            "name": "Юр. лица"
+                        },
+                        {
+                            "value": "01",
+                            "name": "ИП"
+                        },
+                        {
+                            "value": "11",
+                            "name": "Юр. лица + ИП"
+                        }
+                    ]
+                }
+            },
+            "flowId": {
+                "label": "Задача",
+                "control": "SelectList",
+                "controlProps": {
+                    "list": [
+                        {
+                            "value": "13207adb-07ab-4a77-ae3c-8557f6aea031",
+                            "name": "Ошибка запроса НИКИ онлайн"
+                        }
+                    ]
+                }
+            },
+            "errorsType": {
+                "label": "Ошибки/Без ошибок",
+                "control": "SelectList",
+                "controlProps": {
+                    "list": [
+                        {
+                            "value": "",
+                            "name": "<Все>"
+                        },
+                        {
+                            "value": "0",
+                            "name": "Только ошибки"
+                        },
+                        {
+                            "value": "1",
+                            "name": "Без ошибок"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

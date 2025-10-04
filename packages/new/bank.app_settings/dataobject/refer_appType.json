@@ -1,0 +1,84 @@
+[
+    {
+        "code": "loanfiz",
+        "name": "Заявка на кредит физического лица",
+        "appForm": {
+            "object": "appLoanfiz",
+            "form": "appEditForm"
+        },
+        "appFormExt": {},
+        "prepareMethod": {}
+    },
+    {
+        "appForm": {
+            "object": "appLoanjur",
+            "form": "appEditForm"
+        },
+        "code": "loanjur",
+        "name": "Заявка на кредит юридического лица"
+    },
+    {
+        "code": "tranchejur",
+        "name": "Транши юридических лиц",
+        "appForm": {
+            "object": "appLoanjur",
+            "form": "appEditTrancheForm"
+        }
+    },
+    {
+        "code": "guarantee",
+        "name": "Гарантия",
+        "appForm": {
+            "object": "appGuarantee",
+            "form": "appEditForm"
+        },
+        "appFormExt": {},
+        "prepareMethod": {
+            "object": "appGuarantee",
+            "method": "prepareNewApplication"
+        }
+    },
+    {
+        "appForm": {
+            "object": "appLoanOverdraft",
+            "form": "appEditForm"
+        },
+        "code": "overdraftfiz",
+        "name": "Заявка на овердрафт"
+    },
+    {
+        "appForm": {
+            "object": "appFactoring",
+            "form": "appEditForm"
+        },
+        "code": "factoring",
+        "name": "Заявка на факторинг",
+        "appFormExt": {
+            "object": "appFactoring",
+            "form": "appEditForm"
+        }
+    },
+    {
+        "appForm": {
+            "object": "appFactoring",
+            "form": "appMonetaryClaimForm"
+        },
+        "appFormExt": {},
+        "prepareMethod": {
+            "object": "appFactoring",
+            "method": "prepareMonetaryClaim"
+        },
+        "code": "factoringMonetaryClaim",
+        "name": "Финансирование денежного требования по факторингу"
+    },
+    {
+        "code": "loanfiz",
+        "name": "Заявка на кредит физического лица",
+        "appForm": {
+            "object": "appLoanfiz",
+            "form": "appEditForm"
+        },
+        "appFormExt": {},
+        "prepareMethod": {}
+    }
+]

@@ -1,0 +1,370 @@
+<workflow id="APP_REVIEW_FIN" name="Завершение рассмотрения заявки">
+    <event name="onCandidates">
+        <![CDATA[def depIn(dep):
+    from colvir_cbs.services import bank
+    return po['app']['depCode'] in bank.getDepartmentsCodes(dep)
+]]>
+    </event>
+    <event name="onGetProcessObject">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+kv = ok.split(':')
+pk = kv[1].split(',')
+process_vars['dep_id'] = int(pk[0])
+process_vars['id'] = int(pk[1])
+
+#
+# Загружаем общую информацию по заявке
+#
+from apng_core.auth import User
+with User('COLVIR'):
+    token._po = execObjectMethod({
+        'object': 'app',
+        'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+]]>
+    </event>
+    <script id="21aac2c0-70d0-4160-955d-4f3580d62e1f" name="Инициализация">
+        <![CDATA[ok = process_vars.get('objectKey')
+
+if not process_vars.get('decision'):
+    raise Exception('Не задано решение для запуска сценария, decision')
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+]]>
+    </script>
+    <script id="e35c6833-56a1-4fdb-b2f7-69916d1a7b2c" name="Стадия рассмотрения">
+        <![CDATA[execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'stage': 'FIN',
+    }
+})
+
+]]>
+    </script>
+    <call id="078256bb-8fcd-46f1-be35-67f60643c18a" name="Регистрация решеня" call="&apos;APP_REGISTER_DECISION&apos;" result_from="decision_registered" result_to="decision_registered">
+        <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+        <p name="decision" expression="process_vars.get(&apos;decision&apos;)"/>
+    </call>
+    <split id="bae33020-d9b8-4aa8-b582-3bcdeeaf2db2" name="Результат рассмотрения заявки">
+        <condition id="be1a4a03-b3e4-4ea8-be90-d6711d1508cb" name="Отказ" expression="pv[&apos;decision_registered&apos;][&apos;decision&apos;] == &apos;decline&apos;">
+            <timer id="b93ffebc-a4d3-4ff0-b26a-6f1e80741256" name="Обработка отказа по заявке" description="Обработка отказа по заявке" duration="00:00:00" action="continue"/>
+            <script id="35dc69aa-a8c1-4df7-a38b-d6631aa7714c" name="Установка состояния заявки: отказано">
+                <![CDATA[from django.db import transaction
+from apng_core.auth import User
+
+
+#
+# Тут действия нужно выполнять от инициатора процесса
+#
+
+with User(token.processToken.initiator):
+    with transaction.atomic(using='bank'):
+        if process_vars['decision_registered'].get('declineReason') == '08':
+            # Отказ клиента
+            execObjectMethod({
+                'object': 'app', 'method': 'setState',
+                'params': {
+                    'dep_id': pv['dep_id'],
+                    'id': pv['id'],
+                    'state': 'REFUSAL_CLI',
+                }
+            })
+        else:
+            # Отказ банка
+            execObjectMethod({
+                'object': 'app', 'method': 'setState',
+                'params': {
+                    'dep_id': pv['dep_id'],
+                    'id': pv['id'],
+                    'state': 'REFUSAL_BANK',
+                }
+            })
+
+
+            ]]>
+            </script>
+            <call id="5125481e-3d64-423e-96de-fea605a9c792" name="Регистрация отказа во внешних системах" call="&apos;APP_REJECT_EXT&apos;" condition="pv.get(&apos;disableExternalRegistration&apos;, False) == False">
+                <p name="objectKey" expression="pv.get(&apos;objectKey&apos;)"/>
+                <p name="decision_registered" expression="pv.get(&apos;decision_registered&apos;)"/>
+            </call>
+            <script id="a4baca62-a845-4856-906d-04e736c3513c" name="Информирование клиента">
+                <journal time="leave">
+                    <![CDATA[Информирование клиента, SMS: {{po.client.phone}}]]>
+                </journal>
+            </script>
+        </condition>
+        <condition id="58428bd6-dc30-4936-9427-6bef99a5c92b" name="Одобрена" expression="pv[&apos;decision_registered&apos;][&apos;decision&apos;] == &apos;accept&apos;">
+            <call id="14ce3f30-d056-415d-bc38-7a48512322a6" name="Подтверждение клиента" call="&apos;APP_CLIENT_CONFIRMATION&apos;" condition="pv.get(&apos;clientAutoConfirm&apos;, False) == False" result_from="DECISION" result_to="CLIENT_CONFIRMATION">
+                <p name="checkClientPhoto" expression="pv.get(&apos;checkClientPhoto&apos;, False)"/>
+            </call>
+            <split id="a157fc29-09b8-438b-b44d-558326c76c88" name="Решение клиента">
+                <condition id="76c6c8e0-29a9-4ae6-b625-f1e0d883bc37" name="Согласен" expression="pv.get(&apos;clientAutoConfirm&apos;) or pv[&apos;CLIENT_CONFIRMATION&apos;][&apos;status&apos;] == &apos;accept&apos;">
+                    <script id="a52c7ab6-2686-4fae-993c-409cdf528eed" name="Определение вида создаваемого договора">
+                        <![CDATA[from apng_core.db import fetchone
+
+if po['product']['options'].get('issueCardProduct'):
+    pv['docType'] = 'card'
+elif po.get('overdraft') is not None:
+    pv['docType'] = 'overdraft'
+elif po.get('appType') == 'guarantee':
+    pv['docType'] = po['appType']
+elif po.get('appType') == 'factoring':
+    pv['docType'] = po['appType']
+elif po.get('appType') == 'factoringMonetaryClaim':
+    pv['docType'] = po['appType']
+else:
+    with initDbSession(application='bank').cursor() as cursor:
+
+        p = {
+            'DCL_CODE' : po['app']['productCode'], 
+        }
+            
+        cursor.execute("""
+            select 
+                b.code bscode
+            from t_bop_dscr b, t_deacls c 
+            where c.code=:DCL_CODE
+                and b.id(+)=c.bop_id
+            """,
+            p
+        )
+        
+        d = fetchone(cursor)
+        
+        if d['BSCODE'] == 'CS_CRED':
+            pv['docType'] = 'loan'
+        elif d['BSCODE'] == 'CS_CR_LIN':
+            pv['docType'] = 'loanline'
+        elif d['BSCODE'] == 'LS_LEASE':
+            pv['docType'] = 'leasing'
+        else:
+            raise UserException({
+                'message': 'Не определен вид создаваемого по заявке документа'
+            })
+        
+
+#
+# Определение сценария срздания договора
+#
+pv['docWorkflow'] = {
+    'overdraft': 'APP_CREATE_OVERDRAFT',
+    'card': 'APP_CREATE_CARD',
+    'loan': 'APP_CREATE_LOAN',
+    'loanline': 'APP_CREATE_LOAN',
+    'leasing': 'APP_CREATE_LEASING',
+    'guarantee': 'APP_CREATE_GUARANTEE',
+    'factoring': 'APP_CREATE_FACTORING',
+    'factoringMonetaryClaim': 'APP_CREATE_FACTORING_CLAIM',
+}.get(pv['docType'])
+
+if pv['docWorkflow'] is None:
+    raise UserException({
+        'message': 'Не определен сценарий для создания документа %s' % pv['docType']
+    })
+]]>
+                    </script>
+                    <call id="6f11d2cb-628a-4b06-b02a-e6367aaace7e" name="Создание договора" call="pv[&apos;docWorkflow&apos;]" result_from="dea" result_to="dea"/>
+                    <split id="48028ac7-f30a-4562-8028-9636a2163b9b" name="Вид создаваемого продукта">
+                        <condition id="deae27bb-cd37-4f5b-8e27-3b817e2adc46" name="Овердрафт" expression="False and pv[&apos;docType&apos;] == &apos;overdraft&apos;">
+                            <call id="a15b5d6f-d9cb-464b-99c8-aa949dde6e24" name="Создание овердрафта" call="&apos;APP_CREATE_OVERDRAFT&apos;" result_from="overdraft" result_to="dea"/>
+                        </condition>
+                        <condition id="947e7b2b-f423-41c4-b076-6f4af18a3bd2" name="Карта" expression="False and pv[&apos;docType&apos;] == &apos;card&apos;">
+                            <call id="ed02ef5c-6b19-44b2-a0aa-12c661f9b6a6" name="Создание карты" call="&apos;APP_CREATE_CARD&apos;" result_from="dea" result_to="dea"/>
+                        </condition>
+                        <condition id="ab71fb94-c1bb-4619-99cc-82349f47e474" name="Кредит/линия" expression="False and pv[&apos;docType&apos;] in (&apos;loan&apos;, &apos;loanline&apos;)">
+                            <call id="d2b8d57c-d68d-4846-89ef-f22ef0f6c458" name="Создание договора кредита" call="&apos;APP_CREATE_LOAN&apos;" result_from="dea" result_to="dea"/>
+                        </condition>
+                        <condition id="150ab5c4-b578-4eac-93bd-3f510fc43e80" name="Лизинг" expression="False and pv[&apos;docType&apos;] == &apos;leasing&apos;">
+                            <call id="46e6e954-8a0c-4c08-892b-780b86a9ec19" name="Создание договора лизинга" call="&apos;APP_CREATE_LEASING&apos;" result_from="dea" result_to="dea"/>
+                        </condition>
+                        <condition id="7e1a849a-1888-42c8-906e-d389e9c33351" name="Гарантия" expression="False and pv[&apos;docType&apos;] == &apos;guarantee&apos;">
+                            <call id="feae07cd-26cd-4ceb-b4d3-dcc537c20527" name="Создание договора гарантии" call="&apos;APP_CREATE_GUARANTEE&apos;" result_from="dea" result_to="dea"/>
+                        </condition>
+                        <condition id="0f242d6a-afe1-4853-a9a4-183773336ebd" name="Пропусаем"/>
+                    </split>
+                    <script id="17e7af98-7be6-4c39-8c39-7e05704041e4" name="Изменение состояния заявки: создан договор">
+                        <![CDATA[execObjectMethod({
+    'object': 'app', 'method': 'setState',
+    'params': {
+        'dep_id': pv['dep_id'],
+        'id': pv['id'],
+        'state': 'CREDEA',
+    }
+})
+]]>
+                    </script>
+                    <call id="f9062db0-22a8-4822-a6db-cbe466065772" name="Обработка событий: onDeaCreated" call="&apos;APP_EVENT_PROCESS&apos;" condition="po.get(&apos;events&apos;, {}).get(&apos;onDeaCreated&apos;, None) is not None">
+                        <p name="event" expression="&apos;onDeaCreated&apos;"/>
+                        <p name="payload" expression="None"/>
+                    </call>
+                    <timer id="0812687b-5b0d-4506-a8ff-fd700dbce0f2" name="Создан договор" description="Создан договор, заявка {{po.app.code}}, {{po.client.name}}" duration="00:00:00" errorDuration="00:01:00" action="continue"/>
+                    <script id="9c32c311-75f0-439f-b0e9-9b2d119374ab" name="Информирование клиента о создании договора">
+                        <journal time="leave">
+                            <![CDATA[Информирование клиента, SMS: {{po.client.phone}}]]>
+                        </journal>
+                    </script>
+                    <call id="75816d67-2681-46ec-8942-2b80e5c99683" name="Ожидание регистрации договора" call="&apos;APP_WAIT_DEA&apos;" result_from="result" result_to="register_result">
+                        <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+                        <p name="dea" expression="process_vars.get(&apos;dea&apos;)"/>
+                        <p name="issueLoan" expression="process_vars.get(&apos;issueLoan&apos;, False)"/>
+                    </call>
+                    <split id="25f8159b-5d7e-4c50-b324-1621c3309171" name="Договор зарегистрирован?">
+                        <condition id="7b5bf469-5906-468f-9a4a-87fc0624161f" name="Зарегистрирован" expression="process_vars[&apos;register_result&apos;][&apos;status&apos;] == &apos;registered&apos;">
+                            <script id="76fa860b-bdd4-438a-9699-f1fd2809c9ea" name="Установка состояния заявки: договор зарегистрирован">
+                                <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'state': 'DEA_REGISTERED',
+        }
+    })
+
+]]>
+                            </script>
+                        </condition>
+                        <condition id="81b3e72c-f099-43b1-a545-9b9b2737ac84" name="Удалён" expression="process_vars[&apos;register_result&apos;][&apos;status&apos;] == &apos;deleted&apos;">
+                            <script id="0a467e4b-3156-4ea4-8ac7-d74284941d57" name="Установка состояния заявки: отказ клиента">
+                                <![CDATA[from apng_core.aoa.services import execObjectMethod
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser(user='COLVIR'):
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'state': 'REFUSAL_CLI',
+        }
+    })
+]]>
+                            </script>
+                            <script id="7fcdcc57-3b63-49d5-aa2b-f5b76a4f0362" name="Установка решения: Отказ клиента">
+                                <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user='COLVIR') as au:
+    decision_date = au.operday
+
+process_vars['decision'] = {
+    'decision': 'decline', 
+    'code': '01',  
+    'number': po['app']['code'],
+    'date': decision_date,
+    'text': 'Отказ клиента',                 
+    'declineReason': '08',
+    'show_dialog': False,
+}
+
+]]>
+                            </script>
+                            <call id="3467d943-2457-4a4e-a694-a88e6786164e" name="Регистрация итогового решения" call="&apos;APP_REGISTER_DECISION&apos;" result_from="decision_registered" result_to="decision">
+                                <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+                                <p name="decision" expression="process_vars[&apos;decision&apos;]"/>
+                            </call>
+                            <call id="b71794b5-4fe5-4221-990d-7048993fce7c" name="Регистрация отказа во внешних системах" call="&apos;APP_REJECT_EXT&apos;">
+                                <p name="decision_registered" expression="process_vars.get(&apos;decision&apos;)"/>
+                            </call>
+                        </condition>
+                        <condition id="17c01d6c-926a-439b-acdb-dc59a0bd3861" name="Отказ клиента" expression="process_vars[&apos;register_result&apos;][&apos;status&apos;] == &apos;decline&apos;">
+                            <script id="a4d89825-cc68-4271-be9b-2318298c07a1" name="Установка решения: Отказ клиента">
+                                <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user='COLVIR') as au:
+    decision_date = au.operday
+
+pv['decision'] = {
+    'decision': 'decline', 
+    'code': '01',  
+    'number': po['app']['code'],
+    'date': decision_date,
+    'text': 'Отказ клиента',                 
+    'declineReason': '08',
+    'show_dialog': False,
+}
+
+]]>
+                            </script>
+                            <call id="ebe17f7c-3a1f-499d-97c9-4de96b6637a0" name="Регистрация итогового решения" call="&apos;APP_REGISTER_DECISION&apos;" result_from="decision_registered" result_to="decision">
+                                <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+                                <p name="decision" expression="process_vars[&apos;decision&apos;]"/>
+                            </call>
+                        </condition>
+                    </split>
+                </condition>
+                <condition id="1387bf08-2542-4929-95e7-29f588652c71" name="Не согласен" expression="process_vars[&apos;CLIENT_CONFIRMATION&apos;][&apos;status&apos;] in (&apos;reject&apos;, &apos;decline&apos;)">
+                    <script id="4501785e-88bd-4742-ab78-c52627fffdfd" name="Установка состояния заявки: отказ клиента">
+                        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+from apng_core.aoa.services import execObjectMethod
+with AuthenticatedUser():
+    execObjectMethod({
+        'object': 'app', 'method': 'setState',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'state': 'REFUSAL_CLI',
+        }
+    })
+
+
+]]>
+                    </script>
+                    <script id="117cc2c8-040e-4149-ac91-beaacec3cc76" name="Установка решения">
+                        <![CDATA[from apng_core.easyflow.auth import Authentication
+from colvir_cbs.auth import AuthenticatedUser
+
+with AuthenticatedUser(user=Authentication.getAuthenticatedUser().code) as au:
+    decision_date = au.operday
+
+process_vars['CLIENT_REFUSE_DECISION'] = {
+    'decision': 'decline', 
+    'code': '01',  
+    'number': po['app']['code'],
+    'date': decision_date,
+    'text': 'Отказ клиента',                 
+    'declineReason': '08',
+    'show_dialog': False,
+}
+
+]]>
+                    </script>
+                    <call id="a3659895-1eb6-4609-870e-b352dd9c1e84" name="Регистрация итогового решения" call="&apos;APP_REGISTER_DECISION&apos;" result_from="decision_registered" result_to="decision_registered">
+                        <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+                        <p name="decision" expression="process_vars[&apos;CLIENT_REFUSE_DECISION&apos;]"/>
+                    </call>
+                    <call id="504208ca-fec4-46a9-ad7c-e22c6259e549" name="Регистрация отказа во внешних системах" call="&apos;APP_REJECT_EXT&apos;" condition="pv.get(&apos;disableExternalRegistration&apos;, False) == False">
+                        <p name="decision_registered" expression="pv.get(&apos;decision_registered&apos;)"/>
+                    </call>
+                    <split id="8ffd5477-ae46-4c3e-8c47-908fa61f0cf2" name="Показывать сообщение окончания обработки">
+                        <condition id="d323eacf-953e-46f5-9785-d0f8e89a0e70" name="Да" expression="False">
+                            <task id="ecec0459-51d8-4e62-9dd3-a92a7fc3850d" name="Показ результата обработки заявки" autoStart="true" description="Заявка {{po.app.code}} завершена, отказ клиента">
+                                <clientTask path="/easyflow/state-dialog" taskName="{{task.description}}">
+                                    <p name="caption" expression="task[&apos;description&apos;]"/>
+                                    <p name="message" expression="task[&apos;description&apos;]"/>
+                                    <p name="actions" expression="[  { &apos;name&apos;: &apos;Завершить обработку&apos;},  ]"/>
+                                    <p name="objectKey" expression="process_vars.get(&apos;objectKey&apos;)"/>
+                                </clientTask>
+                            </task>
+                        </condition>
+                        <condition id="f018d256-2681-4fc5-beea-19c8202238fc" name="Нет" expression="True"/>
+                    </split>
+                </condition>
+            </split>
+        </condition>
+    </split>
+</workflow>

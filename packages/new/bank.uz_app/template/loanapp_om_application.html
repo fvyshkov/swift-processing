@@ -1,0 +1,275 @@
+{% load functions %}
+<style>
+    .layout {
+        margin-top: 10mm;
+        margin-bottom: 10mm;
+        margin-left: 10mm;
+        width: 210mm;
+    }
+
+    .rtitle {
+        font-size: 15pt;
+        font-weight: bold;
+        border: 1px solid black;
+    }
+    .rtitle > td {
+        border: 1px solid black;
+        text-align: center;
+    }
+    .tbody {
+        font-size: 11pt;
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    
+    .rr {
+        
+    }
+    
+    .rr tr:not(:first-of-type) > td:nth-child(1) {
+        font-size: 11pt;
+        font-weight: bold;
+        width: 350px;
+    }
+    
+    .rr tr:not(:first-of-type) > td:nth-child(2) {
+        width: 250px;
+        border-right: 1px solid black;
+    }
+    .rr tr:not(:first-of-type) > td:nth-child(3) {
+        font-size: 11pt;
+        font-weight: bold;
+        width: 350px;
+    }
+    .rr tr:not(:first-of-type) > td:nth-child(4) {
+        width: 250px;
+    }
+    
+</style>
+
+<div class="layout">
+    <table class="tbody rr">
+        <tr class="rtitle">
+            <td colspan="2">Ариза</td>
+            <td colspan="2">Заявления</td>
+        </tr>
+        
+        <tr>
+            <td>
+                ФИШ
+            </td>
+            <td>
+                {{client.name}}
+            </td>
+            <td>
+                ФИО
+            </td>
+            <td>
+                {{client.name}}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                Паспорт серия ва раками
+            </td>
+            <td>
+                {{client.idDocument.serials}}{{client.idDocument.number}}
+            </td>
+            <td>
+                Серия и номер паспорта
+            </td>
+            <td>
+                {{client.idDocument.serials}}{{client.idDocument.number}}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                Берилган Сана
+            </td>
+            <td>
+                {{client.idDocument.date|date}}
+            </td>
+            <td>
+                Дата выдаче
+            </td>
+            <td>
+                {{client.idDocument.date|date}}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                Ким томонидан берилган
+            </td>
+            <td>
+                {{client.idDocument.issuedBy}}
+            </td>
+            <td>
+                Кем выдан
+            </td>
+            <td>
+                {{client.idDocument.issuedBy}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                СТИР (ИНН)
+            </td>
+            <td>
+                {{client.inn}}
+            </td>
+            <td>
+                ИНН
+            </td>
+            <td>
+                {{client.inn}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                Мижоз манзили
+            </td>
+            <td>
+                {{client.registrationAddress.address}}
+            </td>
+            <td>
+                Адрес клиента
+            </td>
+            <td>
+                {{client.registrationAddress.address}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                Пластик карта раками
+            </td>
+            <td>
+                {{online.cardIdn}}
+            </td>
+            <td>
+                Номер пластиковый карты
+            </td>
+            <td>
+                {{online.cardIdn}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                Кредит линия суммаси
+            </td>
+            <td>
+                {{app.amount}}
+            </td>
+            <td>
+                Сумма кредитного линии
+            </td>
+            <td>
+                {{app.amount}}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                Кредит линияси муддати
+            </td>
+            <td>
+                {{app.duration}}/{{app.durationUnit}}
+            </td>
+            <td>
+                Срок кредитного линии
+            </td>
+            <td>
+                {{app.duration}}/{{app.durationUnit}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                Кредит максади
+            </td>
+            <td>
+                {{app.purposeOfLoanName}}
+            </td>
+            <td>
+                Цель кредита
+            </td>
+            <td>
+                {{app.purposeOfLoanName}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                Мижоз телефон раками
+            </td>
+            <td>
+                {{client.phone}}
+            </td>
+            <td>
+                Телефонный номер
+            </td>
+            <td>
+                {{client.phone}}
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                Ариза санаси
+            </td>
+            <td>
+                {{app.registrationDate|date}}
+            </td>
+            <td>
+                Дата заявлении
+            </td>
+            <td>
+                {{app.registrationDate|date}}
+            </td>
+        </tr>
+    
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+            <td>
+                &nbsp;
+            </td>
+            <td>
+                &nbsp;
+            </td>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        
+        <tr>
+            <td>
+                Тасдикланган код
+            </td>
+            <td>
+                {{app.access_code}}
+            </td>
+            <td>
+                Код потдверждения
+            </td>
+            <td>
+                {{app.access_code}}
+            </td>
+        </tr>
+        
+        
+    </table>
+</div>
+
+
+<!-- 7E5BC701-DDCB-5E05-76C2-11220A03F3A1 -->
+{
+    "method": {}
+}

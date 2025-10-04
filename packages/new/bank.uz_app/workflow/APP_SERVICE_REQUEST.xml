@@ -1,0 +1,41 @@
+<workflow id="APP_SERVICE_REQUEST" name="Запросы во внешние системы">
+    <script id="c9eca277-115d-4d36-a396-22bf1357c294" name="Инициализация">
+        <![CDATA[requestId = process_vars.get('requestId')
+
+
+if requestId is None:
+    raise Exception('Не задан requestId')
+
+process_vars['objectKey'] = 'apprequest:{}'.format(requestId)
+    
+from loanapp_requests.models import Request
+request = Request.objects.get(id=requestId)
+
+if request.state != 'new':
+    raise Exception('Отправить можно только завпрос в состоянии Создан')
+
+process_vars['request'] = {
+    'serviceType': request.serviceType,
+}
+
+
+]]>
+    </script>
+    <script id="583c24ef-983b-4280-b9e4-5cb7bba7bcbd" name="Состояние запроса: В обработке">
+        <journal time="leave">
+            Начало обработки запроса
+        </journal>
+        <![CDATA[from loanapp_requests.models import Request
+request = Request.objects.get(id=process_vars['requestId'])
+request.state = 'inwork'
+request.save()
+
+
+]]>
+    </script>
+    <timer id="6a7c83c0-0c0c-44db-a9a5-eb05dbe8dec0" name="Обработка запроса" description="Обработка запроса" duration="00:00:00" action="continue"/>
+    <call id="c258589b-0386-4a94-8abe-322966890a95" name="Обработка запроса" call="&apos;APP_SERVICE_REQUEST_{}&apos;.format(process_vars[&apos;request&apos;][&apos;serviceType&apos;])">
+        <p name="objectKey" expression="process_vars[&apos;objectKey&apos;]"/>
+        <p name="requestId" expression="process_vars[&apos;requestId&apos;]"/>
+    </call>
+</workflow>

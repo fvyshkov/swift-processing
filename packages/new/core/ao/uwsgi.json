@@ -1,0 +1,174 @@
+{
+    "forms": {
+        "workersTask": {
+            "title": "Состояние worker-ов",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@workers": {
+                    "style": {
+                        "height": "100%"
+                    },
+                    "$": {
+                        "|workers": {
+                            "className": "horizontal",
+                            "style": {
+                                "height": "100%"
+                            },
+                            "$": {
+                                "@list": {
+                                    "style": {
+                                        "height": "100%",
+                                        "width": "400px",
+                                        "display": "flex",
+                                        "flexDirection": "column"
+                                    },
+                                    "$": {
+                                        ".ap": {
+                                            "control": "ActionPanel",
+                                            "controlOpts": {
+                                                "actions": [
+                                                    {
+                                                        "title": "Обновить",
+                                                        "mini": true,
+                                                        "icon": "refresh",
+                                                        "action": {
+                                                            "name": "refresh"
+                                                        }
+                                                    },
+                                                    {
+                                                        "title": "Restart",
+                                                        "action": {
+                                                            "js": "backend.post('/aoa/execObjectMethod', {object: 'uwsgi', method: 'restart', params: {}})"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        ".list": {
+                                            "style": {
+                                                "height": "100%"
+                                            },
+                                            "control": "ListTable",
+                                            "controlOpts": {
+                                                "columns!": {
+                                                    "id": {
+                                                        "label": "id",
+                                                        "width": 50,
+                                                        "compact": true
+                                                    },
+                                                    "status": {
+                                                        "label": "Состояние",
+                                                        "width": 80,
+                                                        "compact": true
+                                                    },
+                                                    "last_spawn": {
+                                                        "label": "Запущен с",
+                                                        "width": 120,
+                                                        "compact": true,
+                                                        "format": "datetime"
+                                                    },
+                                                    "work_time": {
+                                                        "label": "Работает",
+                                                        "width": 80,
+                                                        "compact": true,
+                                                        "format": "duration"
+                                                    }
+                                                }
+                                            },
+                                            "controlProps": {
+                                                "style": {
+                                                    "height": "100%"
+                                                },
+                                                "gridOptions": {
+                                                    "domLayout": "normal",
+                                                    "getRowStyle$": "(function(p){return (p?.data?.status=='busy' || p?.data?.status?.startsWith('sig')) && {color: '#09822d'}})"
+                                                }
+                                            },
+                                            "actions": {
+                                                "onSelectionChanged": [
+                                                    {
+                                                        "js": "context.selectedWorker = selectedRow;"
+                                                    },
+                                                    {
+                                                        "name": "refreshSelection"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                ".trace": {
+                                    "style": {
+                                        "height": "100%",
+                                        "flexGrow": 1,
+                                        "overflow": "auto",
+                                        "padding": "8px"
+                                    },
+                                    "label": "Трасса вызова",
+                                    "control": "TextEdit",
+                                    "controlProps": {
+                                        "style": {
+                                            "height": "100%"
+                                        },
+                                        "multiline": true,
+                                        "InputProps": {
+                                            "style": {
+                                                "height": "100%"
+                                            }
+                                        },
+                                        "inputProps": {
+                                            "spellCheck": false,
+                                            "style": {
+                                                "height": "100%",
+                                                "overflow": "auto",
+                                                "fontSize": "small",
+                                                "whiteSpace": "pre"
+                                            }
+                                        }
+                                    },
+                                    "getter": "context?.selectedWorker?.trace"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "refreshSelection": {
+                            "js": ";"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "name": "refresh"
+                },
+                "refresh": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'uwsgi', method: 'getWorkers', params: {withTrace: true}}).then((r)=>{mem.workers=r; forceUpdate();})"
+                }
+            }
+        }
+    },
+    "methods": {
+        "getWorkers": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "import uwsgi\nimport socket\nimport datetime\n\nworkers = uwsgi.workers()\n\nif parameters.get('withTrace') == True:\n    for w in workers:\n        status = str(w['status'], 'utf-8')\n        if status == 'busy' or status.startswith('sig'):\n            socket_name = '/tmp/tb%s' % w['id']\n            try:\n                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:\n                    s.connect(socket_name)\n                \n                    lines = ''\n                    while True:\n                        d = s.recv(4096)\n                        if len(d) < 1:\n                            break\n                        lines += d.decode('utf8', 'ignore')\n                        #lines.extend(str(d, 'utf-8').strip().split('\\n'))\n    \n                    w['trace'] = lines\n            except Exception as e:\n                w['trace'] = f'Ошибка подключения к сокету {socket_name}\\n{e}'\n            \ndata = []\nfor w in workers:\n    last_spawn = None\n    work_time = None\n    status = str(w['status'], 'utf-8')\n    if w['last_spawn']:\n        last_spawn = datetime.datetime.fromtimestamp(w['last_spawn'])\n        if status == 'busy' or status.startswith('sig'):\n            work_time = datetime.datetime.now() - last_spawn\n    data.append({\n        'id': str(w['id']),\n        'status': status,\n        'last_spawn': last_spawn,\n        'work_time': work_time,\n        'trace': w.get('trace'),\n    })"
+            }
+        },
+        "restart": {
+            "script": {
+                "py": "import os\nos.system('/bin/kill -1 `/bin/cat /tmp/project-master.pid`')"
+            }
+        }
+    },
+    "lists": {},
+    "js": {},
+    "references": {}
+}

@@ -1,0 +1,66 @@
+<workflow id="APP_EVENT_PROCESS" name="Обработка события по завке">
+    <event name="onGetProcessObject">
+        <![CDATA[
+ok = process_vars.get('objectKey')
+kv = ok.split(':')
+pk = kv[1].split(',')
+
+
+#
+# Загружаем общую информацию по заявке
+#
+from colvir_cbs.auth import AuthenticatedUser
+with AuthenticatedUser():
+    from apng_core.aoa.services import execObjectMethod
+    token._po = execObjectMethod({
+        'object': 'app', 'method': 'getApplication',
+        'params': {
+            'dep_id': int(pk[0]),
+            'id'    : int(pk[1]),
+        }
+    })
+
+
+]]>
+    </event>
+    <timer id="35f4094e-4519-4c81-9ade-3db6d1f1c18b" name="Обработка события по заявке" description="Обработка события по заявке, {{po.app.code}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+    <script id="366a3ac5-3cd8-452e-82b1-6cdce8f8cd67" name="Выбор события">
+        <![CDATA[handlers = po.get('events', {}).get(pv['event'], [])
+pv['index'] = pv.get('index', 0)
+
+pv['handler'] = None
+if pv['index'] < len(handlers):
+    pv['handler'] = handlers[pv['index']]
+
+]]>
+    </script>
+    <split id="ba23a3d4-5c8c-4cba-883b-5cb78611ce02" name="Есть обработчик">
+        <condition id="5dd29093-4cc4-45d0-aa5c-6de1c5ead0be" name="Да" expression="pv[&apos;handler&apos;] is not None">
+            <timer id="5944f8e3-3fad-4cb3-81e6-4c0cdab5daf4" name="Обработка события" description="Обработка события {{pv.event}}, заявка {{po.app.code}}" duration="00:00:00" errorDuration="00:05:00" action="continue"/>
+            <script id="cfd4be0f-7b93-413b-988c-bae638eeba09" name="Обработка события">
+                <![CDATA[x = po['app']['code']
+result = execObjectMethod({
+    'object': pv['handler']['object'], 'method': pv['handler']['method'],
+    'params': {
+        'payload': pv.get('payload'),
+        'event': pv['event'],
+        'app': po,
+        'tokenId': token.id.__str__(),
+    }
+})
+
+if result is not None:
+    token.save_vars({
+        'object': pv['handler']['object'], 
+        'method': pv['handler']['method'],
+        'result': result,
+    })
+
+pv['index'] = pv['index']+1
+]]>
+            </script>
+            <jump id="0b27993e-de60-4ae7-b4e0-0f65d106aa72" name="Переход к Выбор события" target_id="366a3ac5-3cd8-452e-82b1-6cdce8f8cd67"/>
+        </condition>
+        <condition id="69b5365e-7dab-46ac-88e2-2c5b015d7595" name="Нет" expression="pv[&apos;handler&apos;] is  None"/>
+    </split>
+</workflow>

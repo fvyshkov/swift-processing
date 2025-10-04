@@ -1,0 +1,50 @@
+<workflow id="APP_MODIFY_DECISION" name="Изменение решения по заявке">
+    <script id="6fa97351-08ce-4f88-9203-d6e4b398bfed" name="Сохранение решения при заявке">
+        <journal time="leave">
+            <![CDATA[{% load functions %}Изменено решение по зявке: {{pv.decision.number}} от {{pv.decision.date|date}}. {{pv.decision.text}}]]>
+        </journal>
+        <![CDATA[from colvir_cbs.auth import AuthenticatedUser
+
+ok = pv.get('objectKey')
+
+if not pv.get('decision'):
+    raise Exception('Не задано решение для запуска сценария, decision')
+    
+kv = ok.split(':')
+pk = kv[1].split(',')
+pv['dep_id'] = int(pk[0])
+pv['id'] = int(pk[1])
+
+
+
+with AuthenticatedUser() as au:
+    
+    #
+    # Принудительное обновление решения в заявке
+    #
+    
+    d = {**pv['decision']}
+    
+    from apng_core.auth import getUser
+    from django.utils import timezone
+    u = getUser()
+    d['user'] = {
+        'code': u.code,
+        'name': u.name,
+        'date': timezone.now(),
+    }
+    
+
+    execObjectMethod({
+        'object': 'loanapp', 'method': 'updateDecisions',
+        'params': {
+            'dep_id': pv['dep_id'],
+            'id': pv['id'],
+            'decisions': {
+                d['code']: d
+            }
+        }
+    })    
+]]>
+    </script>
+</workflow>

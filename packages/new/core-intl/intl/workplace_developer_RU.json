@@ -1,0 +1,32 @@
+[
+    {
+        "msgid": "Development",
+        "msgstr": "Разработка",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Workflow",
+        "msgstr": "Бизнес процессы",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Execute script",
+        "msgstr": "Выполнение скриптов",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Templates",
+        "msgstr": "Шаблоны отчетов",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Objects",
+        "msgstr": "Прикладные объекты",
+        "msgctxt": null
+    },
+    {
+        "msgid": "Translations",
+        "msgstr": "Переводы",
+        "msgctxt": null
+    }
+]

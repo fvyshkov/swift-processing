@@ -1,0 +1,474 @@
+{
+    "forms": {
+        "editConfigTask": {
+            "title": "Edit Config",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlProps": {
+                                "actions": [
+                                    {
+                                        "title": "Save",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveConfig"
+                                        },
+                                        "disabled$": "!context.modified"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "object": "aos.ObjectConfig",
+                    "form": "editConfigForm",
+                    "style": {
+                        "overflow": "hidden"
+                    }
+                }
+            },
+            "events": {
+                "onModified": {
+                    "js": "context.modified = true;"
+                },
+                "saveConfig": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'aos.ObjectConfig', method: 'save', params: mem}).then(()=>{context.modified = false; setTaskTitle(_('Object config'+' '+mem.model_name)); forceUpdate()})"
+                },
+                "onTaskCreated": {
+                    "js": "task?.params?.id && backend.post('/aoa/execObjectMethod', {object: 'aos.ObjectConfig', method: 'get', params: {id: task.params.id}}).then((r)=>{updateMem(r); tm.setTaskTitle(task.key, `${_('Object Config')}: ${mem.model_name} ${mem.name}`);})"
+                }
+            }
+        },
+        "editConfigForm": {
+            "title": "Edit config",
+            "className": "vertical",
+            "style": {
+                "height": "100%",
+                "overflow": "auto",
+                "padding": "4px"
+            },
+            "$": {
+                "model_name": {
+                    "label": "Model",
+                    "control": "TextEdit",
+                    "events": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    }
+                },
+                "name": {
+                    "label": "Name",
+                    "control": "TextEdit",
+                    "events": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    }
+                },
+                "@task": {
+                    "title": "View task",
+                    "className": "vertical",
+                    "$": {
+                        "task": {
+                            "$": {
+                                "@task": {
+                                    "object": "aos.ObjectConfig",
+                                    "form": "callTaskForm"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@description": {
+                    "title": "Object description",
+                    "className": "vertical",
+                    "$": {
+                        "description": {
+                            "style": {
+                                "height": "200px"
+                            },
+                            "label": "Description",
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "configDescription",
+                                "mode": "python"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@lookup": {
+                    "title": "Lookup object",
+                    "$": {
+                        "lookup": {
+                            "style": {
+                                "height": "200px"
+                            },
+                            "label": "Description",
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "configLookup",
+                                "mode": "python"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@load": {
+                    "title": "Load object",
+                    "$": {
+                        "load": {
+                            "style": {
+                                "height": "200px"
+                            },
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "context$": "(()=>{context.ctxLoad=context.ctxLoad||{}; return context.ctxLoad;})()",
+                                "mode": "python"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@export": {
+                    "title": "Export",
+                    "$": {
+                        "export": {
+                            "style": {
+                                "height": "200px"
+                            },
+                            "label": "Description",
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "configExport",
+                                "mode": "python"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@import": {
+                    "title": "Import",
+                    "$": {
+                        "import": {
+                            "style": {
+                                "height": "200px"
+                            },
+                            "label": "Description",
+                            "control": "AceEditor",
+                            "controlProps": {
+                                "editorId": "configImport",
+                                "mode": "python"
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "callTaskForm": {
+            "className": "vertical",
+            "$": {
+                "path": {
+                    "label": "Task",
+                    "style": {
+                        "width": "460px"
+                    },
+                    "control": "TextEdit",
+                    "events": {
+                        "onChange": {
+                            "name": "onModified"
+                        }
+                    }
+                },
+                "@params": {
+                    "title": "Parameters",
+                    "classname": "vertical",
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlProps": {
+                                "actions": [
+                                    {
+                                        "title": "Add",
+                                        "icon": "add",
+                                        "mini": true,
+                                        "action": {
+                                            "name": "addParam"
+                                        }
+                                    },
+                                    {
+                                        "title": "Delete",
+                                        "icon": "delete",
+                                        "mini": true,
+                                        "disabled$": "!context.selectedItem",
+                                        "action": {
+                                            "name": "deleteParam",
+                                            "confirm": {
+                                                "title": "Delete",
+                                                "message$": "`${_('Delete parameter')} ${context.selectedItem.name}?`",
+                                                "yes": "Yes",
+                                                "no": "No"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "|parameters": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "rowDrag": true,
+                                "gridApi": "paramsGridApi",
+                                "columns!": {
+                                    "name": {
+                                        "label": "Name",
+                                        "width": 280,
+                                        "editable": true
+                                    },
+                                    "expression": {
+                                        "label": "Value",
+                                        "flex": 1,
+                                        "editable": true
+                                    }
+                                }
+                            },
+                            "events": {
+                                "onChange": {
+                                    "name": "onModified"
+                                },
+                                "onCellValueChanged": [
+                                    {
+                                        "name": "onModified"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "events": {
+                        "onSelectionChanged": {
+                            "js": "context.selectedItem=selectedRow"
+                        },
+                        "deleteParam": [
+                            {
+                                "js": "mem.parameters.splice(mem.parameters.indexOf(context.selectedItem), 1); mem.parameters=[...mem.parameters];"
+                            },
+                            {
+                                "name": "onModified"
+                            }
+                        ],
+                        "addParam": [
+                            {
+                                "js": "mem.parameters.push({name: `_('Parameter') ${mem.parameters.length+1}`}); mem.parameters=[...mem.parameters]; "
+                            },
+                            {
+                                "js": "setTimeout(()=>{task.events.fire('paramsGridApi', {call: 'startEditingCell', params: [{rowIndex: mem.parameters.length-1, colKey: 'name'}]})}, 200)"
+                            },
+                            {
+                                "name": "onModified"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.models import ObjectConfig\nfrom beflex.aoa.services import applyFilterModel2\n\nquery = ObjectConfig.objects\n\nif parameters.get('id'):\n    query = query.filter(id=parameters['id'])\nelse:\n    request = parameters.get('request')\n    filterModel2 = request.get('filterModel2') if request else None\n    \n    if filterModel2:\n        query = applyFilterModel2(query, filterModel2)\n    else:\n        query = query.all()\n    \n    query = query.order_by('model_name')\n    \n    if request:\n        query = query[request['startRow']:request['endRow']]\n\ndata = []\nfor u in query:\n    d = {\n        'id': u.id.__str__(),\n        'model_name': u.model_name,\n        'name': u.name,\n    }\n    \n    data.append(d)\n\n"
+            }
+        },
+        "get": {
+            "sql": {
+                "params": []
+            },
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.models import ObjectConfig\n\ncfg = ObjectConfig.objects.get(id=parameters['id'])\n\ndata = {\n    'id': cfg.id.__str__(),\n    'model_name': cfg.model_name,\n    'name': cfg.name,\n    'task': cfg.parsed.get('task'),\n    'description': cfg.parsed['description'],\n    'load': cfg.parsed['load'],\n    'export': cfg.parsed['export'],\n    'import': cfg.parsed['import'],\n    'lookup': cfg.parsed.get('lookup'),\n}\n"
+            }
+        },
+        "save": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.models import ObjectConfig\nimport xml.dom.minidom as dom\n\nif parameters.get('id'):\n    cfg = ObjectConfig.objects.get(id=parameters['id'])\nelse:\n    cfg = ObjectConfig()\n    \ncfg.model_name = parameters['model_name']\ncfg.name = parameters['name']\n\ndoc = dom.Document()\n\nmodel = doc.createElement('model')\nmodel.setAttribute('id', parameters['model_name'])\nmodel.setAttribute('name', parameters['name'])\ndoc.appendChild(model)\n\ndef createScriptElement(name, data):\n    node = doc.createElement(name)\n    model.appendChild(node)    \n\n    d = doc.createCDATASection(data)\n    node.appendChild(d)\n\nif 'task' in parameters:\n    task = doc.createElement('task')\n    task.setAttribute('path', parameters.get('task', {}).get('path', ''))\n    model.appendChild(task)\n    \n    for param in parameters.get('task', {}).get('parameters', []):\n        p = doc.createElement('p')\n        p.setAttribute('name', param['name'])\n        p.setAttribute('expression', param.get('expression', ''))\n        task.appendChild(p)\n\ncreateScriptElement('description', parameters.get('description', ''))\ncreateScriptElement('load', parameters.get('load', '') or '')\ncreateScriptElement('export', parameters.get('export', '') or '')\ncreateScriptElement('import', parameters.get('import', '') or '')\ncreateScriptElement('lookup', parameters.get('lookup', '') or '')\n\ndata_str = doc.toprettyxml(indent ='\\t', encoding=None)\n\ncfg.data = data_str\ncfg.save()\n\ndata = {\n    'id': cfg.id\n}\n"
+            }
+        },
+        "delete": {
+            "sql": {},
+            "script": {
+                "params": [],
+                "py": "from beflex.aos.models import ObjectConfig\n\nObjectConfig.objects.get(id=parameters['id']).delete()"
+            }
+        }
+    },
+    "lists": {
+        "default": {
+            "id": "id",
+            "columns": {
+                "model_name": {
+                    "title": "Model",
+                    "width": 200
+                },
+                "name": {
+                    "title": "Name",
+                    "flex": 1
+                }
+            },
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Create",
+                    "icon": "add",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "Новая конфигурация",
+                        "params": {
+                            "object": "aos.ObjectConfig",
+                            "form": "editConfigTask"
+                        }
+                    }
+                },
+                {
+                    "title": "View",
+                    "icon": "view",
+                    "mini": true,
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Конфигурация ${$listRow.model_name}`",
+                        "params": {
+                            "object": "aos.ObjectConfig",
+                            "form": "editConfigTask",
+                            "id$": "$listRow.id"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "mini": "true",
+                    "command": {
+                        "type": "standard",
+                        "call": "delete"
+                    },
+                    "confirm": {
+                        "message$": "`Удалить конфигурацию ${$listRow.model_name}, ${$listRow.name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Tools",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Packages",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.dialog({object: 'package', form: 'objectPackageDialog', mem: {}, params: {objectId: $listRow.id, model: 'aos.ObjectConfig'}, context: {}})"
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "History",
+                            "command": {
+                                "type": "task",
+                                "title$": "`${_('Object history')}: ${$listRow.code}`",
+                                "call": "/aoa/ObjectTask",
+                                "params": {
+                                    "object": "aos.ModifiedObjects",
+                                    "form": "historyTask",
+                                    "model": "aos.ObjectConfig",
+                                    "objectId$": "$listRow.id"
+                                }
+                            },
+                            "disabled$": "!$listRow"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "references": {
+        "models": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Code",
+                        "field": "model_name",
+                        "width": 320
+                    },
+                    {
+                        "title": "Name",
+                        "field": "name",
+                        "flex": 1
+                    }
+                ],
+                "primaryKey": "model_name",
+                "filterFirst": false,
+                "fastFilter": true
+            },
+            "method": {
+                "script": {
+                    "py": "data = AO.aos_ObjectConfig.getList()"
+                }
+            }
+        }
+    },
+    "js": {}
+}
