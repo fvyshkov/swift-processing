@@ -1,0 +1,190 @@
+{
+  "lists": {
+    "default": {
+      "id": "id",
+      "columns": {
+        "id": {
+          "title": "ID",
+          "width": 80
+        },
+        "name": {
+          "title": "Name",
+          "flex": 1
+        }
+      },
+      "actions": [
+        {
+          "title": "Refresh",
+          "icon": "refresh",
+          "mini": true,
+          "command": {
+            "type": "standard",
+            "call": "refresh"
+          }
+        },
+        {
+          "title": "Add",
+          "icon": "add",
+          "command": {
+            "type": "task",
+            "call": "/aoa/ObjectTask",
+            "title": "New Record",
+            "params": {
+              "object": "simpleList",
+              "form": "editForm",
+              "isNew": true
+            }
+          }
+        },
+        {
+          "title": "Edit",
+          "icon": "edit",
+          "command": {
+            "type": "task",
+            "call": "/aoa/ObjectTask",
+            "title$": "`Edit: ${$listRow.name}`",
+            "params": {
+              "object": "simpleList",
+              "form": "editForm",
+              "objectKey$": "{id: $listRow.id}"
+            }
+          },
+          "disabled$": "!$listRow"
+        },
+        {
+          "title": "Delete",
+          "icon": "delete",
+          "command": {
+            "type": "js",
+            "js": "backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'delete', params: {id: $listRow.id}})"
+          },
+          "confirm": {
+            "message$": "`Delete record '${$listRow.name}'?`",
+            "yes": "Yes",
+            "no": "No"
+          },
+          "disabled$": "!$listRow"
+        }
+      ],
+      "events": {
+        "onRowDoubleClicked": {
+          "js": "tm.newTask({path: '/aoa/ObjectTask', title: `Edit: ${params.selectedRow.name}`, params: {object: 'simpleList', form: 'editForm', objectKey: {id: params.selectedRow.id}}})"
+        }
+      }
+    }
+  },
+  "forms": {
+    "editForm": {
+      "title": "Record",
+      "className": "vertical task task-panel panel",
+      "style": {
+        "width": "500px"
+      },
+      "$": {
+        "@form": {
+          "className": "vertical",
+          "style": {
+            "flexGrow": 1,
+            "overflow": "auto",
+            "padding": "16px"
+          },
+          "$": {
+            "id": {
+              "label": "ID",
+              "control": "TextEdit",
+              "readOnly": true,
+              "visible$": "!params.isNew"
+            },
+            "name": {
+              "label": "Name",
+              "control": "TextEdit",
+              "controlProps": {
+                "required": true,
+                "inputProps": {
+                  "maxLength": 100
+                }
+              }
+            }
+          }
+        },
+        "@buttons": {
+          "className": "horizontal",
+          "style": {
+            "borderTop": "1px solid rgba(0,0,0,0.20)",
+            "padding": "8px 16px",
+            "justifyContent": "flex-end"
+          },
+          "$": {
+            ".btnCancel": {
+              "label": "Cancel",
+              "control": "Button",
+              "controlProps": {
+                "color": "primary"
+              },
+              "action": {
+                "js": "frontend.closeTask();"
+              }
+            },
+            ".btnSave": {
+              "label": "Save",
+              "control": "Button",
+              "controlProps": {
+                "variant": "contained",
+                "color": "primary"
+              },
+              "action": [
+                {
+                  "js": "return backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'save', params: {id: mem.id, name: mem.name, isNew: params.isNew}});"
+                },
+                {
+                  "js": "task.events.fireEvent('onRefreshList');"
+                },
+                {
+                  "js": "frontend.closeTask();"
+                }
+              ],
+              "readOnly$": "!mem.name"
+            }
+          }
+        }
+      },
+      "actions": {
+        "onElementCreated": [
+          {
+            "js": "if (!params.isNew && params.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'get', params: {id: params.objectKey.id}}).then(r => {mem.id = r.id; mem.name = r.name; forceUpdate();}); }"
+          }
+        ]
+      }
+    }
+  },
+  "methods": {
+    "getList": {
+      "script": {
+        "py": "# Get all records from simple list\nimport json\n\n# In-memory storage for testing\n# In production, this would be a database query\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\ndata = records\n"
+      },
+      "sql": {}
+    },
+    "get": {
+      "script": {
+        "py": "# Get single record by ID\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\nrecord = next((r for r in records if r['id'] == parameters.get('id')), None)\n\nif not record:\n    raise UserException('Record not found')\n\ndata = record\n"
+      },
+      "sql": {}
+    },
+    "save": {
+      "script": {
+        "py": "# Save record (create or update)\nimport uuid\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\nif parameters.get('isNew'):\n    # Create new record\n    new_record = {\n        'id': str(uuid.uuid4()),\n        'name': parameters.get('name')\n    }\n    records.append(new_record)\n    cache.set('simpleList_records', records, timeout=None)\n    data = {'id': new_record['id'], 'success': True}\nelse:\n    # Update existing record\n    record = next((r for r in records if r['id'] == parameters.get('id')), None)\n    if not record:\n        raise UserException('Record not found')\n    \n    record['name'] = parameters.get('name')\n    cache.set('simpleList_records', records, timeout=None)\n    data = {'id': record['id'], 'success': True}\n"
+      },
+      "sql": {}
+    },
+    "delete": {
+      "script": {
+        "py": "# Delete record by ID\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\nrecord = next((r for r in records if r['id'] == parameters.get('id')), None)\nif not record:\n    raise UserException('Record not found')\n\nrecords = [r for r in records if r['id'] != parameters.get('id')]\ncache.set('simpleList_records', records, timeout=None)\n\ndata = {'success': True}\n"
+      },
+      "sql": {}
+    }
+  },
+  "actions": [],
+  "filter": {},
+  "references": {}
+}
+

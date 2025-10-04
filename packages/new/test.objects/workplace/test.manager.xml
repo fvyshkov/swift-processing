@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workplace code="test.manager" name="Test Manager">
+  <menu name="Test Objects">
+    <menu name="Simple List" call="/aoa/ObjectListTask">
+      <p name="object" value="simpleList" />
+      <p name="list" value="default" />
+    </menu>
+  </menu>
+</workplace>
+

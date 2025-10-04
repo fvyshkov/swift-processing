@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <configType>aoa.Object</configType>
+  <entries>
+    <entry>
+      <code>simpleList</code>
+      <file>ao/simpleList.json</file>
+    </entry>
+  </entries>
+</configuration>
+

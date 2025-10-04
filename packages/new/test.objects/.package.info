@@ -1,0 +1,27 @@
+{
+  "code": "test.objects",
+  "name": "Test Objects",
+  "description": "Simple test objects for development",
+  "version": "1.0.0",
+  "author": "Fedor Vyshkov",
+  "dependencies": [],
+  "files": [
+    {
+      "type": "ao",
+      "path": "ao/simpleList.json"
+    },
+    {
+      "type": "workplace",
+      "path": "workplace/test.manager.xml"
+    },
+    {
+      "type": "config",
+      "path": ".configs/aoa.Object.xml"
+    },
+    {
+      "type": "config",
+      "path": ".configs/workplace.Workplace.xml"
+    }
+  ]
+}
+

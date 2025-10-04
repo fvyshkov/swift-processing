@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <configType>workplace.Workplace</configType>
+  <entries>
+    <entry>
+      <code>test.manager</code>
+      <file>workplace/test.manager.xml</file>
+    </entry>
+  </entries>
+</configuration>
+
