@@ -55,16 +55,16 @@
           "title": "Delete",
           "icon": "delete",
           "command": {
-            "type": "js",
-            "js": "backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'delete', params: {id: $listRow.id}})"
+              "type": "standard",
+              "call": "delete"
           },
           "confirm": {
-            "message$": "`Delete record '${$listRow.name}'?`",
-            "yes": "Yes",
-            "no": "No"
+              "message$": "`Delete record '${$listRow.name}'?`",
+              "yes": "Yes",
+              "no": "No"
           },
           "disabled$": "!$listRow"
-        }
+      }
       ],
       "events": {
         "onRowDoubleClicked": {
