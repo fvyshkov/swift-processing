@@ -292,230 +292,102 @@ Text             // Static text
 
 ---
 
+## 3.3 Loading data in edit forms (recommended)
+
+- Use `actions.onTaskCreated` on the form to load an existing record or init a new one.
+- Access route parameters via `task.params` (not just `params`).
+- Example:
+```json
+"actions": {
+  "onTaskCreated": {
+    "js": "if (task.params?.isNew) { mem.record = {name: ''}; forceUpdate(); } else if (task.params?.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'objectCode', method: 'get', params: {id: task.params.objectKey.id}}).then(r => { mem.record = r; forceUpdate(); }); }"
+  }
+}
+```
+
+- Save button enable rule (example): `"disabled$": "!mem.record?.name"`.
+
+---
+
 ## 4. METHODS SYSTEM
 
-### 4.1 Method Structure
+### 4.1 SQL method structure (UI-visible on SQL tab)
 
+For methods that expose SQL in the UI, use the nested `sql` object:
 ```json
 "methods": {
   "methodName": {
     "sql": {
-      "params": []
+      "sqlType": "query|script|exec",
+      "database": "default|bank|...",
+      "sql": "SELECT ...\n-- or any DDL/DML script"
     },
-    "script": {
-      "params": [],
-      "py": "Python code here"
-    }
+    "script": {}
   }
 }
 ```
+- `sqlType` controls UI behavior; use `query` for selects, `script` for DDL/DML batches.
+- `database` should match configured DB alias.
 
-### 4.2 Common Method Patterns
+### 4.2 Python script pattern (server-side execution)
 
-**Data retrieval:**
-```python
-from apng_core.db import fetchall, fetchone
+Use `initDbSession(database='default').cursor()` with parameterized SQL (`%(param)s`).
+- `getList`: minimal stable SELECT with ORDER BY (paging optional)
+- `get`: SELECT ... WHERE id = %(id)s
+- `save`: INSERT ... RETURNING id (for new) or UPDATE (existing)
+- `delete`: DELETE ... WHERE id = %(id)s
 
-with initDbSession(application='bank').cursor() as cursor:
-    cursor.execute(SQL, params)
-    data = fetchall(cursor)
-```
+---
 
-**Transaction handling:**
-```python
-from django.db import transaction
-from django.conf import settings
+## 5. PostgreSQL DDL patterns
 
-with transaction.atomic(using=settings.APPS_DB['bank']):
-    # database operations
-```
+### 5.1 UUID primary key via pgcrypto
+```sql
+create extension if not exists "pgcrypto";
 
-**Error handling:**
-```python
-from apng_core.exceptions import UserException
-
-raise UserException({
-    'message': 'Error description',
-    'trace': log.readLog()
-})
-```
-
-**Object method calls:**
-```python
-from apng_core.aoa.services import execObjectMethod
-
-result = execObjectMethod({
-    'object': 'objectName',
-    'method': 'methodName',
-    'params': {...}
-})
+create table if not exists simple_list (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    created_at timestamp without time zone not null default now()
+);
 ```
 
 ---
 
-## 5. LISTS SYSTEM
+## 6. Non-executable DDL storage in AO
 
-### 5.1 List Definition
-
+To store schema DDL with an object (for reference only), add a special method, e.g. `DATABASE_UPDATE`, with SQL placed under `methods.<name>.sql`:
 ```json
-"lists": {
-  "default": {
-    "id": "primaryKeyField",
-    "columns": {
-      "columnName": {
-        "title": "Column Title",
-        "width": 160,
-        "flex": 1,
-        "fields": {
-          "field1": { "format": "date|currency|datetime" },
-          "field2": {}
-        },
-        "control": "chip",
-        "decode": {
-          "VALUE": { "value": "Display", "color": "#hex" }
-        },
-        "cellStyle": {}
-      }
+"methods": {
+  "DATABASE_UPDATE": {
+    "sql": {
+      "sqlType": "script",
+      "database": "default",
+      "sql": "create extension if not exists \"pgcrypto\";\ncreate table if not exists simple_list (\n  id uuid primary key default gen_random_uuid(),\n  name text not null,\n  created_at timestamp without time zone not null default now()\n);\n"
     },
-    "actions": [],
-    "filter": {},
-    "events": {
-      "onRowDoubleClicked": { "js": "..." },
-      "onTaskCreated": []
-    }
+    "script": {}
   }
 }
 ```
-
-### 5.2 Column Types
-
-**Simple field:**
-```json
-"columnName": {
-  "title": "Title",
-  "width": 120
-}
-```
-
-**Composite field:**
-```json
-"clientAndProduct": {
-  "title": "Customer/Product",
-  "fields": {
-    "cli_name": {},
-    "product_name": {}
-  }
-}
-```
-
-**Decoded field (Status):**
-```json
-"state": {
-  "title": "State",
-  "control": "chip",
-  "decode": {
-    "START": { "value": "Created", "color": "#2D9CDB" },
-    "COMPLETED": { "value": "Completed", "color": "#00AA44" }
-  }
-}
-```
+- This method is not executed; it serves as embedded documentation visible on the SQL tab.
 
 ---
 
 ## 6. ACTIONS SYSTEM
 
-### 6.1 Action Definition
+### 6.3 Standard Delete Pattern (required for lists)
 
+- Always use the built-in delete command on lists so the grid refreshes correctly:
 ```json
 {
-  "name": "Action Name",
-  "title": "Action Title",
-  "icon": "view|edit|delete|refresh|add",
-  "mini": true,
-  "split": true,
-  "command": {
-    "type": "task|workflow|js|standard",
-    "call": "/path/to/task",
-    "params": {},
-    "js": "javascript code"
-  },
-  "action": {
-    "name": "actionName",
-    "js": "javascript code",
-    "params": {}
-  },
-  "confirm": {
-    "message": "Confirmation text",
-    "message$": "`Dynamic ${variable}`",
-    "yes": "Yes",
-    "no": "No"
-  },
-  "visible": "expression",
-  "visible$": "dynamic expression",
-  "disabled": "expression",
-  "disabled$": "dynamic expression"
+  "title": "Delete",
+  "icon": "delete",
+  "command": { "type": "standard", "call": "delete" },
+  "confirm": { "message$": "`Delete record '${$listRow.name}'?`", "yes": "Yes", "no": "No" },
+  "disabled$": "!$listRow"
 }
 ```
-
-### 6.2 Command Types
-
-**Task:**
-```json
-{
-  "type": "task",
-  "call": "/aoa/ObjectTask",
-  "title$": "`Title ${variable}`",
-  "params": {
-    "object": "objectName",
-    "form": "formName",
-    "objectKey": { "dep_id": 123, "id": 456 }
-  }
-}
-```
-
-**Workflow:**
-```json
-{
-  "type": "workflow",
-  "call": "WORKFLOW_CODE",
-  "params": {
-    "objectKey$": "`loanapp:${dep_id},${id}`"
-  }
-}
-```
-
-**JavaScript:**
-```json
-{
-  "type": "js",
-  "js": "frontend.displayInfo(JSON.stringify($listRow));"
-}
-```
-
----
-
-## 7. WORKPLACE STRUCTURE (XML)
-
-```xml
-<workplace code="workplace.code" name="Display Name">
-  <menu name="Menu Name">
-    <menu name="Submenu" call="/aoa/ObjectListTask">
-      <p name="object" value="objectName" />
-      <p name="list" value="listName" />
-    </menu>
-    <menu name="Task Menu" call="/aoa/ObjectTask">
-      <p name="object" value="objectName" />
-      <p name="form" value="formName" />
-    </menu>
-  </menu>
-</workplace>
-```
-
-### 7.1 Standard Calls
-
-- `/aoa/ObjectListTask` - Display object list
-- `/aoa/ObjectTask` - Display object form/task
-- `/aoa/ObjectTask` with template - Display report
+- Do not replace with custom JS unless absolutely necessary. If you must, manually trigger list refresh after backend call.
 
 ---
 
@@ -993,77 +865,15 @@ unzip -l my.package.zip
 
 ---
 
-## 4. METHODS (BACKEND)
-
-### 4.1 SQL method structure (UI-visible on SQL tab)
-
-For methods that expose SQL in the UI, use the nested `sql` object:
-```json
-"methods": {
-  "methodName": {
-    "sql": {
-      "sqlType": "query|script|exec",
-      "database": "default|bank|...",
-      "sql": "SELECT ...\n-- or any DDL/DML script"
-    },
-    "script": {}
-  }
-}
-```
-- `sqlType` controls UI behavior; use `query` for selects, `script` for DDL/DML batches.
-- `database` should match configured DB alias.
-
-### 4.2 Python script pattern (server-side execution)
-
-Use `initDbSession(database='default').cursor()` with parameterized SQL (`%(param)s`).
-- `getList`: SELECT with ORDER BY
-- `get`: SELECT ... WHERE id = %(id)s
-- `save`: INSERT ... RETURNING id (for new) or UPDATE (existing)
-- `delete`: DELETE ... WHERE id = %(id)s
-
----
-
-## 5. PostgreSQL DDL patterns
-
-### 5.1 UUID primary key via pgcrypto
-```sql
-create extension if not exists "pgcrypto";
-
-create table if not exists simple_list (
-    id uuid primary key default gen_random_uuid(),
-    name text not null,
-    created_at timestamp without time zone not null default now()
-);
-```
-
----
-
-## 6. Non-executable DDL storage in AO
-
-To store schema DDL with an object (for reference only), add a special method, e.g. `DATABASE_UPDATE`, with SQL placed under `methods.<name>.sql`:
-```json
-"methods": {
-  "DATABASE_UPDATE": {
-    "sql": {
-      "sqlType": "script",
-      "database": "default",
-      "sql": "create extension if not exists \"pgcrypto\";\ncreate table if not exists simple_list (\n  id uuid primary key default gen_random_uuid(),\n  name text not null,\n  created_at timestamp without time zone not null default now()\n);\n"
-    },
-    "script": {}
-  }
-}
-```
-- This method is not executed; it serves as embedded documentation visible on the SQL tab.
-
----
-
 ## 15. GENERATION CHECKLIST (addenda)
 
 - [ ] Forms: use `mem.record` namespacing; no manual onChange for TextEdit.
+- [ ] Load existing data in `actions.onTaskCreated` using `task.params.objectKey.id`.
 - [ ] Save button guard: `disabled$ = !mem.record?.name` (or domain-specific).
 - [ ] Methods: expose SQL in UI via `methods.<name>.sql` with `sqlType` and `database`.
 - [ ] For Postgres UUID tables: include `pgcrypto` and `gen_random_uuid()` in DDL.
 - [ ] If embedding DDL, create `DATABASE_UPDATE` method as above.
+- [ ] Lists: use `{"type": "standard", "call": "delete"}` for Delete; avoid custom JS.
 
 ---
 
