@@ -15,6 +15,17 @@
             "file_name": "ao/simpleList.json"
         },
         {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "55555555-5555-5555-5555-555555555555",
+            "object_name": "SWIFT Input Jobs",
+            "object_attrs": {
+                "code": "swiftInputJob",
+                "name": "SWIFT Input Jobs"
+            },
+            "file_name": "ao/swiftInputJob.json"
+        },
+        {
             "model_name": "workplace.Workplace",
             "model_title": "Workplace",
             "object_id": "44444444-4444-4444-4444-444444444444",

@@ -5,6 +5,10 @@
       <p name="object" value="simpleList" />
       <p name="list" value="default" />
     </menu>
+    <menu name="SWIFT Input Jobs" call="/aoa/ObjectListTask">
+      <p name="object" value="swiftInputJob" />
+      <p name="list" value="default" />
+    </menu>
   </menu>
 </workplace>
 

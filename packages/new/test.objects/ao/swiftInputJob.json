@@ -1,0 +1,144 @@
+{
+  "lists": {
+    "default": {
+      "id": "id",
+      "columns": {
+        "id": { "title": "ID", "width": 260 },
+        "state": { "title": "State", "width": 140 },
+        "created": { "title": "Created", "width": 180, "format": "datetime" },
+        "folder_in": { "title": "Folder IN", "flex": 1 },
+        "folder_out": { "title": "Folder OUT", "flex": 1 },
+        "user": { "title": "User", "width": 180 }
+      },
+      "actions": [
+        { "title": "Refresh", "icon": "refresh", "mini": true, "command": { "type": "standard", "call": "refresh" } },
+        {
+          "title": "Add",
+          "icon": "add",
+          "command": {
+            "type": "task",
+            "call": "/aoa/ObjectTask",
+            "title": "New Job",
+            "params": { "object": "swiftInputJob", "form": "editForm", "isNew": true }
+          }
+        },
+        {
+          "title": "Edit",
+          "icon": "edit",
+          "command": {
+            "type": "task",
+            "call": "/aoa/ObjectTask",
+            "title$": "`Edit: ${$listRow.id}`",
+            "params": { "object": "swiftInputJob", "form": "editForm", "objectKey$": "{id: $listRow.id}" }
+          },
+          "disabled$": "!$listRow"
+        },
+        {
+          "title": "Delete",
+          "icon": "delete",
+          "command": { "type": "standard", "call": "delete" },
+          "confirm": { "message$": "`Delete job ${$listRow.id}?`", "yes": "Yes", "no": "No" },
+          "disabled$": "!$listRow"
+        }
+      ],
+      "events": {
+        "onRowDoubleClicked": { "js": "tm.newTask({path: '/aoa/ObjectTask', title: `Edit: ${params.selectedRow.id}`, params: {object: 'swiftInputJob', form: 'editForm', objectKey: {id: params.selectedRow.id}}})" }
+      }
+    }
+  },
+  "forms": {
+    "editForm": {
+      "title": "SWIFT Input Job",
+      "className": "vertical task task-panel panel",
+      "style": { "width": "700px", "height": "420px" },
+      "$": {
+        "@form": {
+          "className": "vertical",
+          "style": { "padding": "8px", "overflow": "auto" },
+          "$": {
+            "record": {
+              "$": {
+                "id": { "label": "ID", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew", "style": { "width": "400px" } },
+                "state": {
+                  "label": "State",
+                  "control": "SelectList",
+                  "style": { "width": "240px" },
+                  "controlProps": {
+                    "list": [
+                      { "value": "processing", "name": "processing" },
+                      { "value": "finished", "name": "finished" }
+                    ]
+                  }
+                },
+                "folder_in": { "label": "Folder IN", "control": "TextEdit", "style": { "width": "600px" } },
+                "folder_out": { "label": "Folder OUT", "control": "TextEdit", "style": { "width": "600px" } },
+                "user": { "label": "User", "control": "TextEdit", "style": { "width": "320px" } },
+                "created": { "label": "Created", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew", "style": { "width": "280px" } }
+              }
+            }
+          }
+        },
+        "@buttons": {
+          "className": "horizontal",
+          "style": { "borderTop": "1px solid rgba(0,0,0,0.20)", "padding": "8px 16px", "justifyContent": "flex-end" },
+          "$": {
+            ".btnCancel": { "label": "Cancel", "control": "Button", "controlProps": { "color": "primary" }, "action": { "js": "frontend.closeTask();" } },
+            ".btnSave": {
+              "label": "Save",
+              "control": "Button",
+              "controlProps": { "variant": "contained", "color": "primary" },
+              "action": [
+                { "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftInputJob', method: 'save', params: { id: mem.record?.id, state: mem.record?.state, folder_in: mem.record?.folder_in, folder_out: mem.record?.folder_out, user: mem.record?.user, isNew: params.isNew }});" },
+                { "js": "task.events.fireEvent('onRefreshList');" },
+                { "js": "frontend.closeTask();" }
+              ],
+              "disabled$": "!(mem.record?.state && mem.record?.folder_in && mem.record?.folder_out && mem.record?.user)"
+            }
+          }
+        }
+      },
+      "actions": {
+        "onTaskCreated": {
+          "js": "if (task.params?.isNew) { mem.record = {state: 'processing'}; forceUpdate(); } else if (task.params?.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'swiftInputJob', method: 'get', params: {id: task.params.objectKey.id}}).then(r => { mem.record = r; forceUpdate(); }); }"
+        }
+      }
+    }
+  },
+  "methods": {
+    "getList": {
+      "script": {
+        "py": "from apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n  SELECT id::text AS id, state, created AS created, folder_in, folder_out, \"user\" AS user\n  FROM swift_input_job\n  ORDER BY created DESC, id DESC\n\"\"\"\n\ntry:\n  with initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\nexcept Exception as e:\n  raise UserException({'message': 'Error fetching jobs', 'description': 'SQL:\\n%s' % SQL}).withError(e)\n"
+      },
+      "sql": {}
+    },
+    "get": {
+      "script": {
+        "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n  SELECT id::text AS id, state, created AS created, folder_in, folder_out, \"user\" AS user\n  FROM swift_input_job\n  WHERE id = %(id)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n  c.execute(SQL, {'id': parameters.get('id')})\n  data = fetchone(c)\n  if not data:\n    raise UserException('Record not found')\n"
+      },
+      "sql": {}
+    },
+    "save": {
+      "script": {
+        "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n  rid = parameters.get('id')\n  if parameters.get('isNew') or not rid:\n    SQL = \"\"\"\n      INSERT INTO swift_input_job (state, folder_in, folder_out, \"user\")\n      VALUES (%(state)s, %(folder_in)s, %(folder_out)s, %(user)s)\n      RETURNING id::text AS id, created AS created\n    \"\"\"\n    try:\n      c.execute(SQL, { 'state': parameters.get('state'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'user': parameters.get('user') })\n      r = fetchone(c)\n      data = { 'id': r['id'], 'created': r['created'] }\n    except Exception as e:\n      raise UserException({'message': 'Error inserting job'}).withError(e)\n  else:\n    SQL = \"\"\"\n      UPDATE swift_input_job\n      SET state = %(state)s, folder_in = %(folder_in)s, folder_out = %(folder_out)s, \"user\" = %(user)s\n      WHERE id = %(id)s\n    \"\"\"\n    try:\n      c.execute(SQL, { 'id': rid, 'state': parameters.get('state'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'user': parameters.get('user') })\n      data = { 'id': rid }\n    except Exception as e:\n      raise UserException({'message': 'Error updating job'}).withError(e)\n"
+      },
+      "sql": {}
+    },
+    "delete": {
+      "script": {
+        "py": "SQL = 'DELETE FROM swift_input_job WHERE id = %(id)s'\nwith initDbSession(database='default').cursor() as c:\n  c.execute(SQL, {'id': parameters.get('id')})\n  data = {'success': True}\n"
+      },
+      "sql": {}
+    },
+    "DATABASE_UPDATE": {
+      "sql": {
+        "sqlType": "script",
+        "database": "default",
+        "sql": "create extension if not exists \"pgcrypto\";\n\ncreate table if not exists swift_input_job (\n  id uuid primary key default gen_random_uuid(),\n  state text not null,\n  created timestamp without time zone not null default now(),\n  folder_in text not null,\n  folder_out text not null,\n  \"user\" character varying(60) not null\n);\n\ncreate table if not exists swift_input_job_item (\n  id uuid primary key default gen_random_uuid(),\n  job_id uuid not null references swift_input_job(id) on delete cascade,\n  file_name text not null,\n  status text not null, -- init|success|fail\n  content bytea,\n  start_date timestamp without time zone default now(),\n  finish_date timestamp without time zone\n);\n"
+      },
+      "script": {}
+    }
+  },
+  "actions": [],
+  "filter": {},
+  "references": {}
+}
