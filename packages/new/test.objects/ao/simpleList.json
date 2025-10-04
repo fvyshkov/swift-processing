@@ -78,7 +78,8 @@
       "title": "Record",
       "className": "vertical task task-panel panel",
       "style": {
-        "width": "500px"
+        "width": "500px",
+        "height": "300px"
       },
       "$": {
         "@form": {
@@ -89,19 +90,27 @@
             "padding": "16px"
           },
           "$": {
-            "id": {
-              "label": "ID",
-              "control": "TextEdit",
-              "readOnly": true,
-              "visible$": "!params.isNew"
-            },
-            "name": {
-              "label": "Name",
-              "control": "TextEdit",
-              "controlProps": {
-                "required": true,
-                "inputProps": {
-                  "maxLength": 100
+            "record": {
+              "className": "vertical",
+              "$": {
+                "id": {
+                  "label": "ID",
+                  "control": "TextEdit",
+                  "readOnly": true,
+                  "visible$": "!params.isNew"
+                },
+                "name": {
+                  "label": "Name",
+                  "control": "TextEdit",
+                  "style": {
+                    "width": "400px"
+                  },
+                  "controlProps": {
+                    "required": true,
+                    "inputProps": {
+                      "maxLength": 100
+                    }
+                  }
                 }
               }
             }
@@ -134,7 +143,7 @@
               },
               "action": [
                 {
-                  "js": "return backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'save', params: {id: mem.id, name: mem.name, isNew: params.isNew}});"
+                  "js": "return backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'save', params: {id: mem.record?.id, name: mem.record?.name, isNew: params.isNew}});"
                 },
                 {
                   "js": "task.events.fireEvent('onRefreshList');"
@@ -143,44 +152,50 @@
                   "js": "frontend.closeTask();"
                 }
               ],
-              "readOnly$": "!mem.name"
+              "disabled$": "!mem.record?.name"
             }
           }
         }
       },
       "actions": {
-        "onElementCreated": [
-          {
-            "js": "if (!params.isNew && params.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'get', params: {id: params.objectKey.id}}).then(r => {mem.id = r.id; mem.name = r.name; forceUpdate();}); }"
-          }
-        ]
+        "onTaskCreated": {
+          "js": "if (params.isNew) { mem.record = {name: ''}; forceUpdate(); } else if (params.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'get', params: {id: params.objectKey.id}}).then(r => {mem.record = r; forceUpdate();}); }"
+        }
       }
     }
   },
   "methods": {
     "getList": {
       "script": {
-        "py": "# Get all records from simple list\nimport json\n\n# In-memory storage for testing\n# In production, this would be a database query\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\ndata = records\n"
+        "py": "# Get all records from simple_list table\nfrom apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    SELECT id, name\n    FROM simple_list\n    ORDER BY id DESC\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL)\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching records',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n"
       },
       "sql": {}
     },
     "get": {
       "script": {
-        "py": "# Get single record by ID\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\nrecord = next((r for r in records if r['id'] == parameters.get('id')), None)\n\nif not record:\n    raise UserException('Record not found')\n\ndata = record\n"
+        "py": "# Get single record by ID\nfrom apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    SELECT id, name\n    FROM simple_list\n    WHERE id = %(id)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = fetchone(c)\n        if not data:\n            raise UserException('Record not found')\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching record',\n            'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'id': parameters.get('id')})\n        }).withError(e)\n"
       },
       "sql": {}
     },
     "save": {
       "script": {
-        "py": "# Save record (create or update)\nimport uuid\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\nif parameters.get('isNew'):\n    # Create new record\n    new_record = {\n        'id': str(uuid.uuid4()),\n        'name': parameters.get('name')\n    }\n    records.append(new_record)\n    cache.set('simpleList_records', records, timeout=None)\n    data = {'id': new_record['id'], 'success': True}\nelse:\n    # Update existing record\n    record = next((r for r in records if r['id'] == parameters.get('id')), None)\n    if not record:\n        raise UserException('Record not found')\n    \n    record['name'] = parameters.get('name')\n    cache.set('simpleList_records', records, timeout=None)\n    data = {'id': record['id'], 'success': True}\n"
+        "py": "# Save record to simple_list table\nfrom apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n    record_id = parameters.get('id')\n    name = parameters.get('name')\n    is_new = parameters.get('isNew', False)\n    \n    if is_new or not record_id:\n        # INSERT new record\n        SQL = \"\"\"\n            INSERT INTO simple_list (name)\n            VALUES (%(name)s)\n            RETURNING id\n        \"\"\"\n        try:\n            c.execute(SQL, {'name': name})\n            result = fetchone(c)\n            data = {'id': result['id'], 'name': name}\n        except Exception as e:\n            raise UserException({\n                'message': 'Error inserting record',\n                'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'name': name})\n            }).withError(e)\n    else:\n        # UPDATE existing record\n        SQL = \"\"\"\n            UPDATE simple_list\n            SET name = %(name)s\n            WHERE id = %(id)s\n        \"\"\"\n        try:\n            c.execute(SQL, {'id': record_id, 'name': name})\n            data = {'id': record_id, 'name': name}\n        except Exception as e:\n            raise UserException({\n                'message': 'Error updating record',\n                'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'id': record_id, 'name': name})\n            }).withError(e)\n"
       },
       "sql": {}
     },
     "delete": {
       "script": {
-        "py": "# Delete record by ID\nfrom django.core.cache import cache\n\nrecords = cache.get('simpleList_records', [])\n\nrecord = next((r for r in records if r['id'] == parameters.get('id')), None)\nif not record:\n    raise UserException('Record not found')\n\nrecords = [r for r in records if r['id'] != parameters.get('id')]\ncache.set('simpleList_records', records, timeout=None)\n\ndata = {'success': True}\n"
+        "py": "# Delete record from simple_list table\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    DELETE FROM simple_list\n    WHERE id = %(id)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = {'success': True}\n    except Exception as e:\n        raise UserException({\n            'message': 'Error deleting record',\n            'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'id': parameters.get('id')})\n        }).withError(e)\n"
       },
       "sql": {}
+    },
+    "DATABASE_UPDATE": {
+      "sql": {
+        "sqlType": "script",
+        "database": "default",
+        "sql": "-- Non-executable DDL kept for reference only.\ncreate extension if not exists \"pgcrypto\";\n\ncreate table if not exists simple_list (\n    id uuid primary key default gen_random_uuid(),\n    name text not null,\n    created_at timestamp without time zone not null default now()\n);\n"
+      },
+      "script": {}
     }
   },
   "actions": [],

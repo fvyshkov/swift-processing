@@ -1,50 +1,85 @@
 # Test Objects Package
 
-Simple test package demonstrating basic CRUD operations.
+## Description
 
-## Objects
+This package provides a simple list management functionality with basic CRUD operations using SQL-based storage.
 
-### simpleList
+## Prerequisites
 
-A basic list object with a single field `name` demonstrating:
-- List view with columns
-- Add/Edit/Delete operations
-- Form validation
-- In-memory storage (using Django cache)
+**IMPORTANT**: Before installing this package, you must create the database objects (PostgreSQL):
+
+```sql
+create extension if not exists "pgcrypto";
+
+create table if not exists simple_list (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    created_at timestamp without time zone not null default now()
+);
+```
+
+The same DDL is stored inside the object under `methods.DATABASE_UPDATE.sql`.
+
+## Features
+
+- **Simple List**: A basic list with name field
+  - Create new records (INSERT with RETURNING id)
+  - Edit existing records (UPDATE)
+  - Delete records (DELETE)
+  - List all records (SELECT with ORDER BY)
+
+## Installation
+
+1. **Create the database table** (see Prerequisites above)
+
+2. Archive the package:
+   ```bash
+   cd packages/new/test.objects
+   zip -r ../test.objects.zip ao/ workplace/ .package.info README.md
+   ```
+
+3. Upload the `test.objects.zip` file through the package manager interface
 
 ## Structure
 
 ```
 test.objects/
-├── .configs/
-│   ├── aoa.Object.xml          # Object configuration
-│   └── workplace.Workplace.xml # Workplace configuration
 ├── ao/
-│   └── simpleList.json         # Application Object definition
+│   └── simpleList.json       # Object definition with forms and methods (contains DATABASE_UPDATE DDL)
 ├── workplace/
-│   └── test.manager.xml        # Workplace menu definition
-├── .package.info               # Package metadata
-└── README.md                   # This file
+│   └── test.manager.xml      # Menu integration
+├── .package.info             # Package metadata
+└── README.md                 # This file
 ```
 
-## Usage
+## Object Details
 
-1. Deploy package to system
-2. Access via workplace: **Test Manager → Simple List**
-3. Operations:
-   - **Add**: Create new record with name
-   - **Edit**: Double-click row or use Edit button
-   - **Delete**: Select row and click Delete (with confirmation)
-   - **Refresh**: Reload list
+### simpleList
+
+**Lists:**
+- `default`: Main list showing all records with ID and Name columns (sorted by ID DESC)
+
+**Forms:**
+- `editForm`: Form for creating/editing records
+  - Uses `mem.record` object pattern (like user.json)
+  - Automatic TextEdit binding to `mem.record.name`
+  - Save button enabled when name is filled
+
+**Methods:**
+- `getList`: SQL SELECT all records from simple_list table
+- `get`: SQL SELECT single record by ID
+- `save`: SQL INSERT (with RETURNING id) or UPDATE based on isNew flag
+- `delete`: SQL DELETE by ID
+- `DATABASE_UPDATE`: Non-executable DDL block storing table creation SQL
 
 ## Technical Details
 
-- **Storage**: Django cache (in-memory, not persistent)
-- **ID Generation**: UUID v4
-- **Frontend**: FlexUI JSON forms
-- **Backend**: Python methods
+All methods follow the pattern from existing objects:
+- Using `initDbSession(database='default').cursor()`
+- Using `fetchall()` and `fetchone()` from `apng_core.db`
+- Parameterized queries with `%(param)s` syntax
+- Proper error handling with `UserException`
 
-## Generated Using
+## Testing
 
-This package was generated using AI-assisted code generation based on `SYSTEM_REFERENCE.md` patterns.
-
+After installation, find "Simple List" in the Test menu to start using the functionality.
