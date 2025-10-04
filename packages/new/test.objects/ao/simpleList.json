@@ -157,9 +157,9 @@
           }
         }
       },
-      "actions": {
+      "events": {
         "onTaskCreated": {
-          "js": "if (params.isNew) { mem.record = {name: ''}; forceUpdate(); } else if (params.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'get', params: {id: params.objectKey.id}}).then(r => {mem.record = r; forceUpdate();}); }"
+          "js": "if (task.params?.isNew) { mem.record = {name: ''}; forceUpdate(); } else if (task.params && task.params.objectKey && task.params.objectKey.id) { backend.post('/aoa/execObjectMethod', {object: 'simpleList', method: 'get', params: {id: task.params.objectKey.id}}).then(r => { mem.record = r; forceUpdate(); }); }"
         }
       }
     }

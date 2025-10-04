@@ -269,6 +269,27 @@ Text             // Static text
 
 **Pattern**: Fields ending with `$` contain JavaScript expressions evaluated at runtime.
 
+### 3.2 Binding Pattern (recommended)
+
+- Use an inner, non-@ key to create a namespaced object in mem, e.g. `"record"` → `mem.record.*`.
+- Example:
+```json
+"$": {
+  "@form": {
+    "$": {
+      "record": {
+        "$": {
+          "id": { "label": "ID", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew" },
+          "name": { "label": "Name", "control": "TextEdit" }
+        }
+      }
+    }
+  }
+}
+```
+- TextEdit automatically binds to `mem.record.name` (no onChange needed).
+- Enable/disable actions using expressions, e.g. Save button: `"disabled$": "!mem.record?.name"`.
+
 ---
 
 ## 4. METHODS SYSTEM
@@ -969,6 +990,80 @@ zip -r ../my.package.zip ao/ workplace/ .package.info
 cd ..
 unzip -l my.package.zip
 ```
+
+---
+
+## 4. METHODS (BACKEND)
+
+### 4.1 SQL method structure (UI-visible on SQL tab)
+
+For methods that expose SQL in the UI, use the nested `sql` object:
+```json
+"methods": {
+  "methodName": {
+    "sql": {
+      "sqlType": "query|script|exec",
+      "database": "default|bank|...",
+      "sql": "SELECT ...\n-- or any DDL/DML script"
+    },
+    "script": {}
+  }
+}
+```
+- `sqlType` controls UI behavior; use `query` for selects, `script` for DDL/DML batches.
+- `database` should match configured DB alias.
+
+### 4.2 Python script pattern (server-side execution)
+
+Use `initDbSession(database='default').cursor()` with parameterized SQL (`%(param)s`).
+- `getList`: SELECT with ORDER BY
+- `get`: SELECT ... WHERE id = %(id)s
+- `save`: INSERT ... RETURNING id (for new) or UPDATE (existing)
+- `delete`: DELETE ... WHERE id = %(id)s
+
+---
+
+## 5. PostgreSQL DDL patterns
+
+### 5.1 UUID primary key via pgcrypto
+```sql
+create extension if not exists "pgcrypto";
+
+create table if not exists simple_list (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    created_at timestamp without time zone not null default now()
+);
+```
+
+---
+
+## 6. Non-executable DDL storage in AO
+
+To store schema DDL with an object (for reference only), add a special method, e.g. `DATABASE_UPDATE`, with SQL placed under `methods.<name>.sql`:
+```json
+"methods": {
+  "DATABASE_UPDATE": {
+    "sql": {
+      "sqlType": "script",
+      "database": "default",
+      "sql": "create extension if not exists \"pgcrypto\";\ncreate table if not exists simple_list (\n  id uuid primary key default gen_random_uuid(),\n  name text not null,\n  created_at timestamp without time zone not null default now()\n);\n"
+    },
+    "script": {}
+  }
+}
+```
+- This method is not executed; it serves as embedded documentation visible on the SQL tab.
+
+---
+
+## 15. GENERATION CHECKLIST (addenda)
+
+- [ ] Forms: use `mem.record` namespacing; no manual onChange for TextEdit.
+- [ ] Save button guard: `disabled$ = !mem.record?.name` (or domain-specific).
+- [ ] Methods: expose SQL in UI via `methods.<name>.sql` with `sqlType` and `database`.
+- [ ] For Postgres UUID tables: include `pgcrypto` and `gen_random_uuid()` in DDL.
+- [ ] If embedding DDL, create `DATABASE_UPDATE` method as above.
 
 ---
 
