@@ -26,6 +26,17 @@
             "file_name": "ao/swiftInputJob.json"
         },
         {
+            "model_name": "aoa.Object",
+            "model_title": "Application object",
+            "object_id": "66666666-6666-6666-6666-666666666666",
+            "object_name": "SWIFT Settings",
+            "object_attrs": {
+                "code": "swiftSettings",
+                "name": "SWIFT Settings"
+            },
+            "file_name": "ao/swiftSettings.json"
+        },
+        {
             "model_name": "workplace.Workplace",
             "model_title": "Workplace",
             "object_id": "44444444-4444-4444-4444-444444444444",

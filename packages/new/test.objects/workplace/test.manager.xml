@@ -9,6 +9,10 @@
       <p name="object" value="swiftInputJob" />
       <p name="list" value="default" />
     </menu>
+    <menu name="SWIFT Settings" call="/aoa/ObjectTask">
+      <p name="object" value="swiftSettings" />
+      <p name="form" value="editForm" />
+    </menu>
   </menu>
 </workplace>
 

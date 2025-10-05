@@ -43,6 +43,86 @@
       ],
       "events": {
         "onRowDoubleClicked": { "js": "tm.newTask({path: '/aoa/ObjectTask', title: `Edit: ${params.selectedRow.id}`, params: {object: 'swiftInputJob', form: 'editForm', objectKey: {id: params.selectedRow.id}}})" }
+      },
+      "filter": {
+        "form": {
+          "style": { "width": "360px", "overflow": "hidden", "paddingRight": "0px" },
+          "title": "Filter",
+          "className": "panel vertical",
+          "$": {
+            "@fields": {
+              "className": "vertical",
+              "style": { "paddingTop": "8px", "paddingRight": "8px", "overflowY": "auto", "flexGrow": 1 },
+              "$": {
+                "@fromDate": {
+                  "className": "horizontal",
+                  "$": {
+                    "fromDate": {
+                      "label": "Created from",
+                      "control": "TextEdit",
+                      "controlProps": {
+                        "masked": {
+                          "mask": ["/\\d/","/\\d/",".","/\\d/","/\\d/",".","/\\d/","/\\d/","/\\d/","/\\d/"," ","/\\d/","/\\d/",":","/\\d/","/\\d/",":","/\\d/","/\\d/"],
+                          "placeholderChar": "_",
+                          "showMask": true,
+                          "guide": true,
+                          "keepCharPositions": true
+                        }
+                      },
+                      "controlOpts": { "toValue": "(params.value||'').match(/\\d+/g) && params.value || ''" }
+                    },
+                    ".btnNow": {
+                      "control": "IconButton",
+                      "controlProps": { "icon": "time", "style": { "paddingTop": "6px" } },
+                      "action": { "name": "setNow" }
+                    }
+                  },
+                  "actions": { "setNow": { "js": " let d = new Date(); mem.fromDate = ('0'+d.getDate()).slice(-2) + '.' + ('0'+(d.getMonth()+1)).slice(-2) + '.' + d.getFullYear()+ ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0'+d.getSeconds()).slice(-2);" } }
+                },
+                "@toDate": {
+                  "className": "horizontal",
+                  "$": {
+                    "toDate": {
+                      "label": "Created to",
+                      "control": "TextEdit",
+                      "controlProps": {
+                        "masked": {
+                          "mask": ["/\\d/","/\\d/",".","/\\d/","/\\d/",".","/\\d/","/\\d/","/\\d/","/\\d/"," ","/\\d/","/\\d/",":","/\\d/","/\\d/",":","/\\d/","/\\d/"],
+                          "placeholderChar": "_",
+                          "showMask": true,
+                          "guide": true,
+                          "keepCharPositions": true
+                        }
+                      },
+                      "controlOpts": { "toValue": "(params.value||'').match(/\\d+/g) && params.value || ''" }
+                    },
+                    ".btnNow": { "control": "IconButton", "controlProps": { "icon": "time", "style": { "paddingTop": "6px" } }, "action": { "name": "setNow" } }
+                  },
+                  "actions": { "setNow": { "js": " let d = new Date(); mem.toDate = ('0'+d.getDate()).slice(-2) + '.' + ('0'+(d.getMonth()+1)).slice(-2) + '.' + d.getFullYear()+ ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0'+d.getSeconds()).slice(-2);" } }
+                },
+                "user": {
+                  "label": "User",
+                  "control": "ObjectSelectList",
+                  "controlProps": { "object": "user", "method": "getList" },
+                  "controlOpts": { "translate": { "value": "code", "name": "name" } }
+                },
+                "state": {
+                  "label": "State",
+                  "control": "SelectList",
+                  "controlProps": { "list": [ {"value": "processing", "name": "processing"}, {"value": "finished", "name": "finished"} ] }
+                }
+              }
+            },
+            "@buttons": {
+              "className": "horizontal",
+              "$": {
+                "btnClear": { "control": "Button", "label": "Clear", "controlProps": { "variant": "outlined", "color": "primary" }, "action": { "name": "clean" } },
+                "btnApply": { "control": "Button", "label": "Apply", "controlProps": { "variant": "contained", "color": "primary" }, "action": { "js": "actions.apply(mem);", "params": { "disableUpdate": true } } }
+              }
+            }
+          },
+          "actions": { "clean": { "jsScript": "Object.keys(mem).forEach(function(key){ delete mem[key]; });" } }
+        }
       }
     }
   },
@@ -55,59 +135,17 @@
         "@form": {
           "className": "vertical",
           "style": { "padding": "8px", "overflow": "auto" },
-          "$": {
-            "record": {
-              "$": {
-                "id": { "label": "ID", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew", "style": { "width": "400px" } },
-                "state": {
-                  "label": "State",
-                  "control": "SelectList",
-                  "style": { "width": "240px" },
-                  "controlProps": {
-                    "list": [
-                      { "value": "processing", "name": "processing" },
-                      { "value": "finished", "name": "finished" }
-                    ]
-                  }
-                },
-                "folder_in": { "label": "Folder IN", "control": "TextEdit", "style": { "width": "600px" } },
-                "folder_out": { "label": "Folder OUT", "control": "TextEdit", "style": { "width": "600px" } },
-                "user": { "label": "User", "control": "TextEdit", "style": { "width": "320px" } },
-                "created": { "label": "Created", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew", "style": { "width": "280px" } }
-              }
-            }
-          }
+          "$": { "record": { "$": { "id": { "label": "ID", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew", "style": { "width": "400px" } }, "state": { "label": "State", "control": "SelectList", "style": { "width": "240px" }, "controlProps": { "list": [ { "value": "processing", "name": "processing" }, { "value": "finished", "name": "finished" } ] } }, "folder_in": { "label": "Folder IN", "control": "TextEdit", "style": { "width": "600px" }, "init$": "js.defaultFolderIn()" }, "folder_out": { "label": "Folder OUT", "control": "TextEdit", "style": { "width": "600px" } }, "user": { "label": "User", "control": "TextEdit", "style": { "width": "320px" }, "readOnly": true }, "created": { "label": "Created", "control": "TextEdit", "readOnly": true, "visible$": "!params.isNew", "style": { "width": "280px" } } } } }
         },
-        "@buttons": {
-          "className": "horizontal",
-          "style": { "borderTop": "1px solid rgba(0,0,0,0.20)", "padding": "8px 16px", "justifyContent": "flex-end" },
-          "$": {
-            ".btnCancel": { "label": "Cancel", "control": "Button", "controlProps": { "color": "primary" }, "action": { "js": "frontend.closeTask();" } },
-            ".btnSave": {
-              "label": "Save",
-              "control": "Button",
-              "controlProps": { "variant": "contained", "color": "primary" },
-              "action": [
-                { "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftInputJob', method: 'save', params: { id: mem.record?.id, state: mem.record?.state, folder_in: mem.record?.folder_in, folder_out: mem.record?.folder_out, user: mem.record?.user, isNew: params.isNew }});" },
-                { "js": "task.events.fireEvent('onRefreshList');" },
-                { "js": "frontend.closeTask();" }
-              ],
-              "disabled$": "!(mem.record?.state && mem.record?.folder_in && mem.record?.folder_out && mem.record?.user)"
-            }
-          }
-        }
+        "@buttons": { "className": "horizontal", "style": { "borderTop": "1px solid rgba(0,0,0,0.20)", "padding": "8px 16px", "justifyContent": "flex-end" }, "$": { ".btnCancel": { "label": "Cancel", "control": "Button", "controlProps": { "color": "primary" }, "action": { "js": "frontend.closeTask();" } }, ".btnSave": { "label": "Save", "control": "Button", "controlProps": { "variant": "contained", "color": "primary" }, "action": [ { "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftInputJob', method: 'save', params: { id: mem.record?.id, state: mem.record?.state, folder_in: mem.record?.folder_in, folder_out: mem.record?.folder_out, isNew: params.isNew }});" }, { "js": "task.events.fireEvent('onRefreshList');" }, { "js": "frontend.closeTask();" } ], "disabled$": "!(mem.record?.state && mem.record?.folder_in && mem.record?.folder_out)" } } }
       },
-      "actions": {
-        "onTaskCreated": {
-          "js": "if (task.params?.isNew) { mem.record = {state: 'processing'}; forceUpdate(); } else if (task.params?.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'swiftInputJob', method: 'get', params: {id: task.params.objectKey.id}}).then(r => { mem.record = r; forceUpdate(); }); }"
-        }
-      }
+      "actions": { "onTaskCreated": { "js": "const loadSettings = () => backend.post('/aoa/execObjectMethod', {object: 'settings', method: 'getValue', params: ['swift_input_job']}).then(s => s).catch(()=>null).then(v => { if (v && typeof v==='object') return v; return backend.post('/aoa/execObjectMethod', {object: 'swiftSettings', method: 'get', params: {}}).then(r=>r||null).catch(()=>null); }); loadSettings().then(preset => { if (task.params?.isNew) { mem.record = {state: 'processing'}; if (preset) { mem.record.folder_in = preset.folder_in; mem.record.folder_out = preset.folder_out; } forceUpdate(); } else if (task.params?.objectKey?.id) { backend.post('/aoa/execObjectMethod', {object: 'swiftInputJob', method: 'get', params: {id: task.params.objectKey.id}}).then(r => { mem.record = r || {}; if (preset) { mem.record.folder_in = mem.record.folder_in || preset.folder_in; mem.record.folder_out = mem.record.folder_out || preset.folder_out; } forceUpdate(); }); } else { forceUpdate(); } });" } }
     }
   },
   "methods": {
     "getList": {
       "script": {
-        "py": "from apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n  SELECT id::text AS id, state, created AS created, folder_in, folder_out, \"user\" AS user\n  FROM swift_input_job\n  ORDER BY created DESC, id DESC\n\"\"\"\n\ntry:\n  with initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\nexcept Exception as e:\n  raise UserException({'message': 'Error fetching jobs', 'description': 'SQL:\\n%s' % SQL}).withError(e)\n"
+        "py": "from apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\nfrom datetime import datetime\n\nbase_sql = \"\"\"\n  SELECT id::text AS id, state, created AS created, folder_in, folder_out, \"user\" AS user\n  FROM swift_input_job\n  WHERE 1=1\n\"\"\"\nparams = {}\n\nreq = parameters.get('request') or {}\nfm2 = (req.get('filterModel2') or {}).copy()\n\n# Date range filters: dd.MM.YYYY HH:MM:SS\ndef parse_dt(s):\n  return datetime.strptime(s, '%d.%m.%Y %H:%M:%S')\n\nif 'fromDate' in fm2 and fm2['fromDate']:\n  base_sql += " AND created >= %(fromDate)s"\n  params['fromDate'] = parse_dt(fm2.pop('fromDate'))\nif 'toDate' in fm2 and fm2['toDate']:\n  base_sql += " AND created < %(toDate)s"\n  params['toDate'] = parse_dt(fm2.pop('toDate'))\n\nif 'user' in fm2 and fm2['user']:\n  base_sql += " AND \"user\" = %(user)s"\n  params['user'] = fm2.pop('user')\nif 'state' in fm2 and fm2['state']:\n  base_sql += " AND state = %(state)s"\n  params['state'] = fm2.pop('state')\n\nbase_sql += " ORDER BY created DESC, id DESC"\n\ntry:\n  with initDbSession(database='default').cursor() as c:\n    c.execute(base_sql, params)\n    data = fetchall(c)\nexcept Exception as e:\n  raise UserException({'message': 'Error fetching jobs', 'description': 'SQL:\\n%s\\nparams:\\n%s' % (base_sql, params)}).withError(e)\n"
       },
       "sql": {}
     },
@@ -119,16 +157,12 @@
     },
     "save": {
       "script": {
-        "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n  rid = parameters.get('id')\n  if parameters.get('isNew') or not rid:\n    SQL = \"\"\"\n      INSERT INTO swift_input_job (state, folder_in, folder_out, \"user\")\n      VALUES (%(state)s, %(folder_in)s, %(folder_out)s, %(user)s)\n      RETURNING id::text AS id, created AS created\n    \"\"\"\n    try:\n      c.execute(SQL, { 'state': parameters.get('state'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'user': parameters.get('user') })\n      r = fetchone(c)\n      data = { 'id': r['id'], 'created': r['created'] }\n    except Exception as e:\n      raise UserException({'message': 'Error inserting job'}).withError(e)\n  else:\n    SQL = \"\"\"\n      UPDATE swift_input_job\n      SET state = %(state)s, folder_in = %(folder_in)s, folder_out = %(folder_out)s, \"user\" = %(user)s\n      WHERE id = %(id)s\n    \"\"\"\n    try:\n      c.execute(SQL, { 'id': rid, 'state': parameters.get('state'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'user': parameters.get('user') })\n      data = { 'id': rid }\n    except Exception as e:\n      raise UserException({'message': 'Error updating job'}).withError(e)\n"
+        "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\nfrom apng_core.auth import getUser\n\nwith initDbSession(database='default').cursor() as c:\n  rid = parameters.get('id')\n  current_user = getUser()\n  user_code = getattr(current_user, 'code', None) or getattr(current_user, 'username', None)\n  if parameters.get('isNew') or not rid:\n    SQL = \"\"\"\n      INSERT INTO swift_input_job (state, folder_in, folder_out, \"user\")\n      VALUES (%(state)s, %(folder_in)s, %(folder_out)s, %(user)s)\n      RETURNING id::text AS id, created AS created\n    \"\"\"\n    try:\n      c.execute(SQL, { 'state': parameters.get('state'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'user': user_code })\n      r = fetchone(c)\n      data = { 'id': r['id'], 'created': r['created'] }\n    except Exception as e:\n      raise UserException({'message': 'Error inserting job'}).withError(e)\n  else:\n    SQL = \"\"\"\n      UPDATE swift_input_job\n      SET state = %(state)s, folder_in = %(folder_in)s, folder_out = %(folder_out)s, \"user\" = %(user)s\n      WHERE id = %(id)s\n    \"\"\"\n    try:\n      c.execute(SQL, { 'id': rid, 'state': parameters.get('state'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'user': user_code })\n      data = { 'id': rid }\n    except Exception as e:\n      raise UserException({'message': 'Error updating job'}).withError(e)\n\n  # upsert settings with last used folders\n  try:\n    c.execute('SELECT id FROM swift_settings LIMIT 1')\n    row = fetchone(c)
+    if row:\n      c.execute('UPDATE swift_settings SET folder_in=%(folder_in)s, folder_out=%(folder_out)s, modified=now() WHERE id=%(id)s', {'id': row['id'], 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out')})\n    else:\n      c.execute('INSERT INTO swift_settings(folder_in, folder_out, modified) VALUES(%(folder_in)s, %(folder_out)s, now())', {'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out')})\n  except Exception as e:\n    pass\n"
       },
       "sql": {}
     },
-    "delete": {
-      "script": {
-        "py": "SQL = 'DELETE FROM swift_input_job WHERE id = %(id)s'\nwith initDbSession(database='default').cursor() as c:\n  c.execute(SQL, {'id': parameters.get('id')})\n  data = {'success': True}\n"
-      },
-      "sql": {}
-    },
+    "delete": { "script": { "py": "SQL = 'DELETE FROM swift_input_job WHERE id = %(id)s'\nwith initDbSession(database='default').cursor() as c:\n  c.execute(SQL, {'id': parameters.get('id')})\n  data = {'success': True}\n" }, "sql": {} },
     "DATABASE_UPDATE": {
       "sql": {
         "sqlType": "script",

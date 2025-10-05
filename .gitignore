@@ -87,3 +87,6 @@ coverage.xml
 .pytest_cache/
 .tox/
 
+# Local folders
+apng-mb/
+

@@ -1,0 +1,84 @@
+{
+  "lists": {
+    "default": {
+      "id": "id",
+      "columns": {
+        "id": { "title": "ID", "width": 260 },
+        "folder_in": { "title": "Folder IN", "flex": 1 },
+        "folder_out": { "title": "Folder OUT", "flex": 1 },
+        "modified": { "title": "Modified", "width": 180, "format": "datetime" }
+      },
+      "actions": [
+        { "title": "Refresh", "icon": "refresh", "mini": true, "command": { "type": "standard", "call": "refresh" } },
+        { "title": "Edit", "icon": "edit", "command": { "type": "task", "call": "/aoa/ObjectTask", "title": "SWIFT Settings", "params": { "object": "swiftSettings", "form": "editForm" } } }
+      ]
+    }
+  },
+  "forms": {
+    "editForm": {
+      "title": "SWIFT Settings",
+      "className": "vertical task task-panel panel",
+      "style": { "width": "700px", "height": "320px" },
+      "$": {
+        "@form": {
+          "className": "vertical",
+          "style": { "padding": "8px", "overflow": "auto" },
+          "$": {
+            "record": {
+              "$": {
+                "id": { "label": "ID", "control": "TextEdit", "readOnly": true, "visible$": "!!mem.record?.id", "style": { "width": "400px" } },
+                "folder_in": { "label": "Folder IN", "control": "TextEdit", "style": { "width": "600px" } },
+                "folder_out": { "label": "Folder OUT", "control": "TextEdit", "style": { "width": "600px" } },
+                "modified": { "label": "Modified", "control": "TextEdit", "readOnly": true, "visible$": "!!mem.record?.modified", "style": { "width": "280px" } }
+              }
+            }
+          }
+        },
+        "@buttons": {
+          "className": "horizontal",
+          "style": { "borderTop": "1px solid rgba(0,0,0,0.20)", "padding": "8px 16px", "justifyContent": "flex-end" },
+          "$": {
+            ".btnCancel": { "label": "Cancel", "control": "Button", "controlProps": { "color": "primary" }, "action": { "js": "frontend.closeTask();" } },
+            ".btnSave": {
+              "label": "Save",
+              "control": "Button",
+              "controlProps": { "variant": "contained", "color": "primary" },
+              "action": [
+                { "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftSettings', method: 'save', params: { id: mem.record?.id, folder_in: mem.record?.folder_in, folder_out: mem.record?.folder_out }});" },
+                { "js": "task.events.fireEvent('onRefreshList');" },
+                { "js": "frontend.closeTask();" }
+              ],
+              "disabled$": "!(mem.record?.folder_in && mem.record?.folder_out)"
+            }
+          }
+        }
+      },
+      "actions": { "onTaskCreated": { "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftSettings', method: 'get'}).then(r => { mem.record = r || {}; forceUpdate(); });" } }
+    }
+  },
+  "methods": {
+    "get": {
+      "script": {
+        "py": "from apng_core.db import fetchone\n\nSQL = 'SELECT id::text AS id, folder_in, folder_out, modified FROM swift_settings ORDER BY modified DESC NULLS LAST LIMIT 1'\nwith initDbSession(database='default').cursor() as c:\n  c.execute(SQL)\n  data = fetchone(c)\n"
+      },
+      "sql": {}
+    },
+    "save": {
+      "script": {
+        "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n  if parameters.get('id'):\n    SQL = 'UPDATE swift_settings SET folder_in=%(folder_in)s, folder_out=%(folder_out)s, modified=now() WHERE id=%(id)s RETURNING id::text AS id, modified'\n    params = {'id': parameters.get('id'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out')}\n  else:\n    SQL = 'INSERT INTO swift_settings(folder_in, folder_out, modified) VALUES(%(folder_in)s, %(folder_out)s, now()) RETURNING id::text AS id, modified'\n    params = {'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out')}\n  try:\n    c.execute(SQL, params)\n    data = fetchone(c)\n  except Exception as e:\n    raise UserException({'message': 'Error saving settings'}).withError(e)\n"
+      },
+      "sql": {}
+    },
+    "DATABASE_UPDATE": {
+      "sql": {
+        "sqlType": "script",
+        "database": "default",
+        "sql": "create table if not exists swift_settings (\n  id uuid primary key default gen_random_uuid(),\n  folder_in text not null,\n  folder_out text not null,\n  modified timestamp without time zone\n);\n"
+      },
+      "script": {}
+    }
+  },
+  "actions": [],
+  "filter": {},
+  "references": {}
+}
