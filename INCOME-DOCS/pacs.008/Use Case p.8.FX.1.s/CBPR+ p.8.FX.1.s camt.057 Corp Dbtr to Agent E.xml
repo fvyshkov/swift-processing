@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SWIFT � 2020. All rights reserved. 
+THE MESSAGE WILL WORK �AS IS� IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).
+=========================================================================================================================================================================================
+SWIFT � 2020. All rights reserved. 
+This publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT�s prior written consent.
+The use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.
+'=================================================================================================================================================================================
+p.8.FX.1.sCorporate Mars sends a camt.057 to E Bank of America
+=========================================================================================================================================================
+-->
+<Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:swift:xsd:envelope \\be-file02\Group\Standards\Messaging\CBPR+Schemas\Feb24Schemas_Core\Translator_envelope_core.xsd">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>TWIXNLNL</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:Fr>
+		<head:To>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>BOFAUS3N</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:To>
+		<head:BizMsgIdr>cmt057bizmsgidr-001</head:BizMsgIdr>
+		<head:MsgDefIdr>camt.057.001.06</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.01</head:BizSvc>
+		<head:CreDt>2021-04-27T09:05:00+02:00</head:CreDt>
+	</head:AppHdr>
+	<camt:Document xmlns:camt="urn:iso:std:iso:20022:tech:xsd:camt.057.001.06">
+		<camt:NtfctnToRcv>
+			<camt:GrpHdr>
+				<camt:MsgId>cmt057bizmsgidr-001</camt:MsgId>
+				<camt:CreDtTm>2021-04-27T09:05:00+02:00</camt:CreDtTm>
+			</camt:GrpHdr>
+			<camt:Ntfctn>
+				<camt:Id>NTFCTNID10001</camt:Id>
+				<camt:Acct>
+					<camt:Id>
+						<camt:Othr>
+							<camt:Id>85214563</camt:Id>
+						</camt:Othr>
+					</camt:Id>
+				</camt:Acct>
+				<camt:Dbtr>
+					<camt:Pty>
+						<camt:Id>
+							<camt:OrgId>
+								<camt:AnyBIC>WPACAU2S</camt:AnyBIC>
+							</camt:OrgId>
+						</camt:Id>
+					</camt:Pty>
+				</camt:Dbtr>
+				<camt:Itm>
+					<camt:Id>TWIXNL2164WPAC2S</camt:Id>
+					<camt:EndToEndId>TWIXNL2164WPAC2S</camt:EndToEndId>
+					<camt:Amt Ccy="USD">1832494.67</camt:Amt>
+					<camt:XpctdValDt>2021-04-27</camt:XpctdValDt>
+				</camt:Itm>
+			</camt:Ntfctn>
+		</camt:NtfctnToRcv>
+	</camt:Document>
+</Envelope>

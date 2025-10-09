@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+THE MESSAGE WILL WORK �AS IS� IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).
+=========================================================================================================================================================================================
+SWIFT � 2020. All rights reserved. 
+This publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT�s prior written consent.
+The use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.
+====================================================================================================================================================================
+p.8.1.2Initiating Party HSBC sends a pain.001 to Debtor Agent RBS
+========================================================================================================================
+-->
+<Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:swift:xsd:envelope \\be-file02\Group\Standards\Messaging\CBPR+Schemas\Feb24Schemas_Core\Translator_envelope_core.xsd">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>HBUKGB4B</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:Fr>
+		<head:To>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>RBOSGB2L</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:To>
+		<head:BizMsgIdr>pain1bizmsgidr01</head:BizMsgIdr>
+		<head:MsgDefIdr>pain.001.001.09</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.02</head:BizSvc>
+		<head:CreDt>2021-06-03T12:43:41+01:00</head:CreDt>
+	</head:AppHdr>
+	<pain:Document xmlns:pain="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09">
+		<pain:CstmrCdtTrfInitn>
+			<pain:GrpHdr>
+				<pain:MsgId>pain1bizmsgidr01</pain:MsgId>
+				<pain:CreDtTm>2021-06-03T12:43:41+01:00</pain:CreDtTm>
+				<pain:NbOfTxs>1</pain:NbOfTxs>
+				<pain:InitgPty>
+					<pain:Id>
+						<pain:OrgId>
+							<pain:AnyBIC>HBUKGB4B</pain:AnyBIC>
+						</pain:OrgId>
+					</pain:Id>
+				</pain:InitgPty>
+			</pain:GrpHdr>
+			<pain:PmtInf>
+				<pain:PmtInfId>pain1bizmsgidr01</pain:PmtInfId>
+				<pain:PmtMtd>TRF</pain:PmtMtd>
+				<pain:ReqdExctnDt>
+					<pain:Dt>2021-06-03</pain:Dt>
+				</pain:ReqdExctnDt>
+				<pain:Dbtr>
+					<pain:Id>
+						<pain:OrgId>
+							<pain:AnyBIC>ICLLGB21</pain:AnyBIC>
+						</pain:OrgId>
+					</pain:Id>
+				</pain:Dbtr>
+				<pain:DbtrAcct>
+					<pain:Id>
+						<pain:Othr>
+							<pain:Id>60779465</pain:Id>
+						</pain:Othr>
+					</pain:Id>
+					<pain:Ccy>NOK</pain:Ccy>
+				</pain:DbtrAcct>
+				<pain:DbtrAgt>
+					<pain:FinInstnId>
+						<pain:BICFI>RBOSGB2L</pain:BICFI>
+					</pain:FinInstnId>
+				</pain:DbtrAgt>
+				<pain:CdtTrfTxInf>
+					<pain:PmtId>
+						<pain:InstrId>pain1bizmsgidr01</pain:InstrId>
+						<pain:EndToEndId>E2E04044506271305</pain:EndToEndId>
+						<pain:UETR>174c245f-2682-4291-ad67-2a41e530cd27</pain:UETR>
+					</pain:PmtId>
+					<pain:Amt>
+						<pain:InstdAmt Ccy="NOK">2365000</pain:InstdAmt>
+					</pain:Amt>
+					<pain:ChrgBr>DEBT</pain:ChrgBr>
+					<pain:CdtrAgt>
+						<pain:FinInstnId>
+							<pain:BICFI>DNBANOKK</pain:BICFI>
+						</pain:FinInstnId>
+					</pain:CdtrAgt>
+					<pain:Cdtr>
+						<pain:Nm>Guardian</pain:Nm>
+						<pain:PstlAdr>
+							<pain:StrtNm>Drammensveien 106</pain:StrtNm>
+							<pain:TwnNm>Oslo</pain:TwnNm>
+							<pain:Ctry>NO</pain:Ctry>
+						</pain:PstlAdr>
+					</pain:Cdtr>
+					<pain:CdtrAcct>
+						<pain:Id>
+							<pain:Othr>
+								<pain:Id>123654786</pain:Id>
+							</pain:Othr>
+						</pain:Id>
+					</pain:CdtrAcct>
+				</pain:CdtTrfTxInf>
+			</pain:PmtInf>
+		</pain:CstmrCdtTrfInitn>
+	</pain:Document>
+</Envelope>

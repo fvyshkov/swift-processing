@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+THE MESSAGE WILL WORK �AS IS� IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).
+=========================================================================================================================================================================================
+SWIFT � 2020. All rights reserved. 
+This publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT�s prior written consent.
+The use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.
+====================================================================================================================================================================
+p.8.1.2Agent B DNB sends a camt.053 to the Creditor Guardian
+=============================================================================================================================
+-->
+<Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:swift:xsd:envelope \\be-file02\Group\Standards\Messaging\CBPR+Schemas\Feb24Schemas_Core\Translator_envelope_core.xsd">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>DNBANOKK</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:Fr>
+		<head:To>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>GUCRNOK1</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:To>
+		<head:BizMsgIdr>cmt053bizmsgidr-001</head:BizMsgIdr>
+		<head:MsgDefIdr>camt.053.001.08</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.02</head:BizSvc>
+		<head:CreDt>2021-06-03T18:00:00+02:00</head:CreDt>
+	</head:AppHdr>
+	<camt:Document xmlns:camt="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+		<camt:BkToCstmrStmt>
+			<camt:GrpHdr>
+				<camt:MsgId>cmt053bizmsgidr-001</camt:MsgId>
+				<camt:CreDtTm>2021-06-03T18:00:00+02:00</camt:CreDtTm>
+			</camt:GrpHdr>
+			<camt:Stmt>
+				<camt:Id>STMNTID</camt:Id>
+				<camt:StmtPgntn>
+					<camt:PgNb>1</camt:PgNb>
+					<camt:LastPgInd>true</camt:LastPgInd>
+				</camt:StmtPgntn>
+				<camt:ElctrncSeqNb>32145</camt:ElctrncSeqNb>
+				<camt:Acct>
+					<camt:Id>
+						<camt:Othr>
+							<camt:Id>123654786</camt:Id>
+						</camt:Othr>
+					</camt:Id>
+					<camt:Ccy>NOK</camt:Ccy>
+				</camt:Acct>
+				<camt:Bal>
+					<camt:Tp>
+						<camt:CdOrPrtry>
+							<camt:Cd>OPBD</camt:Cd>
+						</camt:CdOrPrtry>
+					</camt:Tp>
+					<camt:Amt Ccy="NOK">4645498.54</camt:Amt>
+					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+					<camt:Dt>
+						<camt:Dt>2021-06-03</camt:Dt>
+					</camt:Dt>
+				</camt:Bal>
+				<camt:Bal>
+					<camt:Tp>
+						<camt:CdOrPrtry>
+							<camt:Cd>CLBD</camt:Cd>
+						</camt:CdOrPrtry>
+					</camt:Tp>
+					<camt:Amt Ccy="NOK">7010498.54</camt:Amt>
+					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+					<camt:Dt>
+						<camt:Dt>2021-06-03</camt:Dt>
+					</camt:Dt>
+				</camt:Bal>
+				<camt:Ntry>
+					<camt:Amt Ccy="NOK">2365000</camt:Amt>
+					<camt:CdtDbtInd>DBIT</camt:CdtDbtInd>
+					<camt:Sts>
+						<camt:Cd>BOOK</camt:Cd>
+					</camt:Sts>
+					<camt:BookgDt>
+						<camt:Dt>2021-06-03</camt:Dt>
+					</camt:BookgDt>
+					<camt:ValDt>
+						<camt:Dt>2021-06-03</camt:Dt>
+					</camt:ValDt>
+					<camt:BkTxCd>
+						<camt:Domn>
+							<camt:Cd>PMNT</camt:Cd>
+							<camt:Fmly>
+								<camt:Cd>RCDT</camt:Cd>
+								<camt:SubFmlyCd>XBCT</camt:SubFmlyCd>
+							</camt:Fmly>
+						</camt:Domn>
+					</camt:BkTxCd>
+					<camt:NtryDtls>
+						<camt:TxDtls>
+							<camt:Refs>
+								<camt:InstrId>pacs8bizmsgidr01</camt:InstrId>
+								<camt:EndToEndId>E2E04044506271305</camt:EndToEndId>
+								<camt:UETR>174c245f-2682-4291-ad67-2a41e530cd27</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">2365000</camt:Amt>
+							<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+						</camt:TxDtls>
+					</camt:NtryDtls>
+				</camt:Ntry>
+			</camt:Stmt>
+		</camt:BkToCstmrStmt>
+	</camt:Document>
+</Envelope>

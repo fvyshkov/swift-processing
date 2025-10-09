@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+THE MESSAGE WILL WORK �AS IS� IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).
+=========================================================================================================================================================================================
+SWIFT � 2020. All rights reserved. 
+This publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT�s prior written consent.
+The use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.
+====================================================================================================================================================================
+p.8.FX.1.bA Barclays sends a pain.002 to Corporate Mars
+========================================================================================================================
+-->
+<Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:swift:xsd:envelope \\be-file02\Group\Standards\Messaging\CBPR+Schemas\Feb24Schemas_Core\Translator_envelope_core.xsd">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>BARCGB22</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:Fr>
+		<head:To>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>TWIXNLNL</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:To>
+		<head:BizMsgIdr>pain002bmid-1</head:BizMsgIdr>
+		<head:MsgDefIdr>pain.002.001.12</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.01</head:BizSvc>
+		<head:CreDt>2021-04-27T09:55:00+04:00</head:CreDt>
+	</head:AppHdr>
+	<pain:Document xmlns:pain="urn:iso:std:iso:20022:tech:xsd:pain.002.001.10">
+		<pain:CstmrPmtStsRpt>
+			<pain:GrpHdr>
+				<pain:MsgId>pain002bmid-1</pain:MsgId>
+				<pain:CreDtTm>2021-04-27T09:55:00+04:00</pain:CreDtTm>
+				<pain:InitgPty>
+					<pain:Id>
+						<pain:OrgId>
+							<pain:AnyBIC>BARCGB22</pain:AnyBIC>
+						</pain:OrgId>
+					</pain:Id>
+				</pain:InitgPty>
+			</pain:GrpHdr>
+			<pain:OrgnlGrpInfAndSts>
+				<pain:OrgnlMsgId>pain001bmid1</pain:OrgnlMsgId>
+				<pain:OrgnlMsgNmId>pain.001.001.09</pain:OrgnlMsgNmId>
+				<pain:OrgnlCreDtTm>2021-04-27T09:06:00+02:00</pain:OrgnlCreDtTm>
+			</pain:OrgnlGrpInfAndSts>
+			<pain:OrgnlPmtInfAndSts>
+				<pain:OrgnlPmtInfId>pain001bmid1</pain:OrgnlPmtInfId>
+				<pain:TxInfAndSts>
+					<pain:OrgnlInstrId>pain001bmid1</pain:OrgnlInstrId>
+					<pain:OrgnlEndToEndId>TWIXNL2164WPAC2S</pain:OrgnlEndToEndId>
+					<pain:OrgnlUETR>174c245f-2682-4291-ad67-2a41e530cd27</pain:OrgnlUETR>
+					<pain:TxSts>ACSC</pain:TxSts>
+				</pain:TxInfAndSts>
+			</pain:OrgnlPmtInfAndSts>
+		</pain:CstmrPmtStsRpt>
+	</pain:Document>
+</Envelope>

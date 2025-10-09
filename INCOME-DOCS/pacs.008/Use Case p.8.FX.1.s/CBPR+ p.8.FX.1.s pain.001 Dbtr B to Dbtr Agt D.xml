@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SWIFT � 2020. All rights reserved. 
+THE MESSAGE WILL WORK �AS IS� IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).
+=========================================================================================================================================================================================
+SWIFT � 2020. All rights reserved. 
+This publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT�s prior written consent.
+The use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.
+====================================================================================================================================================================
+p.8.FX.1.sB Westpac sends a pain.001 to D Citibank
+========================================================================================================================
+-->
+<Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:swift:xsd:envelope \\be-file02\Group\Standards\Messaging\CBPR+Schemas\Feb24Schemas_Core\Translator_envelope_core.xsd">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>WPACAU2S</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:Fr>
+		<head:To>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>CITIUS33</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:To>
+		<head:BizMsgIdr>pain001bmid2</head:BizMsgIdr>
+		<head:MsgDefIdr>pain.001.001.09</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.01</head:BizSvc>
+		<head:CreDt>2021-04-27T09:55:00+01:00</head:CreDt>
+	</head:AppHdr>
+	<pain:Document xmlns:pain="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09">
+		<pain:CstmrCdtTrfInitn>
+			<pain:GrpHdr>
+				<pain:MsgId>pain001bmid2</pain:MsgId>
+				<pain:CreDtTm>2021-04-27T09:55:00+01:00</pain:CreDtTm>
+				<pain:NbOfTxs>1</pain:NbOfTxs>
+				<pain:InitgPty>
+					<pain:Id>
+						<pain:OrgId>
+							<pain:AnyBIC>WPACAU2S</pain:AnyBIC>
+						</pain:OrgId>
+					</pain:Id>
+				</pain:InitgPty>
+			</pain:GrpHdr>
+			<pain:PmtInf>
+				<pain:PmtInfId>pain001bmid2</pain:PmtInfId>
+				<pain:PmtMtd>TRF</pain:PmtMtd>
+				<pain:PmtTpInf>
+					<pain:CtgyPurp>
+						<pain:Cd>CORT</pain:Cd>
+					</pain:CtgyPurp>
+				</pain:PmtTpInf>
+				<pain:ReqdExctnDt>
+					<pain:Dt>2021-04-27</pain:Dt>
+				</pain:ReqdExctnDt>
+				<pain:Dbtr>
+					<pain:Id>
+						<pain:OrgId>
+							<pain:AnyBIC>WPACAU2S</pain:AnyBIC>
+						</pain:OrgId>
+					</pain:Id>
+				</pain:Dbtr>
+				<pain:DbtrAcct>
+					<pain:Id>
+						<pain:Othr>
+							<pain:Id>78523147</pain:Id>
+						</pain:Othr>
+					</pain:Id>
+				</pain:DbtrAcct>
+				<pain:DbtrAgt>
+					<pain:FinInstnId>
+						<pain:BICFI>CITIUS33</pain:BICFI>
+					</pain:FinInstnId>
+				</pain:DbtrAgt>
+				<pain:CdtTrfTxInf>
+					<pain:PmtId>
+						<pain:InstrId>pain001bmid2</pain:InstrId>
+						<pain:EndToEndId>TWIXNL2164WPAC2S</pain:EndToEndId>
+						<pain:UETR>f7b3e9a1-2c8d-4e6f-9b0a-5d8c7b0e3f2f</pain:UETR>
+					</pain:PmtId>
+					<pain:Amt>
+						<pain:InstdAmt Ccy="USD">1832494.67</pain:InstdAmt>
+					</pain:Amt>
+					<pain:CdtrAgt>
+						<pain:FinInstnId>
+							<pain:BICFI>BOFAUS3N</pain:BICFI>
+						</pain:FinInstnId>
+					</pain:CdtrAgt>
+					<pain:Cdtr>
+						<pain:Id>
+							<pain:OrgId>
+								<pain:AnyBIC>TWIXNLNL</pain:AnyBIC>
+							</pain:OrgId>
+						</pain:Id>
+					</pain:Cdtr>
+					<pain:Purp>
+						<pain:Cd>FREX</pain:Cd>
+					</pain:Purp>
+				</pain:CdtTrfTxInf>
+			</pain:PmtInf>
+		</pain:CstmrCdtTrfInitn>
+	</pain:Document>
+</Envelope>
