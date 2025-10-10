@@ -16,103 +16,99 @@ logger.debug('Starting SWIFT Income Processing Script')
 logger.debug('🚀 VERSION: 2025-10-10-13:00 WITH CLEANING & PACS008 XML')
 logger.debug('===========================================')
 
-# Check for SWIFT_PATH environment variable
-SWIFT_PATH_ENV = os.environ.get('SWIFT_PATH', 'NOT_SET')
-logger.debug(f'Environment variable SWIFT_PATH: {SWIFT_PATH_ENV}')
+# Global variables for folder paths from settings
+FOLDER_IN = None
+FOLDER_OUT = None
 
-# NFS configuration
-NFS_SERVER = "30.30.1.84"
-NFS_REMOTE_PATH = "/var/local/nfs/apng-apng-swift-pvc-d6e31bb3-44fa-4445-b22a-8faa47da7d8a"
-NFS_LOCAL_MOUNT = "/mnt/swift_nfs"
-
-# Global variable for NFS path
-NFS_PATH = None
-
-def ensure_nfs_mounted():
-    """Ensure NFS is mounted"""
-    global NFS_PATH
+def load_settings_from_db():
+    """Load settings from swift_settings table"""
+    global FOLDER_IN, FOLDER_OUT
     
-    # If SWIFT_PATH is set in environment, use it
-    if SWIFT_PATH_ENV != 'NOT_SET':
-        logger.debug(f'SWIFT_PATH environment variable is set to: {SWIFT_PATH_ENV}')
-        if os.path.exists(SWIFT_PATH_ENV):
-            NFS_PATH = SWIFT_PATH_ENV
-            logger.debug(f'Path exists! Using SWIFT_PATH from environment: {NFS_PATH}')
-            # List contents to verify
-            try:
-                contents = os.listdir(NFS_PATH)
-                logger.debug(f'Directory contains {len(contents)} items')
-                if contents:
-                    logger.debug(f'First few items: {contents[:3]}')
-            except Exception as e:
-                logger.error(f'Cannot list directory contents: {e}')
-            return NFS_PATH
-        else:
-            logger.warning(f'SWIFT_PATH {SWIFT_PATH_ENV} does not exist!')
+    logger.debug('Loading settings from swift_settings table...')
     
-    logger.debug('SWIFT_PATH not set or does not exist, will try to find/mount NFS')
+    sql = """
+        SELECT folder_in, folder_out, server
+        FROM swift_settings
+        LIMIT 1
+    """
     
     try:
-        logger.debug('Checking NFS mount status...')
-        
-        # Check if already mounted
-        result = subprocess.run(['mount'], capture_output=True, text=True)
-        if NFS_SERVER in result.stdout and NFS_LOCAL_MOUNT in result.stdout:
-            logger.debug(f'NFS already mounted at {NFS_LOCAL_MOUNT}')
-            NFS_PATH = NFS_LOCAL_MOUNT
-            return NFS_LOCAL_MOUNT
-        
-        # Create mount point if doesn't exist
-        if not os.path.exists(NFS_LOCAL_MOUNT):
-            logger.debug(f'Creating mount point: {NFS_LOCAL_MOUNT}')
-            os.makedirs(NFS_LOCAL_MOUNT, exist_ok=True)
-        
-        # Try to mount NFS
-        mount_cmd = [
-            'mount', '-t', 'nfs',
-            f'{NFS_SERVER}:{NFS_REMOTE_PATH}',
-            NFS_LOCAL_MOUNT
-        ]
-        
-        logger.debug(f'Mounting NFS: {NFS_SERVER}:{NFS_REMOTE_PATH} -> {NFS_LOCAL_MOUNT}')
-        result = subprocess.run(mount_cmd, capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            logger.debug(f'Mount failed: {result.stderr}')
-            logger.debug('Trying with nfs4...')
-            mount_cmd[2] = 'nfs4'
-            result = subprocess.run(mount_cmd, capture_output=True, text=True)
+        with initDbSession(database='default').cursor() as c:
+            c.execute(sql)
+            result = fetchall(c)
             
-            if result.returncode != 0:
-                raise Exception(f'Failed to mount NFS: {result.stderr}')
-        
-        logger.debug('NFS mounted successfully')
-        NFS_PATH = NFS_LOCAL_MOUNT
-        return NFS_LOCAL_MOUNT
-        
+            if not result or len(result) == 0:
+                raise UserException({
+                    'message': 'No settings found in swift_settings table',
+                    'description': 'Please configure SWIFT settings first'
+                })
+            
+            settings = result[0]
+            FOLDER_IN = settings.get('folder_in')
+            FOLDER_OUT = settings.get('folder_out')
+            server = settings.get('server')
+            
+            if not FOLDER_IN:
+                raise UserException({
+                    'message': 'folder_in is not configured in swift_settings',
+                    'description': 'Please set folder_in in SWIFT settings'
+                })
+            
+            if not FOLDER_OUT:
+                raise UserException({
+                    'message': 'folder_out is not configured in swift_settings',
+                    'description': 'Please set folder_out in SWIFT settings'
+                })
+            
+            logger.debug('='*60)
+            logger.debug('SETTINGS LOADED FROM DATABASE:')
+            logger.debug(f'  folder_in:  {FOLDER_IN}')
+            logger.debug(f'  folder_out: {FOLDER_OUT}')
+            logger.debug(f'  server:     {server or "not set"}')
+            logger.debug('='*60)
+            
+            # Check and create folder_in if needed
+            if not os.path.exists(FOLDER_IN):
+                logger.warning(f'folder_in does not exist: {FOLDER_IN}')
+                logger.debug(f'Creating folder_in: {FOLDER_IN}')
+                try:
+                    os.makedirs(FOLDER_IN, exist_ok=True)
+                    logger.debug(f'✓ Created folder_in: {FOLDER_IN}')
+                except Exception as e:
+                    raise UserException({
+                        'message': f'Cannot create folder_in: {FOLDER_IN}',
+                        'description': str(e)
+                    })
+            else:
+                logger.debug(f'✓ folder_in exists: {FOLDER_IN}')
+            
+            # Check and create folder_out if needed
+            if not os.path.exists(FOLDER_OUT):
+                logger.warning(f'folder_out does not exist: {FOLDER_OUT}')
+                logger.debug(f'Creating folder_out: {FOLDER_OUT}')
+                try:
+                    os.makedirs(FOLDER_OUT, exist_ok=True)
+                    logger.debug(f'✓ Created folder_out: {FOLDER_OUT}')
+                except Exception as e:
+                    raise UserException({
+                        'message': f'Cannot create folder_out: {FOLDER_OUT}',
+                        'description': str(e)
+                    })
+            else:
+                logger.debug(f'✓ folder_out exists: {FOLDER_OUT}')
+            
+            logger.debug('='*60)
+            
+            return FOLDER_IN
+            
+    except UserException:
+        raise
     except Exception as e:
-        logger.warning(f'Could not mount NFS: {e}')
-        logger.debug('Trying alternative paths...')
-        
-        # Try alternative paths that might already be mounted
-        alternative_paths = [
-            "/var/local/nfs/apng-apng-swift-pvc-d6e31bb3-44fa-4445-b22a-8faa47da7d8a",
-            "/data/swift",
-            "/tmp/swift_test"
-        ]
-        
-        for path in alternative_paths:
-            if os.path.exists(path):
-                logger.debug(f'Found existing path: {path}')
-                NFS_PATH = path
-                return path
-        
-        # If nothing works, create test directory
-        test_path = "/tmp/swift_test"
-        os.makedirs(test_path, exist_ok=True)
-        logger.debug(f'Using test path: {test_path}')
-        NFS_PATH = test_path
-        return test_path
+        logger.error(f'Error loading settings from database: {e}')
+        raise UserException({
+            'message': 'Error loading SWIFT settings from database',
+            'description': str(e)
+        }).withError(e)
 
 def _find_first_by_localname(root, localname):
     """Return first element in tree by localname, ignoring namespaces."""
@@ -206,26 +202,26 @@ def extract_pacs008_fields(xml_text):
     return result
 
 def create_test_file():
-    """Create a test file in the NFS directory"""
-    global NFS_PATH
-    logger.debug(f'create_test_file: Starting with path {NFS_PATH}')
+    """Create a test file in the folder_in directory"""
+    global FOLDER_IN
+    logger.debug(f'create_test_file: Starting with path {FOLDER_IN}')
     
     # Check if directory exists
     try:
-        if not os.path.exists(NFS_PATH):
-            logger.debug(f'Directory {NFS_PATH} does not exist, creating it...')
-            os.makedirs(NFS_PATH, exist_ok=True)
-            logger.debug(f'Directory created: {NFS_PATH}')
+        if not os.path.exists(FOLDER_IN):
+            logger.debug(f'Directory {FOLDER_IN} does not exist, creating it...')
+            os.makedirs(FOLDER_IN, exist_ok=True)
+            logger.debug(f'Directory created: {FOLDER_IN}')
         else:
-            logger.debug(f'Directory exists: {NFS_PATH}')
+            logger.debug(f'Directory exists: {FOLDER_IN}')
             
         # CLEAN DIRECTORY - Remove all existing files
         try:
-            contents_before = os.listdir(NFS_PATH)
+            contents_before = os.listdir(FOLDER_IN)
             if contents_before:
                 logger.debug(f'Cleaning directory: found {len(contents_before)} files to remove')
                 for filename in contents_before:
-                    file_path = os.path.join(NFS_PATH, filename)
+                    file_path = os.path.join(FOLDER_IN, filename)
                     if os.path.isfile(file_path):
                         try:
                             os.remove(file_path)
@@ -241,33 +237,33 @@ def create_test_file():
             contents_before = []
             
         # Check if directory is writable
-        if not os.access(NFS_PATH, os.W_OK):
-            logger.error(f'NFS directory is not writable: {NFS_PATH}')
+        if not os.access(FOLDER_IN, os.W_OK):
+            logger.error(f'Input directory is not writable: {FOLDER_IN}')
             # Try to see permissions
             import stat
             try:
-                st = os.stat(NFS_PATH)
+                st = os.stat(FOLDER_IN)
                 logger.debug(f'Directory permissions: {oct(st.st_mode)}')
                 logger.debug(f'Directory owner: {st.st_uid}')
             except:
                 pass
             raise UserException({
-                'message': 'NFS directory is not writable',
-                'description': f'Path: {NFS_PATH}'
+                'message': 'Input directory is not writable',
+                'description': f'Path: {FOLDER_IN}'
             })
         else:
             logger.debug(f'Directory is writable')
     except Exception as e:
-        logger.error(f'Error checking/creating NFS directory: {e}')
+        logger.error(f'Error checking/creating input directory: {e}')
         raise UserException({
-            'message': 'Error checking/creating NFS directory',
-            'description': f'Path: {NFS_PATH}'
+            'message': 'Error checking/creating input directory',
+            'description': f'Path: {FOLDER_IN}'
         }).withError(e)
     
     # Create pacs.008 XML example file (directory is already cleaned)
     logger.debug('Creating pacs.008 XML test file...')
 
-    pacs008_file_path = os.path.join(NFS_PATH, 'pacs008_example.xml')
+    pacs008_file_path = os.path.join(FOLDER_IN, 'pacs008_example.xml')
     try:
         xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
 <!--
@@ -383,11 +379,11 @@ p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
 
     # List contents AFTER creating file
     try:
-        contents_after = os.listdir(NFS_PATH)
+        contents_after = os.listdir(FOLDER_IN)
         logger.debug(f'Files AFTER creating test file: {len(contents_after)} files')
         if contents_after:
             for filename in contents_after:
-                file_path = os.path.join(NFS_PATH, filename)
+                file_path = os.path.join(FOLDER_IN, filename)
                 size = os.path.getsize(file_path) if os.path.isfile(file_path) else 0
                 logger.debug(f'  - {filename} ({size} bytes)')
         else:
@@ -396,46 +392,45 @@ p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
         logger.error(f'Cannot list directory after creating file: {e}')
 
 def read_and_import_files():
-    """Read all files from NFS directory and import to swift_input table"""
-    global NFS_PATH
-    logger.debug(f'read_and_import_files: Starting with path {NFS_PATH}')
+    """Read all files from folder_in directory and import to swift_input table"""
+    global FOLDER_IN
+    logger.debug(f'read_and_import_files: Starting with path {FOLDER_IN}')
     
     # Check if directory exists
-    if not os.path.exists(NFS_PATH):
-        logger.error(f'NFS directory not found: {NFS_PATH}')
+    if not os.path.exists(FOLDER_IN):
+        logger.error(f'Input directory not found: {FOLDER_IN}')
         raise UserException({
-            'message': 'NFS directory not found',
-            'description': f'Path: {NFS_PATH}'
+            'message': 'Input directory not found',
+            'description': f'Path: {FOLDER_IN}'
         })
     
     # Get all files in the directory
     try:
-        files = [f for f in os.listdir(NFS_PATH) if os.path.isfile(os.path.join(NFS_PATH, f))]
-        logger.debug(f'Found {len(files)} files in {NFS_PATH}')
+        files = [f for f in os.listdir(FOLDER_IN) if os.path.isfile(os.path.join(FOLDER_IN, f))]
+        logger.debug(f'Found {len(files)} files in {FOLDER_IN}')
         if files:
             logger.debug(f'Files to process:')
             for filename in files:
-                file_path = os.path.join(NFS_PATH, filename)
+                file_path = os.path.join(FOLDER_IN, filename)
                 size = os.path.getsize(file_path)
                 logger.debug(f'  - {filename} ({size} bytes)')
         else:
             logger.warning('No files found in directory!')
             return 0
     except Exception as e:
-        logger.error(f'Error reading NFS directory: {e}')
+        logger.error(f'Error reading input directory: {e}')
         raise UserException({
-            'message': 'Error reading NFS directory',
-            'description': f'Path: {NFS_PATH}'
+            'message': 'Error reading input directory',
+            'description': f'Path: {FOLDER_IN}'
         }).withError(e)
     
     # Process each file
     imported_count = 0
-    skipped_count = 0
     error_count = 0
     
     with initDbSession(database='default').cursor() as c:
         for filename in files:
-            file_path = os.path.join(NFS_PATH, filename)
+            file_path = os.path.join(FOLDER_IN, filename)
             logger.debug(f'Processing file: {filename}')
             
             try:
@@ -454,33 +449,7 @@ def read_and_import_files():
                 fields = extract_pacs008_fields(content)
                 status_value = 'finished' if not fields.get('error') else 'error'
                 
-                # Check if file already exists in database
-                check_sql = """
-                    SELECT COUNT(*) as cnt
-                    FROM swift_input
-                    WHERE file_name = %s
-                """
-                
-                c.execute(check_sql, (filename,))
-                result = c.fetchone()
-
-                # Support both tuple-based and dict-based cursor results
-                try:
-                    if isinstance(result, dict):
-                        existing_count = result.get('cnt', 0)
-                    elif isinstance(result, (list, tuple)):
-                        existing_count = result[0] if len(result) > 0 else 0
-                    else:
-                        existing_count = 0
-                except Exception:
-                    existing_count = 0
-
-                if existing_count > 0:
-                    logger.debug(f'  File {filename} already exists in database, skipping...')
-                    skipped_count += 1
-                    continue
-                
-                # Insert into swift_input table with parsed fields
+                # Insert into swift_input table with parsed fields (always insert, no duplicate check)
                 insert_sql = """
                     INSERT INTO swift_input (
                         file_name, status, content, imported,
@@ -545,7 +514,6 @@ def read_and_import_files():
     logger.debug('='*60)
     logger.debug(f'IMPORT SUMMARY:')
     logger.debug(f'  Imported: {imported_count} files')
-    logger.debug(f'  Skipped (already in DB): {skipped_count} files')
     logger.debug(f'  Errors: {error_count} files')
     logger.debug('='*60)
     
@@ -606,68 +574,16 @@ def get_total_records():
 
 def main():
     """Main execution function"""
-    global NFS_PATH
+    global FOLDER_IN
     
     try:
-        # Initialize NFS path
-        ensure_nfs_mounted()
+        # Load settings from database
+        load_settings_from_db()
         
         logger.debug('='*80)
-        logger.debug('main: Starting NFS Swift import process')
-        logger.debug(f'NFS Server: {NFS_SERVER}')
-        logger.debug(f'NFS Remote Path: {NFS_REMOTE_PATH}')
-        logger.debug(f'Using Local Path: {NFS_PATH}')
+        logger.debug('main: Starting SWIFT import process')
+        logger.debug(f'Input folder: {FOLDER_IN}')
         logger.debug('='*80)
-        
-        # Check current working directory and user
-        logger.debug(f'Current directory: {os.getcwd()}')
-        logger.debug(f'Current user: {os.getuid() if hasattr(os, "getuid") else "unknown"}')
-        
-        # Log all environment variables with SWIFT in name
-        logger.debug('Environment variables containing SWIFT:')
-        for key, value in os.environ.items():
-            if 'SWIFT' in key.upper():
-                logger.debug(f'  {key}={value}')
-        
-        # Check mount status
-        logger.debug('Checking mount status...')
-        result = subprocess.run(['mount'], capture_output=True, text=True)
-        nfs_mounts = [line for line in result.stdout.split('\n') if 'nfs' in line.lower()]
-        if nfs_mounts:
-            logger.debug('NFS mounts found:')
-            for mount in nfs_mounts[:3]:
-                logger.debug(f'  {mount[:100]}...')
-        else:
-            logger.debug('No NFS mounts found')
-        
-        # Check if we're in Kubernetes
-        if os.path.exists('/var/run/secrets/kubernetes.io'):
-            logger.debug('Running in Kubernetes environment')
-            logger.debug('Checking for PVC mounts...')
-            found_swift_path = False
-            for root, dirs, files in os.walk('/var'):
-                if 'swift' in root.lower() or 'd6e31bb3' in root:
-                    logger.debug(f'  Found potential Swift path: {root}')
-                    if os.access(root, os.W_OK):
-                        logger.debug(f'    -> Writable! Using this path')
-                        NFS_PATH = root
-                        found_swift_path = True
-                        break
-            if not found_swift_path:
-                logger.debug('No Swift path found in /var, keeping current NFS_PATH')
-        
-        # List parent directory to debug
-        parent_dir = os.path.dirname(NFS_PATH)
-        if os.path.exists(parent_dir):
-            logger.debug(f'Contents of {parent_dir}:')
-            try:
-                items = os.listdir(parent_dir)
-                for item in items[:5]:
-                    logger.debug(f'  - {item}')
-                if len(items) > 5:
-                    logger.debug(f'  ... and {len(items)-5} more items')
-            except Exception as e:
-                logger.debug(f'  Cannot list directory: {e}')
         
         # Step 1: Create test file
         logger.debug('Step 1: Creating test file...')
