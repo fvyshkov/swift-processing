@@ -11,6 +11,7 @@ logger = logging.getLogger('cron')
 # Log greeting and environment info
 logger.debug('===========================================')
 logger.debug('Starting SWIFT Income Processing Script')
+logger.debug('🚀 VERSION: 2025-10-10-13:00 WITH CLEANING & PACS008 XML')
 logger.debug('===========================================')
 
 # Check for SWIFT_PATH environment variable
@@ -125,17 +126,25 @@ def create_test_file():
         else:
             logger.debug(f'Directory exists: {NFS_PATH}')
             
-        # List current contents BEFORE creating file
+        # CLEAN DIRECTORY - Remove all existing files
         try:
             contents_before = os.listdir(NFS_PATH)
-            logger.debug(f'Files BEFORE creating test file: {len(contents_before)} files')
             if contents_before:
-                for f in contents_before:
-                    logger.debug(f'  - {f}')
+                logger.debug(f'Cleaning directory: found {len(contents_before)} files to remove')
+                for filename in contents_before:
+                    file_path = os.path.join(NFS_PATH, filename)
+                    if os.path.isfile(file_path):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f'  Removed: {filename}')
+                        except Exception as e:
+                            logger.error(f'  Error removing {filename}: {e}')
+                logger.debug('Directory cleaned successfully')
             else:
-                logger.debug('  Directory is empty')
+                logger.debug('Directory is already empty')
+            contents_before = []
         except Exception as e:
-            logger.error(f'Cannot list directory: {e}')
+            logger.error(f'Cannot clean directory: {e}')
             contents_before = []
             
         # Check if directory is writable
@@ -162,59 +171,136 @@ def create_test_file():
             'description': f'Path: {NFS_PATH}'
         }).withError(e)
     
-    # Create test file ONLY if directory is empty
-    if len(contents_before) == 0:
-        logger.debug('Directory is empty, creating test files...')
-        
-        # Create test_file.txt
-        test_file_path = os.path.join(NFS_PATH, "test_file.txt")
-        try:
-            with open(test_file_path, 'w') as f:
-                f.write("test")
-            logger.debug(f'Successfully created test file: {test_file_path}')
-        except Exception as e:
-            logger.error(f'Error creating test file: {e}')
-            
-        # Create sample SWIFT file
-        sample_swift_path = os.path.join(NFS_PATH, 'sample_mt103.txt')
-        try:
-            swift_msg = '{1:F01BANKBEBBAXXX0000000000}'
-            swift_msg += '{2:I103BANKDEFFXXXXN}'
-            swift_msg += '{3:{108:MT103}}'
-            swift_msg += '{4:'
-            swift_msg += ':20:1234567890'
-            swift_msg += ':23B:CRED'
-            swift_msg += ':32A:250110EUR1000,00'
-            swift_msg += ':50K:/12345678'
-            swift_msg += 'JOHN DOE'
-            swift_msg += 'STREET 123'
-            swift_msg += ':59:/87654321'
-            swift_msg += 'JANE SMITH'
-            swift_msg += 'AVENUE 456'
-            swift_msg += ':71A:SHA'
-            swift_msg += '-}'
-            
-            with open(sample_swift_path, 'w') as f:
-                f.write(swift_msg)
-            logger.debug(f'Successfully created sample SWIFT file: {sample_swift_path}')
-        except Exception as e:
-            logger.error(f'Error creating sample SWIFT file: {e}')
-            
-        # List contents AFTER creating files
-        try:
-            contents_after = os.listdir(NFS_PATH)
-            logger.debug(f'Files AFTER creating test files: {len(contents_after)} files')
-            if contents_after:
-                for filename in contents_after:
-                    file_path = os.path.join(NFS_PATH, filename)
-                    size = os.path.getsize(file_path) if os.path.isfile(file_path) else 0
-                    logger.debug(f'  - {filename} ({size} bytes)')
-            else:
-                logger.error('  Directory is still empty after creating files!')
-        except Exception as e:
-            logger.error(f'Cannot list directory after creating files: {e}')
-    else:
-        logger.debug(f'Directory already contains {len(contents_before)} files, skipping test file creation')
+    # Create pacs.008 XML example file (directory is already cleaned)
+    logger.debug('Creating pacs.008 XML test file...')
+
+    pacs008_file_path = os.path.join(NFS_PATH, 'pacs008_example.xml')
+    try:
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<!--
+THE MESSAGE WILL WORK "AS IS" IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).
+=========================================================================================================================================================================================
+SWIFT © 2020. All rights reserved.
+This publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT's prior written consent.
+The use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.
+====================================================================================================================================================================
+p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
+========================================================================================================================
+-->
+<Envelope xmlns="urn:swift:xsd:envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:swift:xsd:envelope \\\\be-file02\\Group\\Standards\\Messaging\\CBPR+Schemas\\Feb24Schemas_Core\\Translator_envelope_core.xsd">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>NWBKGB2L</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:Fr>
+		<head:To>
+			<head:FIId>
+				<head:FinInstnId>
+					<head:BICFI>RBSSGBKA</head:BICFI>
+				</head:FinInstnId>
+			</head:FIId>
+		</head:To>
+		<head:BizMsgIdr>pacs8bizmsgidr02</head:BizMsgIdr>
+		<head:MsgDefIdr>pacs.008.001.08</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.02</head:BizSvc>
+		<head:CreDt>2022-10-20T10:25:00+01:00</head:CreDt>
+	</head:AppHdr>
+	<pacs:Document xmlns:pacs="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+		<pacs:FIToFICstmrCdtTrf>
+			<pacs:GrpHdr>
+				<pacs:MsgId>pacs8bizmsgidr02</pacs:MsgId>
+				<pacs:CreDtTm>2022-10-20T10:25:00+01:00</pacs:CreDtTm>
+				<pacs:NbOfTxs>1</pacs:NbOfTxs>
+				<pacs:SttlmInf>
+					<pacs:SttlmMtd>INDA</pacs:SttlmMtd>
+				</pacs:SttlmInf>
+			</pacs:GrpHdr>
+			<pacs:CdtTrfTxInf>
+				<pacs:PmtId>
+					<pacs:InstrId>pacs8bizmsgidr02</pacs:InstrId>
+					<pacs:EndToEndId>pacs008EndToEndId-001</pacs:EndToEndId>
+					<pacs:UETR>7a562c67-ca16-48ba-b074-65581be6f001</pacs:UETR>
+				</pacs:PmtId>
+				<pacs:IntrBkSttlmAmt Ccy="USD">98725497</pacs:IntrBkSttlmAmt>
+				<pacs:IntrBkSttlmDt>2022-10-20</pacs:IntrBkSttlmDt>
+				<pacs:ChrgBr>DEBT</pacs:ChrgBr>
+				<pacs:InstgAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>NWBKGB2L</pacs:BICFI>
+					</pacs:FinInstnId>
+				</pacs:InstgAgt>
+				<pacs:InstdAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>RBSSGBKA</pacs:BICFI>
+					</pacs:FinInstnId>
+				</pacs:InstdAgt>
+				<pacs:Dbtr>
+					<pacs:Nm>A Capone</pacs:Nm>
+					<pacs:PstlAdr>
+						<pacs:StrtNm>180 North Stetson Ave</pacs:StrtNm>
+						<pacs:TwnNm>CHICAGO</pacs:TwnNm>
+						<pacs:Ctry>US</pacs:Ctry>
+					</pacs:PstlAdr>
+				</pacs:Dbtr>
+				<pacs:DbtrAcct>
+					<pacs:Id>
+						<pacs:Othr>
+							<pacs:Id>ACPN-2569874</pacs:Id>
+						</pacs:Othr>
+					</pacs:Id>
+				</pacs:DbtrAcct>
+				<pacs:DbtrAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>AMCDUS44</pacs:BICFI>
+					</pacs:FinInstnId>
+				</pacs:DbtrAgt>
+				<pacs:CdtrAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>RBSSGBKA</pacs:BICFI>
+					</pacs:FinInstnId>
+				</pacs:CdtrAgt>
+				<pacs:Cdtr>
+					<pacs:Nm>J Smith</pacs:Nm>
+					<pacs:PstlAdr>
+						<pacs:StrtNm>135 Bishopsgate</pacs:StrtNm>
+						<pacs:TwnNm>London</pacs:TwnNm>
+						<pacs:Ctry>GB</pacs:Ctry>
+					</pacs:PstlAdr>
+				</pacs:Cdtr>
+				<pacs:CdtrAcct>
+					<pacs:Id>
+						<pacs:Othr>
+							<pacs:Id>65479512</pacs:Id>
+						</pacs:Othr>
+					</pacs:Id>
+				</pacs:CdtrAcct>
+			</pacs:CdtTrfTxInf>
+		</pacs:FIToFICstmrCdtTrf>
+	</pacs:Document>
+</Envelope>'''
+
+        with open(pacs008_file_path, 'w', encoding='utf-8') as f:
+            f.write(xml_content)
+        logger.debug(f'Successfully created pacs.008 XML file: {pacs008_file_path}')
+    except Exception as e:
+        logger.error(f'Error creating pacs.008 XML file: {e}')
+
+    # List contents AFTER creating file
+    try:
+        contents_after = os.listdir(NFS_PATH)
+        logger.debug(f'Files AFTER creating test file: {len(contents_after)} files')
+        if contents_after:
+            for filename in contents_after:
+                file_path = os.path.join(NFS_PATH, filename)
+                size = os.path.getsize(file_path) if os.path.isfile(file_path) else 0
+                logger.debug(f'  - {filename} ({size} bytes)')
+        else:
+            logger.error('  Directory is still empty after creating file!')
+    except Exception as e:
+        logger.error(f'Cannot list directory after creating file: {e}')
 
 def read_and_import_files():
     """Read all files from NFS directory and import to swift_input table"""
@@ -282,19 +368,30 @@ def read_and_import_files():
                 
                 c.execute(check_sql, (filename,))
                 result = c.fetchone()
-                
-                if result and result['cnt'] > 0:
+
+                # Support both tuple-based and dict-based cursor results
+                try:
+                    if isinstance(result, dict):
+                        existing_count = result.get('cnt', 0)
+                    elif isinstance(result, (list, tuple)):
+                        existing_count = result[0] if len(result) > 0 else 0
+                    else:
+                        existing_count = 0
+                except Exception:
+                    existing_count = 0
+
+                if existing_count > 0:
                     logger.debug(f'  File {filename} already exists in database, skipping...')
                     skipped_count += 1
                     continue
                 
                 # Insert into swift_input table
                 insert_sql = """
-                    INSERT INTO swift_input (file_name, content, imported)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO swift_input (file_name, status, content, imported)
+                    VALUES (%s, %s, %s, %s)
                 """
-                
-                c.execute(insert_sql, (filename, content, current_date))
+
+                c.execute(insert_sql, (filename, 'finished', content, current_date))
                 imported_count += 1
                 logger.debug(f'  Successfully imported file: {filename}')
                 
@@ -306,12 +403,12 @@ def read_and_import_files():
                         content = f.read().hex()
                     
                     insert_sql = """
-                        INSERT INTO swift_input (file_name, content, imported)
-                        VALUES (%s, %s, %s)
+                        INSERT INTO swift_input (file_name, status, content, imported)
+                        VALUES (%s, %s, %s, %s)
                     """
                     current_date = datetime.now()
-                    
-                    c.execute(insert_sql, (filename, content, current_date))
+
+                    c.execute(insert_sql, (filename, 'finished', content, current_date))
                     imported_count += 1
                     logger.debug(f'  Imported binary file as hex: {filename}')
                 except Exception as e:
@@ -366,6 +463,31 @@ def verify_imports():
                 'message': 'Error fetching imported records',
                 'description': f'SQL:\n{sql}'
             }).withError(e)
+
+def get_total_records():
+    """Get total number of records in swift_input table"""
+    logger.debug('get_total_records: Counting total records')
+
+    sql = "SELECT COUNT(*) as total FROM swift_input"
+
+    with initDbSession(database='default').cursor() as c:
+        try:
+            c.execute(sql)
+            result = c.fetchone()
+
+            # Support both tuple-based and dict-based cursor results
+            if isinstance(result, dict):
+                total = result.get('total', 0)
+            elif isinstance(result, (list, tuple)):
+                total = result[0] if len(result) > 0 else 0
+            else:
+                total = 0
+
+            logger.debug(f'Total records in swift_input table: {total}')
+            return total
+        except Exception as e:
+            logger.error(f'Error counting records: {e}')
+            return 0
 
 def main():
     """Main execution function"""
@@ -443,10 +565,16 @@ def main():
         # Step 3: Verify imports
         logger.debug('Step 3: Verifying imports...')
         verify_imports()
-        
+
+        # Step 4: Get total records count
+        logger.debug('Step 4: Getting total records count...')
+        total_records = get_total_records()
+
         logger.debug('='*80)
         logger.debug('Process completed successfully!')
-        logger.debug(f'Total files imported: {imported_count}')
+        logger.debug(f'Total files imported in this run: {imported_count}')
+        logger.debug(f'Total records in swift_input table: {total_records}')
+        logger.debug('='*80)
         
     except UserException as e:
         logger.error(f'User error: {e}')
