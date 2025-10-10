@@ -507,13 +507,22 @@ def read_and_import_files():
                 if fields.get('error'):
                     error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
                     try:
+                        error_content = f'Error processing file: {filename}\n'
+                        error_content += f'Timestamp: {current_date}\n'
+                        error_content += f'\nError details:\n{fields.get("error")}\n'
+                        
                         with open(error_file_path, 'w', encoding='utf-8') as err_f:
-                            err_f.write(f'Error processing file: {filename}\n')
-                            err_f.write(f'Timestamp: {current_date}\n')
-                            err_f.write(f'\nError details:\n{fields.get("error")}\n')
-                        logger.debug(f'  Created error file: {error_file_path}')
+                            err_f.write(error_content)
+                        
+                        # Verify file was created
+                        if os.path.exists(error_file_path):
+                            file_size = os.path.getsize(error_file_path)
+                            logger.debug(f'  ✓ Created error file: {error_file_path} ({file_size} bytes)')
+                        else:
+                            logger.error(f'  ✗ Error file was not created: {error_file_path}')
                     except Exception as err_write:
                         logger.error(f'  Error creating error file: {err_write}')
+                        logger.error(f'  Traceback: {traceback.format_exc()}')
                 
             except UnicodeDecodeError:
                 # Try reading as binary if UTF-8 fails
@@ -612,6 +621,33 @@ def read_and_import_files():
     if error_count > 0:
         logger.debug(f'  Error details saved in .error.txt files')
     logger.debug('='*60)
+    
+    # List contents of folder_out
+    try:
+        if os.path.exists(FOLDER_OUT):
+            out_files = os.listdir(FOLDER_OUT)
+            logger.debug('')
+            logger.debug(f'Contents of {FOLDER_OUT}:')
+            if out_files:
+                # Sort files for consistent output
+                out_files.sort()
+                for out_file in out_files:
+                    out_file_path = os.path.join(FOLDER_OUT, out_file)
+                    if os.path.isfile(out_file_path):
+                        size = os.path.getsize(out_file_path)
+                        logger.debug(f'  {out_file} ({size} bytes)')
+                    elif os.path.isdir(out_file_path):
+                        logger.debug(f'  {out_file}/ (directory)')
+                    else:
+                        logger.debug(f'  {out_file}')
+                logger.debug(f'Total: {len(out_files)} items')
+            else:
+                logger.debug('  (empty)')
+            logger.debug('='*60)
+        else:
+            logger.warning(f'folder_out does not exist: {FOLDER_OUT}')
+    except Exception as e:
+        logger.error(f'Error listing folder_out contents: {e}')
     
     return imported_count
 
