@@ -2,6 +2,8 @@ import os
 import subprocess
 import logging
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from xml.etree import ElementTree as ET
 from apng_core.db import initDbSession, fetchall
 from apng_core.exceptions import UserException
 
@@ -111,6 +113,97 @@ def ensure_nfs_mounted():
         logger.debug(f'Using test path: {test_path}')
         NFS_PATH = test_path
         return test_path
+
+def _find_first_by_localname(root, localname):
+    """Return first element in tree by localname, ignoring namespaces."""
+    for el in root.iter():
+        tag = el.tag
+        if isinstance(tag, str) and (tag.endswith('}' + localname) or tag == localname):
+            return el
+    return None
+
+def _find_child_text_local(parent, localname):
+    """Return first child text by localname under the given element (deep search)."""
+    if parent is None:
+        return None
+    for el in parent.iter():
+        if el is parent:
+            continue
+        tag = el.tag
+        if isinstance(tag, str) and (tag.endswith('}' + localname) or tag == localname):
+            txt = (el.text or '').strip()
+            return txt if txt else None
+    return None
+
+def extract_pacs008_fields(xml_text):
+    """Extract sender, receiver, amount, date, currency from pacs.008 XML.
+
+    Returns dict with keys: txt_pay, txt_ben, nsdok, val_code, dval, error.
+    """
+    result = {
+        'txt_pay': None,
+        'txt_ben': None,
+        'nsdok': None,
+        'val_code': None,
+        'dval': None,
+        'error': None,
+    }
+
+    try:
+        root = ET.fromstring(xml_text)
+    except Exception as e:
+        result['error'] = f'XML parse error: {e}'
+        return result
+
+    # Debtor (sender)
+    try:
+        dbtr = _find_first_by_localname(root, 'Dbtr')
+        result['txt_pay'] = _find_child_text_local(dbtr, 'Nm')
+    except Exception as e:
+        result['error'] = (result['error'] or '') + f' | sender parse: {e}'
+
+    # Creditor (receiver)
+    try:
+        cdtr = _find_first_by_localname(root, 'Cdtr')
+        result['txt_ben'] = _find_child_text_local(cdtr, 'Nm')
+    except Exception as e:
+        result['error'] = (result['error'] or '') + f' | receiver parse: {e}'
+
+    # Amount and currency
+    try:
+        amt_el = _find_first_by_localname(root, 'IntrBkSttlmAmt')
+        if amt_el is not None:
+            val_text = (amt_el.text or '').strip()
+            try:
+                # Keep numeric for DB; if fails, store None and keep text in error
+                result['nsdok'] = Decimal(val_text)
+            except (InvalidOperation, ValueError):
+                result['nsdok'] = None
+                if val_text:
+                    result['error'] = (result['error'] or '') + f' | bad amount: {val_text}'
+            result['val_code'] = amt_el.attrib.get('Ccy')
+    except Exception as e:
+        result['error'] = (result['error'] or '') + f' | amount parse: {e}'
+
+    # Value date
+    try:
+        dval_el = _find_first_by_localname(root, 'IntrBkSttlmDt')
+        if dval_el is not None and (dval_el.text or '').strip():
+            result['dval'] = (dval_el.text or '').strip()
+        else:
+            # Fallback to group header creation date/time
+            cre_el = _find_first_by_localname(root, 'CreDtTm')
+            if cre_el is not None and (cre_el.text or '').strip():
+                # Take date part
+                result['dval'] = (cre_el.text or '').strip()[:10]
+    except Exception as e:
+        result['error'] = (result['error'] or '') + f' | date parse: {e}'
+
+    # If nothing extracted, set an error
+    if not any([result['txt_pay'], result['txt_ben'], result['nsdok'], result['val_code'], result['dval']]):
+        result['error'] = result['error'] or 'No key fields extracted'
+
+    return result
 
 def create_test_file():
     """Create a test file in the NFS directory"""
@@ -358,6 +451,8 @@ def read_and_import_files():
                 
                 # Prepare SQL for insertion
                 current_date = datetime.now()
+                fields = extract_pacs008_fields(content)
+                status_value = 'finished' if not fields.get('error') else 'error'
                 
                 # Check if file already exists in database
                 check_sql = """
@@ -385,13 +480,31 @@ def read_and_import_files():
                     skipped_count += 1
                     continue
                 
-                # Insert into swift_input table
+                # Insert into swift_input table with parsed fields
                 insert_sql = """
-                    INSERT INTO swift_input (file_name, status, content, imported)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO swift_input (
+                        file_name, status, content, imported,
+                        txt_pay, txt_ben, nsdok, val_code, dval, error
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
 
-                c.execute(insert_sql, (filename, 'finished', content, current_date))
+                c.execute(
+                    insert_sql,
+                    (
+                        filename,
+                        status_value,
+                        content,
+                        current_date,
+                        fields.get('txt_pay'),
+                        fields.get('txt_ben'),
+                        # keep Decimal for numeric DB columns
+                        fields.get('nsdok'),
+                        fields.get('val_code'),
+                        fields.get('dval'),
+                        fields.get('error')
+                    )
+                )
                 imported_count += 1
                 logger.debug(f'  Successfully imported file: {filename}')
                 
@@ -403,12 +516,14 @@ def read_and_import_files():
                         content = f.read().hex()
                     
                     insert_sql = """
-                        INSERT INTO swift_input (file_name, status, content, imported)
-                        VALUES (%s, %s, %s, %s)
+                        INSERT INTO swift_input (
+                            file_name, status, content, imported, error
+                        )
+                        VALUES (%s, %s, %s, %s, %s)
                     """
                     current_date = datetime.now()
 
-                    c.execute(insert_sql, (filename, 'finished', content, current_date))
+                    c.execute(insert_sql, (filename, 'error', content, current_date, 'binary file imported as hex'))
                     imported_count += 1
                     logger.debug(f'  Imported binary file as hex: {filename}')
                 except Exception as e:
