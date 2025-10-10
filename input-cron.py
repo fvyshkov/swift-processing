@@ -1,6 +1,8 @@
 import os
 import subprocess
 import logging
+import shutil
+import traceback
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from xml.etree import ElementTree as ET
@@ -148,7 +150,9 @@ def extract_pacs008_fields(xml_text):
     try:
         root = ET.fromstring(xml_text)
     except Exception as e:
-        result['error'] = f'XML parse error: {e}'
+        # Get full traceback
+        tb = traceback.format_exc()
+        result['error'] = f'XML parse error: {e}\n\nTraceback:\n{tb}'
         return result
 
     # Debtor (sender)
@@ -156,14 +160,16 @@ def extract_pacs008_fields(xml_text):
         dbtr = _find_first_by_localname(root, 'Dbtr')
         result['txt_pay'] = _find_child_text_local(dbtr, 'Nm')
     except Exception as e:
-        result['error'] = (result['error'] or '') + f' | sender parse: {e}'
+        tb = traceback.format_exc()
+        result['error'] = (result['error'] or '') + f' | sender parse error: {e}\nTraceback:\n{tb}'
 
     # Creditor (receiver)
     try:
         cdtr = _find_first_by_localname(root, 'Cdtr')
         result['txt_ben'] = _find_child_text_local(cdtr, 'Nm')
     except Exception as e:
-        result['error'] = (result['error'] or '') + f' | receiver parse: {e}'
+        tb = traceback.format_exc()
+        result['error'] = (result['error'] or '') + f' | receiver parse error: {e}\nTraceback:\n{tb}'
 
     # Amount and currency
     try:
@@ -179,7 +185,8 @@ def extract_pacs008_fields(xml_text):
                     result['error'] = (result['error'] or '') + f' | bad amount: {val_text}'
             result['val_code'] = amt_el.attrib.get('Ccy')
     except Exception as e:
-        result['error'] = (result['error'] or '') + f' | amount parse: {e}'
+        tb = traceback.format_exc()
+        result['error'] = (result['error'] or '') + f' | amount parse error: {e}\nTraceback:\n{tb}'
 
     # Value date
     try:
@@ -193,7 +200,8 @@ def extract_pacs008_fields(xml_text):
                 # Take date part
                 result['dval'] = (cre_el.text or '').strip()[:10]
     except Exception as e:
-        result['error'] = (result['error'] or '') + f' | date parse: {e}'
+        tb = traceback.format_exc()
+        result['error'] = (result['error'] or '') + f' | date parse error: {e}\nTraceback:\n{tb}'
 
     # If nothing extracted, set an error
     if not any([result['txt_pay'], result['txt_ben'], result['nsdok'], result['val_code'], result['dval']]):
@@ -377,6 +385,16 @@ p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
     except Exception as e:
         logger.error(f'Error creating pacs.008 XML file: {e}')
 
+    # Create error test file (invalid XML)
+    logger.debug('Creating error test file...')
+    error_test_file_path = os.path.join(FOLDER_IN, 'error_test.xml')
+    try:
+        with open(error_test_file_path, 'w', encoding='utf-8') as f:
+            f.write('sample error file')
+        logger.debug(f'Successfully created error test file: {error_test_file_path}')
+    except Exception as e:
+        logger.error(f'Error creating error test file: {e}')
+
     # List contents AFTER creating file
     try:
         contents_after = os.listdir(FOLDER_IN)
@@ -477,10 +495,31 @@ def read_and_import_files():
                 imported_count += 1
                 logger.debug(f'  Successfully imported file: {filename}')
                 
+                # Move file to folder_out
+                dest_file_path = os.path.join(FOLDER_OUT, filename)
+                try:
+                    shutil.copy2(file_path, dest_file_path)
+                    logger.debug(f'  Copied file to: {dest_file_path}')
+                except Exception as copy_err:
+                    logger.error(f'  Error copying file to folder_out: {copy_err}')
+                
+                # If there was a parsing error, create .error.txt file
+                if fields.get('error'):
+                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
+                    try:
+                        with open(error_file_path, 'w', encoding='utf-8') as err_f:
+                            err_f.write(f'Error processing file: {filename}\n')
+                            err_f.write(f'Timestamp: {current_date}\n')
+                            err_f.write(f'\nError details:\n{fields.get("error")}\n')
+                        logger.debug(f'  Created error file: {error_file_path}')
+                    except Exception as err_write:
+                        logger.error(f'  Error creating error file: {err_write}')
+                
             except UnicodeDecodeError:
                 # Try reading as binary if UTF-8 fails
+                error_msg = 'UTF-8 decode failed, file imported as hex'
                 try:
-                    logger.debug(f'  UTF-8 decode failed, trying binary for {filename}')
+                    logger.debug(f'  {error_msg} for {filename}')
                     with open(file_path, 'rb') as f:
                         content = f.read().hex()
                     
@@ -495,13 +534,67 @@ def read_and_import_files():
                     c.execute(insert_sql, (filename, 'error', content, current_date, 'binary file imported as hex'))
                     imported_count += 1
                     logger.debug(f'  Imported binary file as hex: {filename}')
+                    
+                    # Copy file to folder_out
+                    dest_file_path = os.path.join(FOLDER_OUT, filename)
+                    try:
+                        shutil.copy2(file_path, dest_file_path)
+                        logger.debug(f'  Copied file to: {dest_file_path}')
+                    except Exception as copy_err:
+                        logger.error(f'  Error copying file: {copy_err}')
+                    
+                    # Create error file
+                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
+                    try:
+                        with open(error_file_path, 'w', encoding='utf-8') as err_f:
+                            err_f.write(f'Error processing file: {filename}\n')
+                            err_f.write(f'Timestamp: {current_date}\n')
+                            err_f.write(f'\nError details:\n{error_msg}\n')
+                        logger.debug(f'  Created error file: {error_file_path}')
+                    except Exception as err_write:
+                        logger.error(f'  Error creating error file: {err_write}')
+                        
                 except Exception as e:
                     logger.error(f'  Error processing binary file {filename}: {str(e)}')
                     error_count += 1
+                    
+                    # Still try to copy file and create error file
+                    try:
+                        dest_file_path = os.path.join(FOLDER_OUT, filename)
+                        shutil.copy2(file_path, dest_file_path)
+                        
+                        error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
+                        tb = traceback.format_exc()
+                        with open(error_file_path, 'w', encoding='utf-8') as err_f:
+                            err_f.write(f'Error processing file: {filename}\n')
+                            err_f.write(f'Timestamp: {datetime.now()}\n')
+                            err_f.write(f'\nError details:\n')
+                            err_f.write(f'Binary file processing failed: {str(e)}\n\n')
+                            err_f.write(f'Full traceback:\n{tb}')
+                    except:
+                        pass
                     continue
+                    
             except Exception as e:
                 logger.error(f'  Error processing file {filename}: {str(e)}')
                 error_count += 1
+                
+                # Copy file to folder_out and create error file with full traceback
+                try:
+                    dest_file_path = os.path.join(FOLDER_OUT, filename)
+                    shutil.copy2(file_path, dest_file_path)
+                    logger.debug(f'  Copied file to: {dest_file_path}')
+                    
+                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
+                    tb = traceback.format_exc()
+                    with open(error_file_path, 'w', encoding='utf-8') as err_f:
+                        err_f.write(f'Error processing file: {filename}\n')
+                        err_f.write(f'Timestamp: {datetime.now()}\n')
+                        err_f.write(f'\nError details:\n{str(e)}\n\n')
+                        err_f.write(f'Full traceback:\n{tb}')
+                    logger.debug(f'  Created error file: {error_file_path}')
+                except Exception as copy_err:
+                    logger.error(f'  Error copying file or creating error file: {copy_err}')
                 continue
         
         # Commit the transaction
@@ -515,6 +608,9 @@ def read_and_import_files():
     logger.debug(f'IMPORT SUMMARY:')
     logger.debug(f'  Imported: {imported_count} files')
     logger.debug(f'  Errors: {error_count} files')
+    logger.debug(f'  All files copied to: {FOLDER_OUT}')
+    if error_count > 0:
+        logger.debug(f'  Error details saved in .error.txt files')
     logger.debug('='*60)
     
     return imported_count
