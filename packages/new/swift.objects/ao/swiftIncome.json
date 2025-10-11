@@ -1,0 +1,934 @@
+{
+    "lists": {
+        "default": {
+            "columns": {
+                "imported": {
+                    "title": "Imported",
+                    "width": 170,
+                    "fields": {
+                        "imported": {
+                            "format": "datetimesec"
+                        }
+                    }
+                },
+                "snd_name": {
+                    "title": "Sender",
+                    "flex": 1
+                },
+                "rcv_name": {
+                    "title": "Receiver",
+                    "flex": 1
+                },
+                "SDOK": {
+                    "title": "Amount",
+                    "cellStyle": {
+                        "textAlign": "right"
+                    },
+                    "fields|": {
+                        "amount": {
+                            "format": "currency"
+                        },
+                        "currency_code": {}
+                    }
+                },
+                "state": {
+                    "title": "State",
+                    "width": 175,
+                    "control": "chip",
+                    "decode": {
+                        "finished": {
+                            "value": "finished",
+                            "color": "#11ED28"
+                        },
+                        "error": {
+                            "value": "error",
+                            "color": "#ed1c24"
+                        }
+                    }
+                }
+            },
+            "id": "id",
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "View",
+                    "icon": "view",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "",
+                        "params": {
+                            "object": "swiftIncome",
+                            "form": "editForm",
+                            "objectKey$": "{id: $listRow.id}"
+                        },
+                        "disabled$": "!$listRow"
+                    }
+                },
+                {
+                    "title": "runJob",
+                    "icon": "addCircle",
+                    "command": {
+                        "type": "js",
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'job'}).then((r)=>{forceUpdate();})",
+                        "title$": "",
+                        "disabled$": "!$listRow"
+                    }
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px",
+                        "overflow": "hidden",
+                        "paddingRight": "0px"
+                    },
+                    "title": "Filter",
+                    "className": "panel vertical",
+                    "$": {
+                        "@fields": {
+                            "className": "vertical",
+                            "style": {
+                                "paddingRight": "8px",
+                                "overflowY": "auto"
+                            },
+                            "$": {
+                                "@app": {
+                                    "title": "Payment",
+                                    "className": "vertical",
+                                    "$": {
+                                        "@fromDate": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "fromDate": {
+                                                    "label": "Imported From",
+                                                    "control": "TextEdit",
+                                                    "controlProps": {
+                                                        "masked": {
+                                                            "mask": [
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ".",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ".",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                " ",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ":",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ":",
+                                                                "/\\d/",
+                                                                "/\\d/"
+                                                            ],
+                                                            "placeholderChar": "_",
+                                                            "showMask": true,
+                                                            "guide": true,
+                                                            "keepCharPositions": true
+                                                        }
+                                                    },
+                                                    "controlOpts": {
+                                                        "toValue": "(params.value||'').match(/\\d+/g) && params.value || ''"
+                                                    }
+                                                },
+                                                ".btnNow": {
+                                                    "control": "IconButton",
+                                                    "controlProps": {
+                                                        "icon": "time",
+                                                        "style": {
+                                                            "paddingTop": "6px"
+                                                        }
+                                                    },
+                                                    "action": {
+                                                        "name": "setNow"
+                                                    }
+                                                }
+                                            },
+                                            "actions": {
+                                                "setNow": {
+                                                    "js": " let d = new Date(); mem.fromDate = ('0'+d.getDate()).slice(-2) + '.' + ('0'+(d.getMonth()+1)).slice(-2) + '.' + d.getFullYear()+ ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0'+d.getSeconds()).slice(-2);"
+                                                }
+                                            }
+                                        },
+                                        "@todate": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "toDate": {
+                                                    "label": "Imported To",
+                                                    "control": "TextEdit",
+                                                    "controlProps": {
+                                                        "masked": {
+                                                            "mask": [
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ".",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ".",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                " ",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ":",
+                                                                "/\\d/",
+                                                                "/\\d/",
+                                                                ":",
+                                                                "/\\d/",
+                                                                "/\\d/"
+                                                            ],
+                                                            "placeholderChar": "_",
+                                                            "showMask": true,
+                                                            "guide": true,
+                                                            "keepCharPositions": true
+                                                        }
+                                                    },
+                                                    "controlOpts": {
+                                                        "toValue": "(params.value||'').match(/\\d+/g) && params.value || ''"
+                                                    }
+                                                },
+                                                ".btnNow": {
+                                                    "control": "IconButton",
+                                                    "controlProps": {
+                                                        "icon": "time",
+                                                        "style": {
+                                                            "paddingTop": "6px"
+                                                        }
+                                                    },
+                                                    "action": {
+                                                        "name": "setNow"
+                                                    }
+                                                }
+                                            },
+                                            "actions": {
+                                                "setNow": {
+                                                    "js": " let d = new Date(); mem.toDate = ('0'+d.getDate()).slice(-2) + '.' + ('0'+(d.getMonth()+1)).slice(-2) + '.' + d.getFullYear()+ ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0'+d.getSeconds()).slice(-2);"
+                                                }
+                                            }
+                                        },
+                                        "txtPay": {
+                                            "label": "Sender",
+                                            "control": "TextEdit"
+                                        },
+                                        "txtBen": {
+                                            "control": "TextEdit",
+                                            "label": "Receiver"
+                                        },
+                                        "state": {
+                                            "label": "State",
+                                            "control": "SelectList",
+                                            "controlProps": {
+                                                "list": [
+                                                    {
+                                                        "value": "active",
+                                                        "name": "active"
+                                                    },
+                                                    {
+                                                        "value": "finished",
+                                                        "name": "finished"
+                                                    },
+                                                    {
+                                                        "value": "error",
+                                                        "name": "error"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "file_name": {
+                                            "control": "TextEdit",
+                                            "label": "File Name"
+                                        }
+                                    }
+                                },
+                                "@loan": {
+                                    "className": "vertical",
+                                    "title": "Amount",
+                                    "$": {
+                                        "@amount": {
+                                            "className": "horizontal",
+                                            "$": {
+                                                "minAmount": {
+                                                    "control": "CurrencyField",
+                                                    "label": "Amount from"
+                                                },
+                                                "maxAmount": {
+                                                    "control": "CurrencyField",
+                                                    "label": "Amount to"
+                                                }
+                                            }
+                                        },
+                                        "currency": {
+                                            "control": "SelectList",
+                                            "label": "Currency",
+                                            "controlProps": {
+                                                "list": [
+                                                    {
+                                                        "name": "UZS",
+                                                        "value": "UZS"
+                                                    },
+                                                    {
+                                                        "name": "USD",
+                                                        "value": "USD"
+                                                    },
+                                                    {
+                                                        "name": "EUR",
+                                                        "value": "EUR"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@buttons": {
+                            "className": "horizontal",
+                            "$": {
+                                "btnClear": {
+                                    "control": "Button",
+                                    "label": "Clear",
+                                    "controlProps": {
+                                        "variant": "outlined",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "name": "clean"
+                                    }
+                                },
+                                "btnApply": {
+                                    "control": "Button",
+                                    "label": "Apply",
+                                    "controlProps": {
+                                        "variant": "contained",
+                                        "color": "primary"
+                                    },
+                                    "action": {
+                                        "js": "actions.apply(mem);",
+                                        "params": {
+                                            "disableUpdate": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "clean": {
+                            "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                        }
+                    }
+                },
+                "query": {
+                    "fromDate": {
+                        "sql": "imported >= %(fromDate)s"
+                    },
+                    "toDate": {
+                        "sql": "imported <= %(toDate)s"
+                    },
+                    "state": {
+                        "sql": "state = :state"
+                    },
+                    "txtPay": {
+                        "sql": "upper(txt_pay) like '%%'||upper(:txtPay)||'%%'"
+                    },
+                    "txtBen": {
+                        "sql": "upper(txt_Ben) like '%%'||upper(:txtBen)||'%%'"
+                    },
+                    "maxAmount": {
+                        "sql": "nsdok <= :maxAmount"
+                    },
+                    "minAmount": {
+                        "sql": "nsdok >= :minAmount"
+                    },
+                    "currency": {
+                        "sql": "val_code = :currency"
+                    }
+                }
+            },
+            "events": {
+                "onTaskCreated": [
+                    {
+                        "js": "task.data.$isFilterOpen = false;"
+                    }
+                ],
+                "runJob": [
+                    {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'get'}).then((r)=>{forceUpdate();})"
+                    }
+                ],
+                "onRowDoubleClicked": [
+                    {
+                        "command": {
+                            "type": "task",
+                            "call": "/aoa/ObjectTask",
+                            "title$": "",
+                            "params": {
+                                "object": "swiftIncome",
+                                "form": "editForm",
+                                "objectKey$": "{id: $listRow.id}"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "forms": {
+        "editForm": {
+            "title": "SWIFT Income",
+            "className": "vertical task task-panel",
+            "style": {
+                "height": "100%",
+                "overflow": "hidden"
+            },
+            "$": {
+                "@form": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "auto"
+                    },
+                    "form": "editFormInner"
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return !task.params?.componentPath && task.params?.objectKey && backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'get', params: {...task.params.objectKey}}).then((r)=>{mem.file=r; mem.record=r; mem.out_fields =r;if(!task.params.taskId)action({name: 'onSetTaskTitle'});  forceUpdate();})"
+                    },
+                    {
+                        "js": "if(task.params.app){mem.app = task.params.app} else if(!task.params?.componentPath && !task.params?.objectKey){mem.app = task.data.forms}"
+                    },
+                    {
+                        "js": "context.readOnly = (task.params && 'readOnly' in task.params)?task.params.readOnly : mem.app?.state && mem.app?.state != 'START'"
+                    }
+                ],
+                "onSetTaskTitle": {
+                    "js": "tm.setTaskTitle(task.key, `Payment`);"
+                }
+            }
+        },
+        "editFormInner": {
+            "title": "Payment",
+            "className": "vertical",
+            "style": {
+                "width": "860px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "padding": "4px"
+                    },
+                    "$": {
+                        "@info": {
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@cost": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "amount": {
+                                                    "label": "Amount",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "control": "CurrencyField",
+                                                    "controlOpts": {
+                                                        "currencyAttr": "currency_code"
+                                                    },
+                                                    "readOnly$": true
+                                                },
+                                                "dval": {
+                                                    "label": "Dval",
+                                                    "style": {
+                                                        "width": "200px"
+                                                    },
+                                                    "control": "DateEdit",
+                                                    "readOnly$": true
+                                                },
+                                                "imported": {
+                                                    "label": "Imported",
+                                                    "style": {
+                                                        "width": "200px"
+                                                    },
+                                                    "control": "DateEdit",
+                                                    "readOnly$": true
+                                                },
+                                                "code": {
+                                                    "label": "Code",
+                                                    "style": {
+                                                        "width": "250px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly$": true
+                                                }
+                                            }
+                                        },
+                                        "message": {
+                                            "label": "message",
+                                            "readOnly$": true,
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "multiline": true,
+                                                "minRows": 1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@sender": {
+                            "title": "Sender",
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "snd_acc": {
+                                                    "label": "Sender Account",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_name": {
+                                                    "label": "Sender Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        },
+                                        "@bank-send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "snd_bank": {
+                                                    "label": "Bank",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_bank_name": {
+                                                    "label": "Bank Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        },
+                                        "@bank-corr-send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "snd_mid_bank_acc": {
+                                                    "label": "Correspondent Account",
+                                                    "style": {
+                                                        "width": "250px"
+                                                    },
+                                                    "control": "ObjectReference",
+                                                    "controlProps": {
+                                                        "object": "swiftBankAccount"
+                                                    },
+                                                    "required": true,
+                                                    "actions": {
+                                                        "onChange": [
+                                                            {
+                                                                "js": "const copy = { ...params.row }; console.log(mem); mem.snd_mid_bank = copy.BANK; mem.snd_mid_acc_val_code = copy.VAL_CODE; mem.snd_mid_bank_acc = copy.ACC_CODE; mem.snd_mid_bank_name = copy.BANK_NAME;  "
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "snd_mid_bank": {
+                                                    "label": "Correspondent Bank",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "150px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_mid_acc_val_code": {
+                                                    "label": "Currency",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "70px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_mid_bank_name": {
+                                                    "label": "Bank Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "360px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@receiver": {
+                            "title": "Receiver",
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@bank-send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "rcv_bank": {
+                                                    "label": "Bank",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "rcv_bank_name": {
+                                                    "label": "Bank Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        },
+                                        "@rcv": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "rcv_acc": {
+                                                    "label": "Account",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "rcv_name": {
+                                                    "label": "Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@record-1": {
+                            "title": "Additional",
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@d": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "state": {
+                                                    "label": "State",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "readOnly$": true
+                                                },
+                                                "file_name": {
+                                                    "label": "File Name",
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly$": true
+                                                }
+                                            }
+                                        },
+                                        "error": {
+                                            "label": "Error",
+                                            "readOnly$": true,
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "multiline": true,
+                                                "minRows": 2
+                                            }
+                                        },
+                                        "content": {
+                                            "style": {
+                                                "height": "200px",
+                                                "overflow": "hidden",
+                                                "width": "860px"
+                                            },
+                                            "control": "AceEditor",
+                                            "controlProps": {
+                                                "editorId": "listFormEdit",
+                                                "mode": "xml"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "frontend.closeTask()",
+                                "disableUpdate": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "settings": {
+            "title": "SWIFT Settings",
+            "className": "vertical task task-panel panel",
+            "style": {
+                "width": "700px",
+                "height": "320px"
+            },
+            "$": {
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "auto"
+                    },
+                    "$": {
+                        "record": {
+                            "style": {
+                                "padding": "8px",
+                                "overflow": "auto"
+                            },
+                            "$": {
+                                "id": {
+                                    "label": "ID",
+                                    "control": "TextEdit",
+                                    "readOnly": true,
+                                    "visible$": "!!mem.record?.id",
+                                    "style": {
+                                        "padding": "8px",
+                                        "width": "400px"
+                                    }
+                                },
+                                "server": {
+                                    "label": "Server",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "padding": "8px",
+                                        "width": "600px"
+                                    }
+                                },
+                                "folder_in": {
+                                    "label": "Folder IN",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "padding": "8px",
+                                        "width": "600px"
+                                    }
+                                },
+                                "folder_out": {
+                                    "label": "Folder OUT",
+                                    "control": "TextEdit",
+                                    "style": {
+                                        "padding": "8px",
+                                        "width": "600px"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "borderTop": "1px solid rgba(0,0,0,0.20)",
+                        "padding": "8px 16px",
+                        "justifyContent": "flex-end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "frontend.closeTask();"
+                            }
+                        },
+                        ".btnSave": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'saveSettings', params: { id: mem.record?.id, folder_in: mem.record?.folder_in, folder_out: mem.record?.folder_out, server: mem.record?.server }});"
+                                },
+                                {
+                                    "js": "task.events.fireEvent('onRefreshList');"
+                                },
+                                {
+                                    "js": "frontend.closeTask();"
+                                }
+                            ],
+                            "disabled$": "!(mem.record?.folder_in && mem.record?.folder_out)"
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'getSettings'}).then(r => { mem.record = r || {}; forceUpdate(); });"
+                }
+            }
+        }
+    },
+    "methods": {
+        "getList": {
+            "script": {
+                "py": "# Get all records from simple_list table\nfrom apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nfrom apng_core.aoa.services.filter import applyFilterModel, applyFilterModel2\nfrom datetime import datetime\nfrom django.utils.timezone import make_aware\n\nSQL = \"\"\"\n    SELECT *\n    FROM swift_input\n    WHERE 1=1\n\n\"\"\"\n\ndef parseDT(s):\n    return make_aware(datetime.strptime(s, '%d.%m.%Y %H:%M:%S'))\n\n\n\n\nfilterModel2 = parameters.get('request', {}).get('filterModel2')\n\nfilterDef = None\n\nif filterModel2:\n    from apng_core.aoa.services import filter as aoa\n    filterDef = aoa.buildFilterSql({\n        'objectCode': 'swiftIncome',\n        'filterData': filterModel2\n    })\n    #raise Exception (filterDef['sql'])\n    SQL =  'select * from (' + SQL + ') '+ filterDef['sql']\n    \n    #raise Exception (rawSQL)\n    #queryParams = {\n    #    **queryParams,\n    #    **filterDef['params']\n    #}\n\n    #raise Exception(filterDef['params'])                \n\"\"\"                \nif filterModel2:\n    if 'fromDate' in filterModel2:\n        SQL += f\" and imported >= \\'{parseDT(filterModel2[\\'fromDate\\])}\\'\"\n        \n    if 'toDate' in filterModel2:\n        SQL += f\" and imported <= \\'{parseDT(filterModel2[\\'toDate\\])}\\'\"\n\"\"\n\n\"\"\"\n#raise Exception(SQL)\n\nSQL += \" ORDER BY Imported DESC\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        if filterDef is not None:\n            c.execute(SQL, filterDef['params'])\n        else:\n            c.execute(SQL)\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching records',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n"
+            },
+            "sql": {}
+        },
+        "get": {
+            "script": {
+                "py": "# Get single record by ID\nfrom apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    SELECT *\n    FROM swift_input\n    WHERE id = %(id)s\n\"\"\"\n\n#raise Exception(parameters)\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = fetchone(c)\n        if not data:\n            raise UserException('Record not found')\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching record',\n            'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'id': parameters.get('id')})\n        }).withError(e)\n"
+            },
+            "sql": {}
+        },
+        "DATABASE_UPDATE": {
+            "sql": {
+                "sqlType": "query",
+                "database": "default",
+                "sql": "\n"
+            },
+            "script": {
+                "py": "-- Table: public.swift_input\n\n-- DROP TABLE IF EXISTS public.swift_input;\n\nCREATE TABLE IF NOT EXISTS public.swift_input\n(\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    file_name text COLLATE pg_catalog.\"default\" NOT NULL,\n    status text COLLATE pg_catalog.\"default\" NOT NULL,\n    content text COLLATE pg_catalog.\"default\",\n    imported timestamp without time zone DEFAULT now(),\n    content_out text COLLATE pg_catalog.\"default\",\n    error text COLLATE pg_catalog.\"default\",\n    txt_ben text COLLATE pg_catalog.\"default\",\n    txt_pay text COLLATE pg_catalog.\"default\",\n    nsdok numeric,\n    val_code text COLLATE pg_catalog.\"default\",\n    dval timestamp without time zone,\n    CONSTRAINT swift_input_job_item_pkey PRIMARY KEY (id)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE IF EXISTS public.swift_input\n    OWNER to postgres;\n\nGRANT ALL ON TABLE public.swift_input TO apng;\n\nGRANT ALL ON TABLE public.swift_input TO postgres;"
+            }
+        },
+        "getSettings": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\nSQL = 'SELECT id::text AS id, folder_in, folder_out, server FROM swift_settings LIMIT 1'\nwith initDbSession(database='default').cursor() as c:\n  c.execute(SQL)\n  data = fetchone(c)\n"
+            }
+        },
+        "saveSettings": {
+            "script": {
+                "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n  if parameters.get('id'):\n    SQL = 'UPDATE swift_settings SET folder_in=%(folder_in)s, folder_out=%(folder_out)s, server=%(server)s WHERE id=%(id)s RETURNING id::text AS id'\n    params = {'id': parameters.get('id'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'server': parameters.get('server')}\n  else:\n    SQL = 'INSERT INTO swift_settings(folder_in, folder_out, active) VALUES(%(folder_in)s, %(folder_out)s, %(server)s) RETURNING id::text AS id'\n    params = {'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'server': parameters.get('server')}\n  try:\n    c.execute(SQL, params)\n    data = fetchone(c)\n  except Exception as e:\n    raise UserException({'message': 'Error saving settings'}).withError(e)\n"
+            },
+            "sql": {}
+        },
+        "job": {
+            "script": {
+                "py": "import os\nimport subprocess\nimport logging\nimport shutil\nimport traceback\nfrom datetime import datetime\nfrom decimal import Decimal, InvalidOperation\nfrom xml.etree import ElementTree as ET\nfrom apng_core.db import initDbSession, fetchall\nfrom apng_core.exceptions import UserException\n\n# Initialize logger\nlogger = logging.getLogger('cron')\n\n# Log greeting and environment info\nlogger.debug('===========================================')\nlogger.debug('Starting SWIFT Income Processing Script')\nlogger.debug('🚀 VERSION: 2025-10-10-13:00 WITH CLEANING & PACS008 XML')\nlogger.debug('===========================================')\n\n# Global variables for folder paths from settings\nFOLDER_IN = None\nFOLDER_OUT = None\n\ndef load_settings_from_db():\n    \"\"\"Load settings from swift_settings table\"\"\"\n    global FOLDER_IN, FOLDER_OUT\n    \n    logger.debug('Loading settings from swift_settings table...')\n    \n    sql = \"\"\"\n        SELECT folder_in, folder_out, server\n        FROM swift_settings\n        LIMIT 1\n    \"\"\"\n    \n    try:\n        with initDbSession(database='default').cursor() as c:\n            c.execute(sql)\n            result = fetchall(c)\n            \n            if not result or len(result) == 0:\n                raise UserException({\n                    'message': 'No settings found in swift_settings table',\n                    'description': 'Please configure SWIFT settings first'\n                })\n            \n            settings = result[0]\n            FOLDER_IN = settings.get('folder_in')\n            FOLDER_OUT = settings.get('folder_out')\n            server = settings.get('server')\n            \n            if not FOLDER_IN:\n                raise UserException({\n                    'message': 'folder_in is not configured in swift_settings',\n                    'description': 'Please set folder_in in SWIFT settings'\n                })\n            \n            if not FOLDER_OUT:\n                raise UserException({\n                    'message': 'folder_out is not configured in swift_settings',\n                    'description': 'Please set folder_out in SWIFT settings'\n                })\n            \n            logger.debug('='*60)\n            logger.debug('SETTINGS LOADED FROM DATABASE:')\n            logger.debug(f'  folder_in:  {FOLDER_IN}')\n            logger.debug(f'  folder_out: {FOLDER_OUT}')\n            logger.debug(f'  server:     {server or \"not set\"}')\n            logger.debug('='*60)\n            \n            # Check and create folder_in if needed\n            if not os.path.exists(FOLDER_IN):\n                logger.warning(f'folder_in does not exist: {FOLDER_IN}')\n                logger.debug(f'Creating folder_in: {FOLDER_IN}')\n                try:\n                    os.makedirs(FOLDER_IN, exist_ok=True)\n                    logger.debug(f'✓ Created folder_in: {FOLDER_IN}')\n                except Exception as e:\n                    raise UserException({\n                        'message': f'Cannot create folder_in: {FOLDER_IN}',\n                        'description': str(e)\n                    })\n            else:\n                logger.debug(f'✓ folder_in exists: {FOLDER_IN}')\n            \n            # Check and create folder_out if needed\n            if not os.path.exists(FOLDER_OUT):\n                logger.warning(f'folder_out does not exist: {FOLDER_OUT}')\n                logger.debug(f'Creating folder_out: {FOLDER_OUT}')\n                try:\n                    os.makedirs(FOLDER_OUT, exist_ok=True)\n                    logger.debug(f'✓ Created folder_out: {FOLDER_OUT}')\n                except Exception as e:\n                    raise UserException({\n                        'message': f'Cannot create folder_out: {FOLDER_OUT}',\n                        'description': str(e)\n                    })\n            else:\n                logger.debug(f'✓ folder_out exists: {FOLDER_OUT}')\n            \n            logger.debug('='*60)\n            \n            return FOLDER_IN\n            \n    except UserException:\n        raise\n    except Exception as e:\n        logger.error(f'Error loading settings from database: {e}')\n        raise UserException({\n            'message': 'Error loading SWIFT settings from database',\n            'description': str(e)\n        }).withError(e)\n\ndef get_bank_name_by_code(bank_code):\n    \"\"\"Get bank name from Oracle CBS by BIC code. Returns None if not found or error.\"\"\"\n    if not bank_code:\n        return None\n    \n    try:\n        sql = \"\"\"\n            SELECT longname \n            FROM GV_BNKALL \n            WHERE code = :par\n            AND rownum = 1\n        \"\"\"\n        \n        with initDbSession(application='colvir_cbs').cursor() as c:\n            c.execute(sql, {'par': bank_code})\n            result = c.fetchone()\n            \n            if result:\n                if isinstance(result, dict):\n                    return result.get('LONGNAME') or result.get('longname')\n                elif isinstance(result, (list, tuple)):\n                    return result[0] if len(result) > 0 else None\n            return None\n            \n    except Exception as e:\n        logger.debug(f'Could not find bank name for code {bank_code}: {e}')\n        return str(e)\n\ndef get_correspondent_account(bank_code, currency_code):\n    \"\"\"Get correspondent account from Oracle CBS by bank code and currency. Returns None if not found or error.\"\"\"\n    if not bank_code or not currency_code:\n        return None\n    \n    try:\n        sql = \"\"\"\n            SELECT I_BNKREL.CODE CORR_CODE\n            FROM \n                T_PROCESS, T_PROCMEM, T_BOP_STAT, T_DEA, T_DEACLS,\n                G_ACCBLN, G_BNK, P_ACCDSC, T_VAL, \n                P_BNKACC, I_BNKREL, I_DEAREL\n            WHERE\n                I_DEAREL.COR_ID = I_BNKREL.ID\n                AND I_BNKREL.ID = P_BNKACC.ID\n                AND P_BNKACC.DEP_ID = G_ACCBLN.DEP_ID (+)\n                AND P_BNKACC.LINK_ID = G_ACCBLN.ID (+)\n                AND P_ACCDSC.ID = P_BNKACC.ACC_ID\n                AND T_VAL.ID = P_BNKACC.VAL_ID\n                AND I_BNKREL.CLI_ID = G_BNK.ID\n                AND I_BNKREL.DEP_ID = T_PROCMEM.DEP_ID \n                AND I_BNKREL.ORD_ID = T_PROCMEM.ORD_ID\n                AND T_PROCMEM.MAINFL = '1'\n                AND T_PROCESS.ID = T_PROCMEM.ID\n                AND T_PROCESS.BOP_ID = T_BOP_STAT.ID \n                AND T_PROCESS.NSTAT = T_BOP_STAT.NORD\n                AND I_BNKREL.DEP_ID = T_DEA.DEP_ID \n                AND I_BNKREL.ORD_ID = T_DEA.ID\n                AND T_DEA.DCL_ID = T_DEACLS.ID\n                AND G_BNK.CODE = :bank_code\n                AND T_VAL.CODE = :currency_code\n                AND rownum = 1\n        \"\"\"\n        \n        with initDbSession(application='colvir_cbs').cursor() as c:\n            c.execute(sql, {'bank_code': bank_code, 'currency_code': currency_code})\n            result = c.fetchone()\n            \n            if result:\n                if isinstance(result, dict):\n                    return result.get('CORR_CODE') or result.get('corr_code')\n                elif isinstance(result, (list, tuple)):\n                    return result[0] if len(result) > 0 else None\n            return None\n            \n    except Exception as e:\n        logger.debug(f'Could not find correspondent account for {bank_code}/{currency_code}: {e}')\n        return None\n\ndef _find_first_by_localname(root, localname):\n    \"\"\"Return first element in tree by localname, ignoring namespaces.\"\"\"\n    for el in root.iter():\n        tag = el.tag\n        if isinstance(tag, str) and (tag.endswith('}' + localname) or tag == localname):\n            return el\n    return None\n\ndef _find_child_text_local(parent, localname):\n    \"\"\"Return first child text by localname under the given element (deep search).\"\"\"\n    if parent is None:\n        return None\n    for el in parent.iter():\n        if el is parent:\n            continue\n        tag = el.tag\n        if isinstance(tag, str) and (tag.endswith('}' + localname) or tag == localname):\n            txt = (el.text or '').strip()\n            return txt if txt else None\n    return None\n\ndef extract_pacs008_fields(xml_text):\n    \"\"\"Extract sender, receiver, amount, date, currency and additional fields from pacs.008 XML.\n\n    Returns dict with keys: snd_name, rcv_name, amount, currency_code, dval, code, message,\n    snd_acc, rcv_acc, snd_bank, snd_bank_name, snd_mid_bank, snd_mid_bank_name, \n    snd_mid_bank_acc, rcv_bank, rcv_bank_name, error.\n    \"\"\"\n    result = {\n        'snd_name': None,\n        'rcv_name': None,\n        'amount': None,\n        'currency_code': None,\n        'dval': None,\n        'code': None,\n        'message': None,\n        'snd_acc': None,\n        'rcv_acc': None,\n        'snd_bank': None,\n        'snd_bank_name': None,\n        'snd_mid_bank': None,\n        'snd_mid_bank_name': None,\n        'snd_mid_bank_acc': None,\n        'rcv_bank': None,\n        'rcv_bank_name': None,\n        'error': None,\n    }\n\n    try:\n        root = ET.fromstring(xml_text)\n    except Exception as e:\n        # Get full traceback\n        tb = traceback.format_exc()\n        result['error'] = f'XML parse error: {e}\\n\\nTraceback:\\n{tb}'\n        return result\n\n    # Debtor (sender name)\n    try:\n        dbtr = _find_first_by_localname(root, 'Dbtr')\n        result['snd_name'] = _find_child_text_local(dbtr, 'Nm')\n    except Exception as e:\n        tb = traceback.format_exc()\n        result['error'] = (result['error'] or '') + f' | sender parse error: {e}\\nTraceback:\\n{tb}'\n\n    # Creditor (receiver name)\n    try:\n        cdtr = _find_first_by_localname(root, 'Cdtr')\n        result['rcv_name'] = _find_child_text_local(cdtr, 'Nm')\n    except Exception as e:\n        tb = traceback.format_exc()\n        result['error'] = (result['error'] or '') + f' | receiver parse error: {e}\\nTraceback:\\n{tb}'\n\n    # Amount and currency\n    try:\n        amt_el = _find_first_by_localname(root, 'IntrBkSttlmAmt')\n        if amt_el is not None:\n            val_text = (amt_el.text or '').strip()\n            try:\n                # Keep numeric for DB; if fails, store None and keep text in error\n                result['amount'] = Decimal(val_text)\n            except (InvalidOperation, ValueError):\n                result['amount'] = None\n                if val_text:\n                    result['error'] = (result['error'] or '') + f' | bad amount: {val_text}'\n            result['currency_code'] = amt_el.attrib.get('Ccy')\n    except Exception as e:\n        tb = traceback.format_exc()\n        result['error'] = (result['error'] or '') + f' | amount parse error: {e}\\nTraceback:\\n{tb}'\n\n    # Value date\n    try:\n        dval_el = _find_first_by_localname(root, 'IntrBkSttlmDt')\n        if dval_el is not None and (dval_el.text or '').strip():\n            result['dval'] = (dval_el.text or '').strip()\n        else:\n            # Fallback to group header creation date/time\n            cre_el = _find_first_by_localname(root, 'CreDtTm')\n            if cre_el is not None and (cre_el.text or '').strip():\n                # Take date part\n                result['dval'] = (cre_el.text or '').strip()[:10]\n    except Exception as e:\n        tb = traceback.format_exc()\n        result['error'] = (result['error'] or '') + f' | date parse error: {e}\\nTraceback:\\n{tb}'\n\n    # Code (EndToEndId or InstrId)\n    try:\n        code_el = _find_first_by_localname(root, 'EndToEndId')\n        if code_el is not None and (code_el.text or '').strip():\n            result['code'] = (code_el.text or '').strip()\n        else:\n            # Fallback to InstrId\n            instr_el = _find_first_by_localname(root, 'InstrId')\n            if instr_el is not None:\n                result['code'] = (instr_el.text or '').strip()\n    except Exception as e:\n        pass  # Not critical\n    \n    # Message (Remittance Information)\n    try:\n        ustrd_el = _find_first_by_localname(root, 'Ustrd')\n        if ustrd_el is not None:\n            result['message'] = (ustrd_el.text or '').strip()\n    except Exception as e:\n        pass  # Not critical\n    \n    # Sender account (DbtrAcct)\n    try:\n        dbtr_acct = _find_first_by_localname(root, 'DbtrAcct')\n        if dbtr_acct is not None:\n            # Try IBAN first\n            iban_el = _find_child_text_local(dbtr_acct, 'IBAN')\n            if iban_el:\n                result['snd_acc'] = iban_el\n            else:\n                # Try Othr/Id\n                othr_id = _find_child_text_local(dbtr_acct, 'Id')\n                if othr_id:\n                    result['snd_acc'] = othr_id\n    except Exception as e:\n        pass  # Not critical\n    \n    # Receiver account (CdtrAcct)\n    try:\n        cdtr_acct = _find_first_by_localname(root, 'CdtrAcct')\n        if cdtr_acct is not None:\n            # Try IBAN first\n            iban_el = _find_child_text_local(cdtr_acct, 'IBAN')\n            if iban_el:\n                result['rcv_acc'] = iban_el\n            else:\n                # Try Othr/Id\n                othr_id = _find_child_text_local(cdtr_acct, 'Id')\n                if othr_id:\n                    result['rcv_acc'] = othr_id\n    except Exception as e:\n        pass  # Not critical\n    \n    # Sender bank (DbtrAgt)\n    try:\n        dbtr_agt = _find_first_by_localname(root, 'DbtrAgt')\n        if dbtr_agt is not None:\n            # BIC\n            bic_el = _find_child_text_local(dbtr_agt, 'BICFI')\n            if bic_el:\n                result['snd_bank'] = bic_el\n            # Name\n            name_el = _find_child_text_local(dbtr_agt, 'Nm')\n            if name_el:\n                result['snd_bank_name'] = name_el\n    except Exception as e:\n        pass  # Not critical\n    \n    # Receiver bank (CdtrAgt)\n    try:\n        cdtr_agt = _find_first_by_localname(root, 'CdtrAgt')\n        if cdtr_agt is not None:\n            # BIC\n            bic_el = _find_child_text_local(cdtr_agt, 'BICFI')\n            if bic_el:\n                result['rcv_bank'] = bic_el\n            # Name\n            name_el = _find_child_text_local(cdtr_agt, 'Nm')\n            if name_el:\n                result['rcv_bank_name'] = name_el\n    except Exception as e:\n        pass  # Not critical\n    \n    # Intermediary bank (InstgAgt - наш корсчет)\n    try:\n        instg_agt = _find_first_by_localname(root, 'InstgAgt')\n        if instg_agt is not None:\n            # BIC\n            bic_el = _find_child_text_local(instg_agt, 'BICFI')\n            if bic_el:\n                result['snd_mid_bank'] = bic_el\n            # Name\n            name_el = _find_child_text_local(instg_agt, 'Nm')\n            if name_el:\n                result['snd_mid_bank_name'] = name_el\n            # Account - может быть в ClrSysMmbId\n            clr_sys = _find_child_text_local(instg_agt, 'MmbId')\n            if clr_sys:\n                result['snd_mid_bank_acc'] = clr_sys\n    except Exception as e:\n        pass  # Not critical\n\n    # If nothing extracted, set an error\n    if not any([result['snd_name'], result['rcv_name'], result['amount'], result['currency_code'], result['dval']]):\n        result['error'] = result['error'] or 'No key fields extracted'\n\n    # Enrich data from Oracle CBS directory (only if BIC codes are present)\n    # Get sender bank name from directory\n    if result['snd_bank'] and not result['snd_bank_name']:\n        bank_name = get_bank_name_by_code(result['snd_bank'])\n        if bank_name:\n            result['snd_bank_name'] = bank_name\n            logger.debug(f'  Found snd_bank_name from directory: {bank_name}')\n    \n    # Get receiver bank name from directory\n    if result['rcv_bank'] and not result['rcv_bank_name']:\n        bank_name = get_bank_name_by_code(result['rcv_bank'])\n        if bank_name:\n            result['rcv_bank_name'] = bank_name\n            logger.debug(f'  Found rcv_bank_name from directory: {bank_name}')\n    \n    # Get intermediary bank name from directory\n    if result['snd_mid_bank'] and not result['snd_mid_bank_name']:\n        bank_name = get_bank_name_by_code(result['snd_mid_bank'])\n        if bank_name:\n            result['snd_mid_bank_name'] = bank_name\n            logger.debug(f'  Found snd_mid_bank_name from directory: {bank_name}')\n    \n    # Get correspondent account for intermediary bank\n    if result['snd_mid_bank'] and result['currency_code'] and not result['snd_mid_bank_acc']:\n        corr_acc = get_correspondent_account(result['snd_mid_bank'], result['currency_code'])\n        if corr_acc:\n            result['snd_mid_bank_acc'] = corr_acc\n            logger.debug(f'  Found snd_mid_bank_acc from directory: {corr_acc}')\n\n    return result\n\ndef create_test_file():\n    \"\"\"Create a test file in the folder_in directory\"\"\"\n    global FOLDER_IN\n    logger.debug(f'create_test_file: Starting with path {FOLDER_IN}')\n    \n    # Check if directory exists\n    try:\n        if not os.path.exists(FOLDER_IN):\n            logger.debug(f'Directory {FOLDER_IN} does not exist, creating it...')\n            os.makedirs(FOLDER_IN, exist_ok=True)\n            logger.debug(f'Directory created: {FOLDER_IN}')\n        else:\n            logger.debug(f'Directory exists: {FOLDER_IN}')\n            \n        # CLEAN DIRECTORY - Remove all existing files\n        try:\n            contents_before = os.listdir(FOLDER_IN)\n            if contents_before:\n                logger.debug(f'Cleaning directory: found {len(contents_before)} files to remove')\n                for filename in contents_before:\n                    file_path = os.path.join(FOLDER_IN, filename)\n                    if os.path.isfile(file_path):\n                        try:\n                            os.remove(file_path)\n                            logger.debug(f'  Removed: {filename}')\n                        except Exception as e:\n                            logger.error(f'  Error removing {filename}: {e}')\n                logger.debug('Directory cleaned successfully')\n            else:\n                logger.debug('Directory is already empty')\n            contents_before = []\n        except Exception as e:\n            logger.error(f'Cannot clean directory: {e}')\n            contents_before = []\n            \n        # Check if directory is writable\n        if not os.access(FOLDER_IN, os.W_OK):\n            logger.error(f'Input directory is not writable: {FOLDER_IN}')\n            # Try to see permissions\n            import stat\n            try:\n                st = os.stat(FOLDER_IN)\n                logger.debug(f'Directory permissions: {oct(st.st_mode)}')\n                logger.debug(f'Directory owner: {st.st_uid}')\n            except:\n                pass\n            raise UserException({\n                'message': 'Input directory is not writable',\n                'description': f'Path: {FOLDER_IN}'\n            })\n        else:\n            logger.debug(f'Directory is writable')\n    except Exception as e:\n        logger.error(f'Error checking/creating input directory: {e}')\n        raise UserException({\n            'message': 'Error checking/creating input directory',\n            'description': f'Path: {FOLDER_IN}'\n        }).withError(e)\n    \n    # Create pacs.008 XML example file (directory is already cleaned)\n    logger.debug('Creating pacs.008 XML test file...')\n\n    pacs008_file_path = os.path.join(FOLDER_IN, 'pacs008_example.xml')\n    try:\n        xml_content = '''<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!--\nTHE MESSAGE WILL WORK \"AS IS\" IN THE READINESS PORTAL. IT IS ESSENTIAL THAT USERS REMOVE THE ENVELOPE AND REPLACE IT WITH THEIR OWN TRANSPORT HEADER (FOR EXAMPLE FOR ALLIANCE ACCESS YOU WOULD USE THE XML V2 HEADERS).\n=========================================================================================================================================================================================\nSWIFT © 2020. All rights reserved.\nThis publication contains SWIFT or third-party confidential information. Do not disclose this publication outside your organisation without SWIFT's prior written consent.\nThe use of this document is governed by the legal notices appearing at the end of this document. By using this document, you will be deemed to have accepted those legal notices.\n====================================================================================================================================================================\np.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS\n========================================================================================================================\n-->\n<Envelope xmlns=\"urn:swift:xsd:envelope\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:swift:xsd:envelope \\\\\\\\be-file02\\\\Group\\\\Standards\\\\Messaging\\\\CBPR+Schemas\\\\Feb24Schemas_Core\\\\Translator_envelope_core.xsd\">\n\t<head:AppHdr xmlns:head=\"urn:iso:std:iso:20022:tech:xsd:head.001.001.02\">\n\t\t<head:Fr>\n\t\t\t<head:FIId>\n\t\t\t\t<head:FinInstnId>\n\t\t\t\t\t<head:BICFI>DSBAHKHH</head:BICFI>\n\t\t\t\t</head:FinInstnId>\n\t\t\t</head:FIId>\n\t\t</head:Fr>\n\t\t<head:To>\n\t\t\t<head:FIId>\n\t\t\t\t<head:FinInstnId>\n\t\t\t\t\t<head:BICFI>ID521122</head:BICFI>\n\t\t\t\t</head:FinInstnId>\n\t\t\t</head:FIId>\n\t\t</head:To>\n\t\t<head:BizMsgIdr>pacs8bizmsgidr02</head:BizMsgIdr>\n\t\t<head:MsgDefIdr>pacs.008.001.08</head:MsgDefIdr>\n\t\t<head:BizSvc>swift.cbprplus.02</head:BizSvc>\n\t\t<head:CreDt>2022-10-20T10:25:00+01:00</head:CreDt>\n\t</head:AppHdr>\n\t<pacs:Document xmlns:pacs=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">\n\t\t<pacs:FIToFICstmrCdtTrf>\n\t\t\t<pacs:GrpHdr>\n\t\t\t\t<pacs:MsgId>pacs8bizmsgidr02</pacs:MsgId>\n\t\t\t\t<pacs:CreDtTm>2022-10-20T10:25:00+01:00</pacs:CreDtTm>\n\t\t\t\t<pacs:NbOfTxs>1</pacs:NbOfTxs>\n\t\t\t\t<pacs:SttlmInf>\n\t\t\t\t\t<pacs:SttlmMtd>INDA</pacs:SttlmMtd>\n\t\t\t\t</pacs:SttlmInf>\n\t\t\t</pacs:GrpHdr>\n\t\t\t<pacs:CdtTrfTxInf>\n\t\t\t\t<pacs:PmtId>\n\t\t\t\t\t<pacs:InstrId>pacs8bizmsgidr02</pacs:InstrId>\n\t\t\t\t\t<pacs:EndToEndId>pacs008EndToEndId-001</pacs:EndToEndId>\n\t\t\t\t\t<pacs:UETR>7a562c67-ca16-48ba-b074-65581be6f001</pacs:UETR>\n\t\t\t\t</pacs:PmtId>\n\t\t\t\t<pacs:IntrBkSttlmAmt Ccy=\"USD\">98725497</pacs:IntrBkSttlmAmt>\n\t\t\t\t<pacs:IntrBkSttlmDt>2022-10-20</pacs:IntrBkSttlmDt>\n\t\t\t\t<pacs:ChrgBr>DEBT</pacs:ChrgBr>\n\t\t\t\t<pacs:InstgAgt>\n\t\t\t\t\t<pacs:FinInstnId>\n\t\t\t\t\t\t<pacs:BICFI>DSBAHKHH</pacs:BICFI>\n\t\t\t\t\t</pacs:FinInstnId>\n\t\t\t\t</pacs:InstgAgt>\n\t\t\t\t<pacs:InstdAgt>\n\t\t\t\t\t<pacs:FinInstnId>\n\t\t\t\t\t\t<pacs:BICFI>ID521122</pacs:BICFI>\n\t\t\t\t\t</pacs:FinInstnId>\n\t\t\t\t</pacs:InstdAgt>\n\t\t\t\t<pacs:Dbtr>\n\t\t\t\t\t<pacs:Nm>A Capone</pacs:Nm>\n\t\t\t\t\t<pacs:PstlAdr>\n\t\t\t\t\t\t<pacs:StrtNm>180 North Stetson Ave</pacs:StrtNm>\n\t\t\t\t\t\t<pacs:TwnNm>CHICAGO</pacs:TwnNm>\n\t\t\t\t\t\t<pacs:Ctry>US</pacs:Ctry>\n\t\t\t\t\t</pacs:PstlAdr>\n\t\t\t\t</pacs:Dbtr>\n\t\t\t\t<pacs:DbtrAcct>\n\t\t\t\t\t<pacs:Id>\n\t\t\t\t\t\t<pacs:Othr>\n\t\t\t\t\t\t\t<pacs:Id>ACPN-2569874</pacs:Id>\n\t\t\t\t\t\t</pacs:Othr>\n\t\t\t\t\t</pacs:Id>\n\t\t\t\t</pacs:DbtrAcct>\n\t\t\t\t<pacs:DbtrAgt>\n\t\t\t\t\t<pacs:FinInstnId>\n\t\t\t\t\t\t<pacs:BICFI>ID11509</pacs:BICFI>\n\t\t\t\t\t</pacs:FinInstnId>\n\t\t\t\t</pacs:DbtrAgt>\n\t\t\t\t<pacs:CdtrAgt>\n\t\t\t\t\t<pacs:FinInstnId>\n\t\t\t\t\t\t<pacs:BICFI>DOSSKG22</pacs:BICFI>\n\t\t\t\t\t</pacs:FinInstnId>\n\t\t\t\t</pacs:CdtrAgt>\n\t\t\t\t<pacs:Cdtr>\n\t\t\t\t\t<pacs:Nm>J Smith</pacs:Nm>\n\t\t\t\t\t<pacs:PstlAdr>\n\t\t\t\t\t\t<pacs:StrtNm>135 Bishopsgate</pacs:StrtNm>\n\t\t\t\t\t\t<pacs:TwnNm>London</pacs:TwnNm>\n\t\t\t\t\t\t<pacs:Ctry>GB</pacs:Ctry>\n\t\t\t\t\t</pacs:PstlAdr>\n\t\t\t\t</pacs:Cdtr>\n\t\t\t\t<pacs:CdtrAcct>\n\t\t\t\t\t<pacs:Id>\n\t\t\t\t\t\t<pacs:Othr>\n\t\t\t\t\t\t\t<pacs:Id>65479512</pacs:Id>\n\t\t\t\t\t\t</pacs:Othr>\n\t\t\t\t\t</pacs:Id>\n\t\t\t\t</pacs:CdtrAcct>\n\t\t\t</pacs:CdtTrfTxInf>\n\t\t</pacs:FIToFICstmrCdtTrf>\n\t</pacs:Document>\n</Envelope>'''\n\n        with open(pacs008_file_path, 'w', encoding='utf-8') as f:\n            f.write(xml_content)\n        logger.debug(f'Successfully created pacs.008 XML file: {pacs008_file_path}')\n    except Exception as e:\n        logger.error(f'Error creating pacs.008 XML file: {e}')\n\n    # Create error test file (invalid XML)\n    logger.debug('Creating error test file...')\n    error_test_file_path = os.path.join(FOLDER_IN, 'error_test.xml')\n    try:\n        with open(error_test_file_path, 'w', encoding='utf-8') as f:\n            f.write('sample error file')\n        logger.debug(f'Successfully created error test file: {error_test_file_path}')\n    except Exception as e:\n        logger.error(f'Error creating error test file: {e}')\n\n    # List contents AFTER creating file\n    try:\n        contents_after = os.listdir(FOLDER_IN)\n        logger.debug(f'Files AFTER creating test file: {len(contents_after)} files')\n        if contents_after:\n            for filename in contents_after:\n                file_path = os.path.join(FOLDER_IN, filename)\n                size = os.path.getsize(file_path) if os.path.isfile(file_path) else 0\n                logger.debug(f'  - {filename} ({size} bytes)')\n        else:\n            logger.error('  Directory is still empty after creating file!')\n    except Exception as e:\n        logger.error(f'Cannot list directory after creating file: {e}')\n\ndef read_and_import_files():\n    \"\"\"Read all files from folder_in directory and import to swift_input table\"\"\"\n    global FOLDER_IN\n    logger.debug(f'read_and_import_files: Starting with path {FOLDER_IN}')\n    \n    # Check if directory exists\n    if not os.path.exists(FOLDER_IN):\n        logger.error(f'Input directory not found: {FOLDER_IN}')\n        raise UserException({\n            'message': 'Input directory not found',\n            'description': f'Path: {FOLDER_IN}'\n        })\n    \n    # Get all files in the directory\n    try:\n        files = [f for f in os.listdir(FOLDER_IN) if os.path.isfile(os.path.join(FOLDER_IN, f))]\n        logger.debug(f'Found {len(files)} files in {FOLDER_IN}')\n        if files:\n            logger.debug(f'Files to process:')\n            for filename in files:\n                file_path = os.path.join(FOLDER_IN, filename)\n                size = os.path.getsize(file_path)\n                logger.debug(f'  - {filename} ({size} bytes)')\n        else:\n            logger.warning('No files found in directory!')\n            return 0\n    except Exception as e:\n        logger.error(f'Error reading input directory: {e}')\n        raise UserException({\n            'message': 'Error reading input directory',\n            'description': f'Path: {FOLDER_IN}'\n        }).withError(e)\n    \n    # Process each file\n    imported_count = 0\n    error_count = 0\n    \n    with initDbSession(database='default').cursor() as c:\n        for filename in files:\n            file_path = os.path.join(FOLDER_IN, filename)\n            logger.debug(f'Processing file: {filename}')\n            \n            try:\n                # Read file content\n                with open(file_path, 'r', encoding='utf-8') as f:\n                    content = f.read()\n                \n                logger.debug(f'  File size: {len(content)} bytes')\n                if len(content) > 50:\n                    logger.debug(f'  First 50 chars: {content[:50]}...')\n                else:\n                    logger.debug(f'  Content: {content}')\n                \n                # Prepare SQL for insertion\n                current_date = datetime.now()\n                fields = extract_pacs008_fields(content)\n                state_value = 'finished' if not fields.get('error') else 'error'\n                \n                # Log extracted fields\n                logger.debug(f'  Extracted fields:')\n                logger.debug(f'    code: {fields.get(\"code\")}')\n                logger.debug(f'    message: {fields.get(\"message\")[:50] if fields.get(\"message\") else None}...')\n                logger.debug(f'    snd_name: {fields.get(\"snd_name\")}')\n                logger.debug(f'    rcv_name: {fields.get(\"rcv_name\")}')\n                logger.debug(f'    snd_acc: {fields.get(\"snd_acc\")}')\n                logger.debug(f'    rcv_acc: {fields.get(\"rcv_acc\")}')\n                logger.debug(f'    snd_bank: {fields.get(\"snd_bank\")}')\n                logger.debug(f'    rcv_bank: {fields.get(\"rcv_bank\")}')\n                logger.debug(f'    snd_mid_bank: {fields.get(\"snd_mid_bank\")}')\n                \n                # Insert into swift_input table with parsed fields (always insert, no duplicate check)\n                insert_sql = \"\"\"\n                    INSERT INTO swift_input (\n                        file_name, state, content, imported,\n                        snd_name, rcv_name, amount, currency_code, dval,\n                        code, message, snd_acc, rcv_acc,\n                        snd_bank, snd_bank_name, snd_mid_bank, snd_mid_bank_name, snd_mid_bank_acc,\n                        rcv_bank, rcv_bank_name,\n                        error\n                    )\n                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)\n                \"\"\"\n\n                c.execute(\n                    insert_sql,\n                    (\n                        filename,\n                        state_value,\n                        content,\n                        current_date,\n                        fields.get('snd_name'),\n                        fields.get('rcv_name'),\n                        # keep Decimal for numeric DB columns\n                        fields.get('amount'),\n                        fields.get('currency_code'),\n                        fields.get('dval'),\n                        fields.get('code'),\n                        fields.get('message'),\n                        fields.get('snd_acc'),\n                        fields.get('rcv_acc'),\n                        fields.get('snd_bank'),\n                        fields.get('snd_bank_name'),\n                        fields.get('snd_mid_bank'),\n                        fields.get('snd_mid_bank_name'),\n                        fields.get('snd_mid_bank_acc'),\n                        fields.get('rcv_bank'),\n                        fields.get('rcv_bank_name'),\n                        fields.get('error')\n                    )\n                )\n                imported_count += 1\n                logger.debug(f'  Successfully imported file: {filename}')\n                \n                # Move file to folder_out\n                dest_file_path = os.path.join(FOLDER_OUT, filename)\n                try:\n                    shutil.copy2(file_path, dest_file_path)\n                    logger.debug(f'  Copied file to: {dest_file_path}')\n                except Exception as copy_err:\n                    logger.error(f'  Error copying file to folder_out: {copy_err}')\n                \n                # If there was a parsing error, create .error.txt file\n                if fields.get('error'):\n                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')\n                    try:\n                        error_content = f'Error processing file: {filename}\\n'\n                        error_content += f'Timestamp: {current_date}\\n'\n                        error_content += f'\\nError details:\\n{fields.get(\"error\")}\\n'\n                        \n                        with open(error_file_path, 'w', encoding='utf-8') as err_f:\n                            err_f.write(error_content)\n                        \n                        # Verify file was created\n                        if os.path.exists(error_file_path):\n                            file_size = os.path.getsize(error_file_path)\n                            logger.debug(f'  ✓ Created error file: {error_file_path} ({file_size} bytes)')\n                        else:\n                            logger.error(f'  ✗ Error file was not created: {error_file_path}')\n                    except Exception as err_write:\n                        logger.error(f'  Error creating error file: {err_write}')\n                        logger.error(f'  Traceback: {traceback.format_exc()}')\n                \n            except UnicodeDecodeError:\n                # Try reading as binary if UTF-8 fails\n                error_msg = 'UTF-8 decode failed, file imported as hex'\n                try:\n                    logger.debug(f'  {error_msg} for {filename}')\n                    with open(file_path, 'rb') as f:\n                        content = f.read().hex()\n                    \n                    insert_sql = \"\"\"\n                        INSERT INTO swift_input (\n                            file_name, state, content, imported, error\n                        )\n                        VALUES (%s, %s, %s, %s, %s)\n                    \"\"\"\n                    current_date = datetime.now()\n\n                    c.execute(insert_sql, (filename, 'error', content, current_date, 'binary file imported as hex'))\n                    imported_count += 1\n                    logger.debug(f'  Imported binary file as hex: {filename}')\n                    \n                    # Copy file to folder_out\n                    dest_file_path = os.path.join(FOLDER_OUT, filename)\n                    try:\n                        shutil.copy2(file_path, dest_file_path)\n                        logger.debug(f'  Copied file to: {dest_file_path}')\n                    except Exception as copy_err:\n                        logger.error(f'  Error copying file: {copy_err}')\n                    \n                    # Create error file\n                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')\n                    try:\n                        with open(error_file_path, 'w', encoding='utf-8') as err_f:\n                            err_f.write(f'Error processing file: {filename}\\n')\n                            err_f.write(f'Timestamp: {current_date}\\n')\n                            err_f.write(f'\\nError details:\\n{error_msg}\\n')\n                        logger.debug(f'  Created error file: {error_file_path}')\n                    except Exception as err_write:\n                        logger.error(f'  Error creating error file: {err_write}')\n                        \n                except Exception as e:\n                    logger.error(f'  Error processing binary file {filename}: {str(e)}')\n                    error_count += 1\n                    \n                    # Still try to copy file and create error file\n                    try:\n                        dest_file_path = os.path.join(FOLDER_OUT, filename)\n                        shutil.copy2(file_path, dest_file_path)\n                        \n                        error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')\n                        tb = traceback.format_exc()\n                        with open(error_file_path, 'w', encoding='utf-8') as err_f:\n                            err_f.write(f'Error processing file: {filename}\\n')\n                            err_f.write(f'Timestamp: {datetime.now()}\\n')\n                            err_f.write(f'\\nError details:\\n')\n                            err_f.write(f'Binary file processing failed: {str(e)}\\n\\n')\n                            err_f.write(f'Full traceback:\\n{tb}')\n                    except:\n                        pass\n                    continue\n                    \n            except Exception as e:\n                logger.error(f'  Error processing file {filename}: {str(e)}')\n                error_count += 1\n                \n                # Copy file to folder_out and create error file with full traceback\n                try:\n                    dest_file_path = os.path.join(FOLDER_OUT, filename)\n                    shutil.copy2(file_path, dest_file_path)\n                    logger.debug(f'  Copied file to: {dest_file_path}')\n                    \n                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')\n                    tb = traceback.format_exc()\n                    with open(error_file_path, 'w', encoding='utf-8') as err_f:\n                        err_f.write(f'Error processing file: {filename}\\n')\n                        err_f.write(f'Timestamp: {datetime.now()}\\n')\n                        err_f.write(f'\\nError details:\\n{str(e)}\\n\\n')\n                        err_f.write(f'Full traceback:\\n{tb}')\n                    logger.debug(f'  Created error file: {error_file_path}')\n                except Exception as copy_err:\n                    logger.error(f'  Error copying file or creating error file: {copy_err}')\n                continue\n        \n        # Commit the transaction\n        if imported_count > 0:\n            c.connection.commit()\n            logger.debug(f'Transaction committed: {imported_count} files')\n        else:\n            logger.warning('No files were imported!')\n    \n    logger.debug('='*60)\n    logger.debug(f'IMPORT SUMMARY:')\n    logger.debug(f'  Imported: {imported_count} files')\n    logger.debug(f'  Errors: {error_count} files')\n    logger.debug(f'  All files copied to: {FOLDER_OUT}')\n    if error_count > 0:\n        logger.debug(f'  Error details saved in .error.txt files')\n    logger.debug('='*60)\n    \n    # List contents of folder_out\n    try:\n        if os.path.exists(FOLDER_OUT):\n            out_files = os.listdir(FOLDER_OUT)\n            logger.debug('')\n            logger.debug(f'Contents of {FOLDER_OUT}:')\n            if out_files:\n                # Sort files for consistent output\n                out_files.sort()\n                for out_file in out_files:\n                    out_file_path = os.path.join(FOLDER_OUT, out_file)\n                    if os.path.isfile(out_file_path):\n                        size = os.path.getsize(out_file_path)\n                        logger.debug(f'  {out_file} ({size} bytes)')\n                    elif os.path.isdir(out_file_path):\n                        logger.debug(f'  {out_file}/ (directory)')\n                    else:\n                        logger.debug(f'  {out_file}')\n                logger.debug(f'Total: {len(out_files)} items')\n            else:\n                logger.debug('  (empty)')\n            logger.debug('='*60)\n        else:\n            logger.warning(f'folder_out does not exist: {FOLDER_OUT}')\n    except Exception as e:\n        logger.error(f'Error listing folder_out contents: {e}')\n    \n    return imported_count\n\ndef verify_imports():\n    \"\"\"Verify imported records in the database\"\"\"\n    logger.debug('verify_imports: Starting verification')\n    \n    sql = \"\"\"\n        SELECT file_name, imported, LENGTH(content) as content_length\n        FROM swift_input\n        ORDER BY imported DESC\n        LIMIT 10\n    \"\"\"\n    \n    with initDbSession(database='default').cursor() as c:\n        try:\n            c.execute(sql)\n            data = fetchall(c)\n            \n            logger.debug(f'Found {len(data)} recent imports')\n            for row in data:\n                logger.debug(f'  File: {row[\"file_name\"]}, Imported: {row[\"imported\"]}, Size: {row[\"content_length\"]} bytes')\n                \n            return data\n        except Exception as e:\n            logger.error(f'Error fetching imported records: {e}')\n            raise UserException({\n                'message': 'Error fetching imported records',\n                'description': f'SQL:\\n{sql}'\n            }).withError(e)\n\ndef get_total_records():\n    \"\"\"Get total number of records in swift_input table\"\"\"\n    logger.debug('get_total_records: Counting total records')\n\n    sql = \"SELECT COUNT(*) as total FROM swift_input\"\n\n    with initDbSession(database='default').cursor() as c:\n        try:\n            c.execute(sql)\n            result = c.fetchone()\n\n            # Support both tuple-based and dict-based cursor results\n            if isinstance(result, dict):\n                total = result.get('total', 0)\n            elif isinstance(result, (list, tuple)):\n                total = result[0] if len(result) > 0 else 0\n            else:\n                total = 0\n\n            logger.debug(f'Total records in swift_input table: {total}')\n            return total\n        except Exception as e:\n            logger.error(f'Error counting records: {e}')\n            return 0\n\ndef main():\n    \"\"\"Main execution function\"\"\"\n    global FOLDER_IN\n    \n    try:\n        # Load settings from database\n        load_settings_from_db()\n        \n        logger.debug('='*80)\n        logger.debug('main: Starting SWIFT import process')\n        logger.debug(f'Input folder: {FOLDER_IN}')\n        logger.debug('='*80)\n        \n        # Step 1: Create test file\n        logger.debug('Step 1: Creating test file...')\n        create_test_file()\n        \n        # Step 2: Read and import files\n        logger.debug('Step 2: Reading and importing files...')\n        imported_count = read_and_import_files()\n        \n        # Step 3: Verify imports\n        logger.debug('Step 3: Verifying imports...')\n        verify_imports()\n\n        # Step 4: Get total records count\n        logger.debug('Step 4: Getting total records count...')\n        total_records = get_total_records()\n\n        logger.debug('='*80)\n        logger.debug('Process completed successfully!')\n        logger.debug(f'Total files imported in this run: {imported_count}')\n        logger.debug(f'Total records in swift_input table: {total_records}')\n        logger.debug('='*80)\n        \n    except UserException as e:\n        logger.error(f'User error: {e}')\n        raise\n    except Exception as e:\n        logger.error(f'Unexpected error: {e}')\n        raise UserException({\n            'message': 'Unexpected error in main process',\n            'description': str(e)\n        }).withError(e)\n\nmain()"
+            },
+            "sql": {}
+        }
+    },
+    "actions": [],
+    "filter": {},
+    "references": {},
+    "js": {}
+}

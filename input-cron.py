@@ -112,6 +112,91 @@ def load_settings_from_db():
             'description': str(e)
         }).withError(e)
 
+def get_bank_name_by_code(bank_code):
+    """Get bank name from Oracle CBS by BIC code. Returns None if not found or error."""
+    if not bank_code:
+        return None
+    
+    try:
+        sql = """
+            SELECT longname 
+            FROM GV_BNKALL 
+            WHERE code = :par
+            AND rownum = 1
+        """
+        
+        with initDbSession(application='colvir_cbs').cursor() as c:
+            # Open COLVIR package before query
+            c.execute("BEGIN c_pkgconnect.popen('COLVIR'); END;")
+            """
+            c.execute(sql, {'par': bank_code})
+            result = c.fetchone()
+            
+            if result:
+                if isinstance(result, dict):
+                    return result.get('LONGNAME') or result.get('longname')
+                elif isinstance(result, (list, tuple)):
+                    return result[0] if len(result) > 0 else None
+            return None
+            """
+            return '1'
+            
+    except Exception as e:
+        logger.debug(f'Could not find bank name for code {bank_code}: {e}')
+        return None
+
+def get_correspondent_account(bank_code, currency_code):
+    """Get correspondent account from Oracle CBS by bank code and currency. Returns None if not found or error."""
+    if not bank_code or not currency_code:
+        return None
+    
+    try:
+        sql = """
+            SELECT I_BNKREL.CODE CORR_CODE
+            FROM 
+                T_PROCESS, T_PROCMEM, T_BOP_STAT, T_DEA, T_DEACLS,
+                G_ACCBLN, G_BNK, P_ACCDSC, T_VAL, 
+                P_BNKACC, I_BNKREL, I_DEAREL
+            WHERE
+                I_DEAREL.COR_ID = I_BNKREL.ID
+                AND I_BNKREL.ID = P_BNKACC.ID
+                AND P_BNKACC.DEP_ID = G_ACCBLN.DEP_ID (+)
+                AND P_BNKACC.LINK_ID = G_ACCBLN.ID (+)
+                AND P_ACCDSC.ID = P_BNKACC.ACC_ID
+                AND T_VAL.ID = P_BNKACC.VAL_ID
+                AND I_BNKREL.CLI_ID = G_BNK.ID
+                AND I_BNKREL.DEP_ID = T_PROCMEM.DEP_ID 
+                AND I_BNKREL.ORD_ID = T_PROCMEM.ORD_ID
+                AND T_PROCMEM.MAINFL = '1'
+                AND T_PROCESS.ID = T_PROCMEM.ID
+                AND T_PROCESS.BOP_ID = T_BOP_STAT.ID 
+                AND T_PROCESS.NSTAT = T_BOP_STAT.NORD
+                AND I_BNKREL.DEP_ID = T_DEA.DEP_ID 
+                AND I_BNKREL.ORD_ID = T_DEA.ID
+                AND T_DEA.DCL_ID = T_DEACLS.ID
+                AND G_BNK.CODE = :bank_code
+                AND T_VAL.CODE = :currency_code
+                AND rownum = 1
+        """
+        
+        with initDbSession(application='colvir_cbs').cursor() as c:
+            # Open COLVIR package before query
+            c.execute("BEGIN c_pkgconnect.popen('COLVIR'); END;")
+            
+            c.execute(sql, {'bank_code': bank_code, 'currency_code': currency_code})
+            result = c.fetchone()
+            
+            if result:
+                if isinstance(result, dict):
+                    return result.get('CORR_CODE') or result.get('corr_code')
+                elif isinstance(result, (list, tuple)):
+                    return result[0] if len(result) > 0 else None
+            return None
+            
+    except Exception as e:
+        logger.debug(f'Could not find correspondent account for {bank_code}/{currency_code}: {e}')
+        return None
+
 def _find_first_by_localname(root, localname):
     """Return first element in tree by localname, ignoring namespaces."""
     for el in root.iter():
@@ -134,16 +219,29 @@ def _find_child_text_local(parent, localname):
     return None
 
 def extract_pacs008_fields(xml_text):
-    """Extract sender, receiver, amount, date, currency from pacs.008 XML.
+    """Extract sender, receiver, amount, date, currency and additional fields from pacs.008 XML.
 
-    Returns dict with keys: txt_pay, txt_ben, nsdok, val_code, dval, error.
+    Returns dict with keys: snd_name, rcv_name, amount, currency_code, dval, code, message,
+    snd_acc, rcv_acc, snd_bank, snd_bank_name, snd_mid_bank, snd_mid_bank_name, 
+    snd_mid_bank_acc, rcv_bank, rcv_bank_name, error.
     """
     result = {
-        'txt_pay': None,
-        'txt_ben': None,
-        'nsdok': None,
-        'val_code': None,
+        'snd_name': None,
+        'rcv_name': None,
+        'amount': None,
+        'currency_code': None,
         'dval': None,
+        'code': None,
+        'message': None,
+        'snd_acc': None,
+        'rcv_acc': None,
+        'snd_bank': None,
+        'snd_bank_name': None,
+        'snd_mid_bank': None,
+        'snd_mid_bank_name': None,
+        'snd_mid_bank_acc': None,
+        'rcv_bank': None,
+        'rcv_bank_name': None,
         'error': None,
     }
 
@@ -155,18 +253,18 @@ def extract_pacs008_fields(xml_text):
         result['error'] = f'XML parse error: {e}\n\nTraceback:\n{tb}'
         return result
 
-    # Debtor (sender)
+    # Debtor (sender name)
     try:
         dbtr = _find_first_by_localname(root, 'Dbtr')
-        result['txt_pay'] = _find_child_text_local(dbtr, 'Nm')
+        result['snd_name'] = _find_child_text_local(dbtr, 'Nm')
     except Exception as e:
         tb = traceback.format_exc()
         result['error'] = (result['error'] or '') + f' | sender parse error: {e}\nTraceback:\n{tb}'
 
-    # Creditor (receiver)
+    # Creditor (receiver name)
     try:
         cdtr = _find_first_by_localname(root, 'Cdtr')
-        result['txt_ben'] = _find_child_text_local(cdtr, 'Nm')
+        result['rcv_name'] = _find_child_text_local(cdtr, 'Nm')
     except Exception as e:
         tb = traceback.format_exc()
         result['error'] = (result['error'] or '') + f' | receiver parse error: {e}\nTraceback:\n{tb}'
@@ -178,12 +276,12 @@ def extract_pacs008_fields(xml_text):
             val_text = (amt_el.text or '').strip()
             try:
                 # Keep numeric for DB; if fails, store None and keep text in error
-                result['nsdok'] = Decimal(val_text)
+                result['amount'] = Decimal(val_text)
             except (InvalidOperation, ValueError):
-                result['nsdok'] = None
+                result['amount'] = None
                 if val_text:
                     result['error'] = (result['error'] or '') + f' | bad amount: {val_text}'
-            result['val_code'] = amt_el.attrib.get('Ccy')
+            result['currency_code'] = amt_el.attrib.get('Ccy')
     except Exception as e:
         tb = traceback.format_exc()
         result['error'] = (result['error'] or '') + f' | amount parse error: {e}\nTraceback:\n{tb}'
@@ -203,9 +301,140 @@ def extract_pacs008_fields(xml_text):
         tb = traceback.format_exc()
         result['error'] = (result['error'] or '') + f' | date parse error: {e}\nTraceback:\n{tb}'
 
+    # Code (EndToEndId or InstrId)
+    try:
+        code_el = _find_first_by_localname(root, 'EndToEndId')
+        if code_el is not None and (code_el.text or '').strip():
+            result['code'] = (code_el.text or '').strip()
+        else:
+            # Fallback to InstrId
+            instr_el = _find_first_by_localname(root, 'InstrId')
+            if instr_el is not None:
+                result['code'] = (instr_el.text or '').strip()
+    except Exception as e:
+        pass  # Not critical
+    
+    # Message (Remittance Information)
+    try:
+        ustrd_el = _find_first_by_localname(root, 'Ustrd')
+        if ustrd_el is not None:
+            result['message'] = (ustrd_el.text or '').strip()
+    except Exception as e:
+        pass  # Not critical
+    
+    # Sender account (DbtrAcct)
+    try:
+        dbtr_acct = _find_first_by_localname(root, 'DbtrAcct')
+        if dbtr_acct is not None:
+            # Try IBAN first
+            iban_el = _find_child_text_local(dbtr_acct, 'IBAN')
+            if iban_el:
+                result['snd_acc'] = iban_el
+            else:
+                # Try Othr/Id
+                othr_id = _find_child_text_local(dbtr_acct, 'Id')
+                if othr_id:
+                    result['snd_acc'] = othr_id
+    except Exception as e:
+        pass  # Not critical
+    
+    # Receiver account (CdtrAcct)
+    try:
+        cdtr_acct = _find_first_by_localname(root, 'CdtrAcct')
+        if cdtr_acct is not None:
+            # Try IBAN first
+            iban_el = _find_child_text_local(cdtr_acct, 'IBAN')
+            if iban_el:
+                result['rcv_acc'] = iban_el
+            else:
+                # Try Othr/Id
+                othr_id = _find_child_text_local(cdtr_acct, 'Id')
+                if othr_id:
+                    result['rcv_acc'] = othr_id
+    except Exception as e:
+        pass  # Not critical
+    
+    # Sender bank (DbtrAgt)
+    try:
+        dbtr_agt = _find_first_by_localname(root, 'DbtrAgt')
+        if dbtr_agt is not None:
+            # BIC
+            bic_el = _find_child_text_local(dbtr_agt, 'BICFI')
+            if bic_el:
+                result['snd_bank'] = bic_el
+            # Name
+            name_el = _find_child_text_local(dbtr_agt, 'Nm')
+            if name_el:
+                result['snd_bank_name'] = name_el
+    except Exception as e:
+        pass  # Not critical
+    
+    # Receiver bank (CdtrAgt)
+    try:
+        cdtr_agt = _find_first_by_localname(root, 'CdtrAgt')
+        if cdtr_agt is not None:
+            # BIC
+            bic_el = _find_child_text_local(cdtr_agt, 'BICFI')
+            if bic_el:
+                result['rcv_bank'] = bic_el
+            # Name
+            name_el = _find_child_text_local(cdtr_agt, 'Nm')
+            if name_el:
+                result['rcv_bank_name'] = name_el
+    except Exception as e:
+        pass  # Not critical
+    
+    # Intermediary bank (InstgAgt - наш корсчет)
+    try:
+        instg_agt = _find_first_by_localname(root, 'InstgAgt')
+        if instg_agt is not None:
+            # BIC
+            bic_el = _find_child_text_local(instg_agt, 'BICFI')
+            if bic_el:
+                result['snd_mid_bank'] = bic_el
+            # Name
+            name_el = _find_child_text_local(instg_agt, 'Nm')
+            if name_el:
+                result['snd_mid_bank_name'] = name_el
+            # Account - может быть в ClrSysMmbId
+            clr_sys = _find_child_text_local(instg_agt, 'MmbId')
+            if clr_sys:
+                result['snd_mid_bank_acc'] = clr_sys
+    except Exception as e:
+        pass  # Not critical
+
     # If nothing extracted, set an error
-    if not any([result['txt_pay'], result['txt_ben'], result['nsdok'], result['val_code'], result['dval']]):
+    if not any([result['snd_name'], result['rcv_name'], result['amount'], result['currency_code'], result['dval']]):
         result['error'] = result['error'] or 'No key fields extracted'
+
+    # Enrich data from Oracle CBS directory (only if BIC codes are present)
+    # Get sender bank name from directory
+    if result['snd_bank'] and not result['snd_bank_name']:
+        bank_name = get_bank_name_by_code(result['snd_bank'])
+        if bank_name:
+            result['snd_bank_name'] = bank_name
+            logger.debug(f'  Found snd_bank_name from directory: {bank_name}')
+    
+    # Get receiver bank name from directory
+    if result['rcv_bank'] and not result['rcv_bank_name']:
+        bank_name = get_bank_name_by_code(result['rcv_bank'])
+        if bank_name:
+            result['rcv_bank_name'] = bank_name
+            logger.debug(f'  Found rcv_bank_name from directory: {bank_name}')
+    
+    # Get intermediary bank name from directory
+    if result['snd_mid_bank'] and not result['snd_mid_bank_name']:
+        bank_name = get_bank_name_by_code(result['snd_mid_bank'])
+        if bank_name:
+            result['snd_mid_bank_name'] = bank_name
+            logger.debug(f'  Found snd_mid_bank_name from directory: {bank_name}')
+    
+    # Get correspondent account for intermediary bank
+    if result['snd_mid_bank'] and result['currency_code'] and not result['snd_mid_bank_acc']:
+        corr_acc = get_correspondent_account(result['snd_mid_bank'], result['currency_code'])
+        if corr_acc:
+            result['snd_mid_bank_acc'] = corr_acc
+            logger.debug(f'  Found snd_mid_bank_acc from directory: {corr_acc}')
 
     return result
 
@@ -289,14 +518,14 @@ p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
 		<head:Fr>
 			<head:FIId>
 				<head:FinInstnId>
-					<head:BICFI>NWBKGB2L</head:BICFI>
+					<head:BICFI>SABRRUMM</head:BICFI>
 				</head:FinInstnId>
 			</head:FIId>
 		</head:Fr>
 		<head:To>
 			<head:FIId>
 				<head:FinInstnId>
-					<head:BICFI>RBSSGBKA</head:BICFI>
+					<head:BICFI>ID521122</head:BICFI>
 				</head:FinInstnId>
 			</head:FIId>
 		</head:To>
@@ -326,12 +555,12 @@ p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
 				<pacs:ChrgBr>DEBT</pacs:ChrgBr>
 				<pacs:InstgAgt>
 					<pacs:FinInstnId>
-						<pacs:BICFI>NWBKGB2L</pacs:BICFI>
+						<pacs:BICFI>SABRRUMM</pacs:BICFI>
 					</pacs:FinInstnId>
 				</pacs:InstgAgt>
 				<pacs:InstdAgt>
 					<pacs:FinInstnId>
-						<pacs:BICFI>RBSSGBKA</pacs:BICFI>
+						<pacs:BICFI>ID521122</pacs:BICFI>
 					</pacs:FinInstnId>
 				</pacs:InstdAgt>
 				<pacs:Dbtr>
@@ -351,7 +580,7 @@ p.8.2.4Agent D NatWest sends a pacs.008 to Agent E RBS
 				</pacs:DbtrAcct>
 				<pacs:DbtrAgt>
 					<pacs:FinInstnId>
-						<pacs:BICFI>AMCDUS44</pacs:BICFI>
+						<pacs:BICFI>ID11509</pacs:BICFI>
 					</pacs:FinInstnId>
 				</pacs:DbtrAgt>
 				<pacs:CdtrAgt>
@@ -465,30 +694,57 @@ def read_and_import_files():
                 # Prepare SQL for insertion
                 current_date = datetime.now()
                 fields = extract_pacs008_fields(content)
-                status_value = 'finished' if not fields.get('error') else 'error'
+                state_value = 'finished' if not fields.get('error') else 'error'
+                
+                # Log extracted fields
+                logger.debug(f'  Extracted fields:')
+                logger.debug(f'    code: {fields.get("code")}')
+                logger.debug(f'    message: {fields.get("message")[:50] if fields.get("message") else None}...')
+                logger.debug(f'    snd_name: {fields.get("snd_name")}')
+                logger.debug(f'    rcv_name: {fields.get("rcv_name")}')
+                logger.debug(f'    snd_acc: {fields.get("snd_acc")}')
+                logger.debug(f'    rcv_acc: {fields.get("rcv_acc")}')
+                logger.debug(f'    snd_bank: {fields.get("snd_bank")}')
+                logger.debug(f'    rcv_bank: {fields.get("rcv_bank")}')
+                logger.debug(f'    snd_mid_bank: {fields.get("snd_mid_bank")}')
                 
                 # Insert into swift_input table with parsed fields (always insert, no duplicate check)
                 insert_sql = """
                     INSERT INTO swift_input (
-                        file_name, status, content, imported,
-                        txt_pay, txt_ben, nsdok, val_code, dval, error
+                        file_name, state, content, imported,
+                        snd_name, rcv_name, amount, currency_code, dval,
+                        code, message, snd_acc, rcv_acc,
+                        snd_bank, snd_bank_name, snd_mid_bank, snd_mid_bank_name, snd_mid_bank_acc,
+                        rcv_bank, rcv_bank_name,
+                        error
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
 
                 c.execute(
                     insert_sql,
                     (
                         filename,
-                        status_value,
+                        state_value,
                         content,
                         current_date,
-                        fields.get('txt_pay'),
-                        fields.get('txt_ben'),
+                        fields.get('snd_name'),
+                        fields.get('rcv_name'),
                         # keep Decimal for numeric DB columns
-                        fields.get('nsdok'),
-                        fields.get('val_code'),
+                        fields.get('amount'),
+                        fields.get('currency_code'),
                         fields.get('dval'),
+                        fields.get('code'),
+                        fields.get('message'),
+                        fields.get('snd_acc'),
+                        fields.get('rcv_acc'),
+                        fields.get('snd_bank'),
+                        fields.get('snd_bank_name'),
+                        fields.get('snd_mid_bank'),
+                        fields.get('snd_mid_bank_name'),
+                        fields.get('snd_mid_bank_acc'),
+                        fields.get('rcv_bank'),
+                        fields.get('rcv_bank_name'),
                         fields.get('error')
                     )
                 )
@@ -534,7 +790,7 @@ def read_and_import_files():
                     
                     insert_sql = """
                         INSERT INTO swift_input (
-                            file_name, status, content, imported, error
+                            file_name, state, content, imported, error
                         )
                         VALUES (%s, %s, %s, %s, %s)
                     """

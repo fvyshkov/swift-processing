@@ -1,0 +1,16 @@
+<workplace code="swift.manager" name="SWIFT">
+  <menu name="SWIFT">
+    <menu name="Income " call="/aoa/ObjectListTask">
+      <p name="object" value="swiftIncome" />
+      <p name="list" value="default" />
+    </menu>
+    <menu name="Outcome" call="/aoa/ObjectListTask">
+      <p name="object" value="swiftOutcome" />
+      <p name="list" value="default" />
+    </menu>
+    <menu name="Settings" call="/aoa/ObjectTask">
+      <p name="object" value="swiftIncome" />
+      <p name="form" value="settings" />
+    </menu>
+  </menu>
+</workplace>

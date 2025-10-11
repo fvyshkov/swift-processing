@@ -1,0 +1,59 @@
+{
+    "packageId": "779ba04a-c37b-4714-9f80-59daa3f3446e",
+    "packageName": "swift.objects",
+    "configs": [
+        {
+            "id": "faa1a2cb-742f-48a8-96ae-6e232ab9d9f3",
+            "name": "Прикладной объект",
+            "model_name": "aoa.Object"
+        },
+        {
+            "id": "58d15866-38cd-483d-990d-7f99201822d3",
+            "name": "Рабочее место",
+            "model_name": "workplace.Workplace"
+        }
+    ],
+    "content": [
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "93170add-6c68-461f-bd5b-67fe955fbe7b",
+            "object_name": "Bank Account",
+            "object_attrs": {
+                "code": "swiftBankAccount",
+                "name": "Bank Account"
+            },
+            "file_name": "ao/swiftBankAccount.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "33333333-3333-3333-3333-333333333333",
+            "object_name": "SWIFT Income",
+            "object_attrs": {
+                "code": "swiftIncome",
+                "name": "SWIFT Income"
+            },
+            "file_name": "ao/swiftIncome.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "55555555-5555-5555-5555-555555555555",
+            "object_name": "SWIFT Outcome",
+            "object_attrs": {
+                "code": "swiftOutcome",
+                "name": "SWIFT Outcome"
+            },
+            "file_name": "ao/swiftOutcome.json"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Рабочее место",
+            "object_id": "44444444-4444-4444-4444-444444444444",
+            "object_name": "SWIFT",
+            "object_attrs": null,
+            "file_name": "workplace/swift.manager.xml"
+        }
+    ]
+}

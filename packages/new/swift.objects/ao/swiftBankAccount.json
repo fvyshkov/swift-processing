@@ -1,0 +1,300 @@
+{
+    "lists": {},
+    "forms": {
+        "swiftBankAccountListForm": {
+            "title": "Список нормативно правовых актов",
+            "className": "horizontal",
+            "$": {
+                ".list": {
+                    "style": {
+                        "width": "660px"
+                    },
+                    "control": "ListTable",
+                    "controlOpts": {
+                        "columns!": {
+                            "name": {
+                                "label": "Нормативно правовой акт",
+                                "flex": 1,
+                                "cellStyle": {
+                                    "whiteSpace": "normal !important",
+                                    "lineHeight": 1.2,
+                                    "display": "flex",
+                                    "alignItems": "center"
+                                },
+                                "compact": true
+                            }
+                        }
+                    },
+                    "controlProps": {
+                        "gridOptions": {
+                            "headerHeight": 0
+                        }
+                    }
+                },
+                "btnSelect": {
+                    "label": "Выбрать",
+                    "control": "Button",
+                    "controlProps": {
+                        "color": "primary"
+                    },
+                    "action": {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftBankAccount', method: 'getItemList'}, {useCache: true}).then((r)=>frontend.dialog({object: 'legalAct', form: 'selectSwiftBankAccountDialog', mem: {npalist: r.map((s)=>({...s, selected: !!mem.find((i)=>i.code==s.code)}))}}));"
+                    }
+                }
+            },
+            "actions": {
+                "closeDialog": {
+                    "jsScript": "dialog.actions.close();"
+                },
+                "applyDialog": {
+                    "jsScript": "mem.splice(0, mem.length, ...dialog.mem.npalist.filter((s)=>s.selected)); dialog.actions.close();"
+                }
+            }
+        },
+        "selectSwiftBankAccountDialog": {
+            "title": "Account Selection",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden",
+                "width": "800px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "8px",
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "|npalist": {
+                            "control": "ListTable",
+                            "controlOpts": {
+                                "$": {
+                                    "selected": {
+                                        "label": "Selected",
+                                        "width": 100,
+                                        "control": "checkbox"
+                                    },
+                                    "name": {
+                                        "label": "Account",
+                                        "flex": 1,
+                                        "cellStyle": {
+                                            "whiteSpace": "normal !important",
+                                            "lineHeight": 1.2,
+                                            "display": "flex",
+                                            "alignItems": "center"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "text",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "name": "closeDialog"
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Select",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "name": "applyDialog"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "js": {},
+    "methods": {
+        "getItemList": {
+            "sql": {
+                "sqlType": "query",
+                "database": "colvir_cbs",
+                "sql": "select \r\n  npa.code \"code\", \r\n  npa.longname \"name\"\r\nfrom colvir.U_UZ_NPA npa\r\nwhere npa.arcfl='0' and npa.arestfl='0'\r\norder by code"
+            },
+            "script": {}
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "1000px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Bank",
+                        "field": "BANK",
+                        "width": 200
+                    },
+                    {
+                        "title": "Name",
+                        "field": "BANK_NAME",
+                        "flex": 1
+                    },
+                    {
+                        "title": "Account",
+                        "field": "ACC_CODE",
+                        "width": 300
+                    },
+                    {
+                        "title": "Currency",
+                        "field": "VAL_CODE",
+                        "width": 100
+                    }
+                ],
+                "primaryKey": "code",
+                "fastFilter": true,
+                "filter": {
+                    "form": {
+                        "style": {
+                            "width": "360px",
+                            "overflow": "hidden",
+                            "paddingRight": "0px"
+                        },
+                        "title": "Filter",
+                        "className": "panel vertical",
+                        "$": {
+                            "@fields": {
+                                "className": "vertical",
+                                "style": {
+                                    "paddingRight": "8px",
+                                    "overflowY": "auto"
+                                },
+                                "$": {
+                                    "@app": {
+                                        "className": "vertical",
+                                        "style": {
+                                            "margin-top": "8px"
+                                        },
+                                        "$": {
+                                            "bank": {
+                                                "label": "Bank",
+                                                "control": "TextEdit"
+                                            },
+                                            "currency": {
+                                                "control": "SelectList",
+                                                "label": "Currency",
+                                                "controlProps": {
+                                                    "list": [
+                                                        {
+                                                            "name": "UZS",
+                                                            "value": "UZS"
+                                                        },
+                                                        {
+                                                            "name": "USD",
+                                                            "value": "USD"
+                                                        },
+                                                        {
+                                                            "name": "EUR",
+                                                            "value": "EUR"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "@buttons": {
+                                "className": "horizontal",
+                                "$": {
+                                    "btnClear": {
+                                        "control": "Button",
+                                        "label": "Clear",
+                                        "controlProps": {
+                                            "variant": "outlined",
+                                            "color": "primary"
+                                        },
+                                        "action": {
+                                            "name": "clean"
+                                        }
+                                    },
+                                    "btnApply": {
+                                        "control": "Button",
+                                        "label": "Apply",
+                                        "controlProps": {
+                                            "variant": "contained",
+                                            "color": "primary"
+                                        },
+                                        "action": {
+                                            "js": "actions.apply(mem);",
+                                            "params": {
+                                                "disableUpdate": true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "actions": {
+                            "clean": {
+                                "jsScript": "Object.keys(mem).forEach(function(key) { delete mem[key]; });"
+                            },
+                            "onFormCreated": [
+                                {
+                                    "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'getApplication', params: {dep_id: params.dep_id, id: params.id}}).then((app)=>{mem.decision=app.decisions[Object.keys(app.decisions||[])?.[0]] || {}; forceUpdate();})"
+                                }
+                            ]
+                        }
+                    },
+                    "query": {
+                        "fromDate": {
+                            "sql": "imported >= %(fromDate)s"
+                        },
+                        "toDate": {
+                            "sql": "imported <= %(toDate)s"
+                        },
+                        "state": {
+                            "sql": "state = :state"
+                        },
+                        "txtPay": {
+                            "sql": "upper(txt_pay) like '%%'||upper(:txtPay)||'%%'"
+                        },
+                        "txtBen": {
+                            "sql": "upper(txt_Ben) like '%%'||upper(:txtBen)||'%%'"
+                        },
+                        "maxAmount": {
+                            "sql": "nsdok <= :maxAmount"
+                        },
+                        "minAmount": {
+                            "sql": "nsdok >= :minAmount"
+                        },
+                        "currency": {
+                            "sql": "val_code = :currency"
+                        }
+                    }
+                }
+            },
+            "method": {
+                "sql": {
+                    "sqlType": "query",
+                    "database": "colvir_cbs",
+                    "sql": "select\n  T_VAL.CODE VAL_CODE,       -- валюта\n  G_ACCBLN.CODE ACC_CODE,    -- корсчетунас\n  G_BNK.CODE BANK,        -- корреспонденткодбанка\n  substr(g_pkgBnk.fGetLongNameBnk_Id(G_BNK.ID),1,250) BANK_NAME\n from \n  T_PROCESS, T_PROCMEM, T_BOP_STAT, T_DEA, T_DEACLS,\n  G_ACCBLN, G_BNK, P_ACCDSC, T_VAL, \n  P_BNKACC, I_BNKREL, I_DEAREL\nwhere\n  I_DEAREL.COR_ID = I_BNKREL.ID\n  and I_BNKREL.ID = P_BNKACC.ID\n  and P_BNKACC.DEP_ID = G_ACCBLN.DEP_ID (+)\n  and P_BNKACC.LINK_ID = G_ACCBLN.ID (+)\n  and P_ACCDSC.ID = P_BNKACC.ACC_ID\n  and T_VAL.ID = P_BNKACC.VAL_ID\n  and I_BNKREL.CLI_ID = G_BNK.ID\n  and I_BNKREL.DEP_ID = T_PROCMEM.DEP_ID and I_BNKREL.ORD_ID = T_PROCMEM.ORD_ID\n  and T_PROCMEM.MAINFL = '1'\n  and T_PROCESS.ID = T_PROCMEM.ID\n  and T_PROCESS.BOP_ID = T_BOP_STAT.ID and T_PROCESS.NSTAT = T_BOP_STAT.NORD\n  and I_BNKREL.DEP_ID = T_DEA.DEP_ID and I_BNKREL.ORD_ID = T_DEA.ID\n  and T_DEA.DCL_ID = T_DEACLS.ID",
+                    "params": []
+                },
+                "script": {}
+            }
+        }
+    }
+}
