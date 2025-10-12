@@ -132,6 +132,49 @@
 
 #### 2. Statement (Stmt) - Выписка
 
+**Важно:** Выписка содержит два **независимых списка на одном уровне**:
+1. **Список балансов (Bal)** - показывает балансы счета (начальный, конечный)
+2. **Список транзакций (Ntry)** - показывает все операции за период
+
+**Структура выписки:**
+```xml
+<camt:Stmt>
+  <!-- Идентификация выписки -->
+  <camt:Id>STMNTID</camt:Id>
+  <camt:StmtPgntn>...</camt:StmtPgntn>
+  <camt:ElctrncSeqNb>32145</camt:ElctrncSeqNb>
+
+  <!-- Информация о счете -->
+  <camt:Acct>
+    <camt:Id>...</camt:Id>
+    <camt:Ccy>NOK</camt:Ccy>
+  </camt:Acct>
+
+  <!-- СПИСОК БАЛАНСОВ (несколько элементов Bal) -->
+  <camt:Bal>  <!-- Баланс на начало -->
+    <camt:Tp><camt:CdOrPrtry><camt:Cd>OPBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+    <camt:Amt Ccy="NOK">4645498.54</camt:Amt>
+    ...
+  </camt:Bal>
+  <camt:Bal>  <!-- Баланс на конец -->
+    <camt:Tp><camt:CdOrPrtry><camt:Cd>CLBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+    <camt:Amt Ccy="NOK">7010498.54</camt:Amt>
+    ...
+  </camt:Bal>
+
+  <!-- СПИСОК ТРАНЗАКЦИЙ (несколько элементов Ntry) -->
+  <camt:Ntry>  <!-- Транзакция 1 -->
+    <camt:Amt Ccy="NOK">2365000</camt:Amt>
+    <camt:NtryDtls>
+      <camt:TxDtls>...</camt:TxDtls>  <!-- Детали транзакции -->
+    </camt:NtryDtls>
+  </camt:Ntry>
+  <camt:Ntry>  <!-- Транзакция 2 -->
+    ...
+  </camt:Ntry>
+</camt:Stmt>
+```
+
 ##### Идентификация выписки
 
 | Элемент | Тип | Описание | Обязательность |
@@ -160,7 +203,7 @@
 | `Ownr` | Party | Владелец счета | Опциональный |
 | `Svcr` | Agent | Обслуживающий банк | Опциональный |
 
-#### 3. Balance (Bal) - Список балансов
+#### 3. Balance (Bal) - Список балансов (несколько элементов Bal на одном уровне внутри Stmt)
 
 | Элемент | Тип | Описание | Обязательность |
 |---------|-----|----------|----------------|
@@ -184,7 +227,30 @@
 - `CRDT` - Credit (кредит, положительный баланс)
 - `DBIT` - Debit (дебет, отрицательный баланс)
 
-#### 4. Entry (Ntry) - Список записей/транзакций
+#### 4. Entry (Ntry) - Список записей/транзакций (несколько элементов Ntry на одном уровне внутри Stmt)
+
+**Структура Entry:**
+```xml
+<camt:Ntry>
+  <!-- Основная информация о записи -->
+  <camt:Amt Ccy="NOK">2365000</camt:Amt>
+  <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+  <camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
+  <camt:BookgDt>...</camt:BookgDt>
+  <camt:BkTxCd>...</camt:BkTxCd>
+
+  <!-- ДЕТАЛИ ЗАПИСИ - может содержать список TxDtls -->
+  <camt:NtryDtls>
+    <camt:TxDtls>  <!-- Детали транзакции 1 -->
+      <camt:Refs>...</camt:Refs>
+      <camt:Amt>...</camt:Amt>
+    </camt:TxDtls>
+    <camt:TxDtls>  <!-- Детали транзакции 2 (если несколько) -->
+      ...
+    </camt:TxDtls>
+  </camt:NtryDtls>
+</camt:Ntry>
+```
 
 | Элемент | Тип | Описание | Обязательность |
 |---------|-----|----------|----------------|
@@ -197,7 +263,7 @@
 | `ValDt/Dt` | Date | Дата валютирования | Обязательный |
 | `AcctSvcrRef` | Text | Ссылка обслуживающего банка | Опциональный |
 | `BkTxCd` | Complex | Банковский код транзакции | Обязательный |
-| `NtryDtls` | List | Список деталей записи | Опциональный |
+| `NtryDtls` | Complex | Детали записи (содержит список TxDtls) | Опциональный |
 
 **Коды статуса (Sts/Cd):**
 - `BOOK` - Booked (проведено)
@@ -251,7 +317,11 @@
 
 #### 5. Entry Details (NtryDtls) - Детали записи
 
-##### Transaction Details (TxDtls) - Список деталей транзакций
+**Важно:** `NtryDtls` находится внутри элемента `Ntry` и содержит **список `TxDtls`** (один или несколько элементов).
+
+##### Transaction Details (TxDtls) - Список деталей транзакций (несколько элементов TxDtls внутри NtryDtls)
+
+Одна запись `Ntry` может содержать несколько транзакций `TxDtls`. Например, пакетный платеж может отображаться как одна запись `Ntry` с несколькими детальными транзакциями `TxDtls`.
 
 | Элемент | Тип | Описание |
 |---------|-----|----------|
@@ -276,6 +346,32 @@
 - `ChqNb` - Номер чека
 - `ClrSysRef` - Ссылка клиринговой системы
 - `UETR` - Unique End-to-end Transaction Reference
+
+### Визуальная иерархия camt.053
+
+```
+Document (корень)
+└── BkToCstmrStmt
+    ├── GrpHdr (заголовок группы)
+    └── Stmt (выписка) ← может быть несколько выписок
+        ├── Id, ElctrncSeqNb, StmtPgntn (идентификация)
+        ├── Acct (информация о счете)
+        ├── Bal (баланс 1: OPBD - начальный) ← СПИСОК
+        ├── Bal (баланс 2: CLBD - конечный)  ← СПИСОК
+        ├── Ntry (запись/транзакция 1) ← СПИСОК
+        │   ├── Amt, CdtDbtInd, Sts, BookgDt, ValDt
+        │   ├── BkTxCd (код транзакции)
+        │   └── NtryDtls (детали)
+        │       ├── TxDtls (детали транзакции 1) ← СПИСОК
+        │       │   ├── Refs (ссылки)
+        │       │   ├── Amt, CdtDbtInd
+        │       │   ├── RltdPties (стороны)
+        │       │   ├── RltdAgts (агенты)
+        │       │   └── RmtInf (назначение)
+        │       └── TxDtls (детали транзакции 2) ← СПИСОК
+        ├── Ntry (запись/транзакция 2) ← СПИСОК
+        └── Ntry (запись/транзакция N) ← СПИСОК
+```
 
 ### Пример использования
 ```xml
