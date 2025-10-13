@@ -12,24 +12,47 @@
 		<camt:BkToCstmrStmt>
 			<camt:GrpHdr><camt:MsgId>cmt053bizmsgidr-001</camt:MsgId><camt:CreDtTm>2021-06-03T18:00:00+02:00</camt:CreDtTm></camt:GrpHdr>
 			<camt:Stmt>
-				<camt:Id>STMNTID</camt:Id>
+				<camt:Id>STMNTID-2021-06-03</camt:Id>
 				<camt:StmtPgntn><camt:PgNb>1</camt:PgNb><camt:LastPgInd>true</camt:LastPgInd></camt:StmtPgntn>
 				<camt:ElctrncSeqNb>32145</camt:ElctrncSeqNb>
 				<camt:Acct><camt:Id><camt:Othr><camt:Id>123654786</camt:Id></camt:Othr></camt:Id><camt:Ccy>NOK</camt:Ccy></camt:Acct>
+
+				<!-- Balance 1: Opening Booked -->
 				<camt:Bal>
 					<camt:Tp><camt:CdOrPrtry><camt:Cd>OPBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
 					<camt:Amt Ccy="NOK">4645498.54</camt:Amt>
 					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
 					<camt:Dt><camt:Dt>2021-06-03</camt:Dt></camt:Dt>
 				</camt:Bal>
+
+				<!-- Balance 2: Closing Booked -->
 				<camt:Bal>
 					<camt:Tp><camt:CdOrPrtry><camt:Cd>CLBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
 					<camt:Amt Ccy="NOK">7010498.54</camt:Amt>
 					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
 					<camt:Dt><camt:Dt>2021-06-03</camt:Dt></camt:Dt>
 				</camt:Bal>
+
+				<!-- Balance 3: Interim Booked -->
+				<camt:Bal>
+					<camt:Tp><camt:CdOrPrtry><camt:Cd>ITBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+					<camt:Amt Ccy="NOK">6175498.54</camt:Amt>
+					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+					<camt:Dt><camt:Dt>2021-06-03</camt:Dt></camt:Dt>
+				</camt:Bal>
+
+				<!-- Balance 4: Closing Available -->
+				<camt:Bal>
+					<camt:Tp><camt:CdOrPrtry><camt:Cd>CLAV</camt:Cd></camt:CdOrPrtry></camt:Tp>
+					<camt:Amt Ccy="NOK">6800000.00</camt:Amt>
+					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+					<camt:Dt><camt:Dt>2021-06-03</camt:Dt></camt:Dt>
+				</camt:Bal>
+
+				<!-- Entry 1: Credit payment BOOKED -->
 				<camt:Ntry>
-					<camt:Amt Ccy="NOK">2365000</camt:Amt>
+					<camt:NtryRef>NTRY-2021-001</camt:NtryRef>
+					<camt:Amt Ccy="NOK">2365000.00</camt:Amt>
 					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
 					<camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
 					<camt:BookgDt><camt:Dt>2021-06-03</camt:Dt></camt:BookgDt>
@@ -37,12 +60,162 @@
 					<camt:BkTxCd><camt:Domn><camt:Cd>PMNT</camt:Cd><camt:Fmly><camt:Cd>RCDT</camt:Cd><camt:SubFmlyCd>XBCT</camt:SubFmlyCd></camt:Fmly></camt:Domn></camt:BkTxCd>
 					<camt:NtryDtls>
 						<camt:TxDtls>
-							<camt:Refs><camt:InstrId>pacs8bizmsgidr01</camt:InstrId><camt:EndToEndId>E2E04044506271305</camt:EndToEndId><camt:UETR>174c245f-2682-4291-ad67-2a41e530cd27</camt:UETR></camt:Refs>
-							<camt:Amt Ccy="NOK">2365000</camt:Amt>
+							<camt:Refs>
+								<camt:InstrId>pacs8bizmsgidr01</camt:InstrId>
+								<camt:EndToEndId>E2E04044506271305</camt:EndToEndId>
+								<camt:UETR>174c245f-2682-4291-ad67-2a41e530cd27</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">2365000.00</camt:Amt>
 							<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+							<camt:RltdPties>
+								<camt:Dbtr><camt:Nm>ACME Corporation Ltd</camt:Nm></camt:Dbtr>
+								<camt:DbtrAcct><camt:Id><camt:IBAN>NO9386011117947</camt:IBAN></camt:Id></camt:DbtrAcct>
+								<camt:DbtrAgt><camt:FinInstnId><camt:BICFI>DNBANOKK</camt:BICFI><camt:Nm>DNB Bank ASA</camt:Nm></camt:FinInstnId></camt:DbtrAgt>
+								<camt:Cdtr><camt:Nm>Nordic Supplies AS</camt:Nm></camt:Cdtr>
+								<camt:CdtrAcct><camt:Id><camt:IBAN>NO1234567890123</camt:IBAN></camt:Id></camt:CdtrAcct>
+								<camt:CdtrAgt><camt:FinInstnId><camt:BICFI>GUCRNOK1</camt:BICFI><camt:Nm>Nordea Bank Norway</camt:Nm></camt:FinInstnId></camt:CdtrAgt>
+							</camt:RltdPties>
+							<camt:RmtInf><camt:Ustrd>Invoice #INV-2021-05-123 Payment for goods</camt:Ustrd></camt:RmtInf>
 						</camt:TxDtls>
 					</camt:NtryDtls>
 				</camt:Ntry>
+
+				<!-- Entry 2: Debit payment BOOKED -->
+				<camt:Ntry>
+					<camt:NtryRef>NTRY-2021-002</camt:NtryRef>
+					<camt:AcctSvcrRef>BANK-REF-20210603-002</camt:AcctSvcrRef>
+					<camt:Amt Ccy="NOK">530000.00</camt:Amt>
+					<camt:CdtDbtInd>DBIT</camt:CdtDbtInd>
+					<camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
+					<camt:BookgDt><camt:Dt>2021-06-03</camt:Dt></camt:BookgDt>
+					<camt:ValDt><camt:Dt>2021-06-03</camt:Dt></camt:ValDt>
+					<camt:BkTxCd><camt:Domn><camt:Cd>PMNT</camt:Cd><camt:Fmly><camt:Cd>ICDT</camt:Cd><camt:SubFmlyCd>STDO</camt:SubFmlyCd></camt:Fmly></camt:Domn></camt:BkTxCd>
+					<camt:NtryDtls>
+						<camt:TxDtls>
+							<camt:Refs>
+								<camt:InstrId>INSTR-2021-002</camt:InstrId>
+								<camt:EndToEndId>E2E-SALARY-2021-06</camt:EndToEndId>
+								<camt:UETR>a8b3c4d5-e6f7-8901-2345-67890abcdef1</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">530000.00</camt:Amt>
+							<camt:CdtDbtInd>DBIT</camt:CdtDbtInd>
+							<camt:RltdPties>
+								<camt:Dbtr><camt:Nm>Nordic Supplies AS</camt:Nm></camt:Dbtr>
+								<camt:DbtrAcct><camt:Id><camt:IBAN>NO1234567890123</camt:IBAN></camt:Id></camt:DbtrAcct>
+								<camt:DbtrAgt><camt:FinInstnId><camt:BICFI>GUCRNOK1</camt:BICFI><camt:Nm>Nordea Bank</camt:Nm></camt:FinInstnId></camt:DbtrAgt>
+								<camt:Cdtr><camt:Nm>Employee Payroll Account</camt:Nm></camt:Cdtr>
+								<camt:CdtrAcct><camt:Id><camt:IBAN>NO9876543210987</camt:IBAN></camt:Id></camt:CdtrAcct>
+								<camt:CdtrAgt><camt:FinInstnId><camt:BICFI>SBANNO22</camt:BICFI><camt:Nm>Sparebank 1</camt:Nm></camt:FinInstnId></camt:CdtrAgt>
+							</camt:RltdPties>
+							<camt:RmtInf><camt:Ustrd>Salary payment June 2021</camt:Ustrd></camt:RmtInf>
+							<camt:Purp><camt:Cd>SALA</camt:Cd></camt:Purp>
+						</camt:TxDtls>
+					</camt:NtryDtls>
+				</camt:Ntry>
+
+				<!-- Entry 3: Credit PENDING -->
+				<camt:Ntry>
+					<camt:NtryRef>NTRY-2021-003</camt:NtryRef>
+					<camt:Amt Ccy="NOK">175000.00</camt:Amt>
+					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+					<camt:Sts><camt:Cd>PDNG</camt:Cd></camt:Sts>
+					<camt:BookgDt><camt:Dt>2021-06-03</camt:Dt></camt:BookgDt>
+					<camt:ValDt><camt:Dt>2021-06-04</camt:Dt></camt:ValDt>
+					<camt:BkTxCd><camt:Domn><camt:Cd>PMNT</camt:Cd><camt:Fmly><camt:Cd>RCDT</camt:Cd><camt:SubFmlyCd>DMCT</camt:SubFmlyCd></camt:Fmly></camt:Domn></camt:BkTxCd>
+					<camt:NtryDtls>
+						<camt:TxDtls>
+							<camt:Refs>
+								<camt:InstrId>PENDING-INSTR-003</camt:InstrId>
+								<camt:EndToEndId>E2E-CUSTOMER-PAYMENT-003</camt:EndToEndId>
+								<camt:UETR>12345678-90ab-cdef-1234-567890abcdef</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">175000.00</camt:Amt>
+							<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+							<camt:RltdPties>
+								<camt:Dbtr><camt:Nm>Oslo Trading Company</camt:Nm></camt:Dbtr>
+								<camt:DbtrAcct><camt:Id><camt:IBAN>NO5555666677778888</camt:IBAN></camt:Id></camt:DbtrAcct>
+								<camt:DbtrAgt><camt:FinInstnId><camt:BICFI>HANDNOK1</camt:BICFI><camt:Nm>Handelsbanken</camt:Nm></camt:FinInstnId></camt:DbtrAgt>
+								<camt:Cdtr><camt:Nm>Nordic Supplies AS</camt:Nm></camt:Cdtr>
+								<camt:CdtrAcct><camt:Id><camt:IBAN>NO1234567890123</camt:IBAN></camt:Id></camt:CdtrAcct>
+								<camt:CdtrAgt><camt:FinInstnId><camt:BICFI>GUCRNOK1</camt:BICFI></camt:FinInstnId></camt:CdtrAgt>
+							</camt:RltdPties>
+							<camt:RmtInf><camt:Ustrd>Order #ORD-2021-456 Pending verification</camt:Ustrd></camt:RmtInf>
+						</camt:TxDtls>
+					</camt:NtryDtls>
+				</camt:Ntry>
+
+				<!-- Entry 4: Multiple transactions in one entry (batch) -->
+				<camt:Ntry>
+					<camt:NtryRef>NTRY-2021-004-BATCH</camt:NtryRef>
+					<camt:AcctSvcrRef>BATCH-REF-20210603-004</camt:AcctSvcrRef>
+					<camt:Amt Ccy="NOK">1000000.00</camt:Amt>
+					<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+					<camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
+					<camt:BookgDt><camt:Dt>2021-06-03</camt:Dt></camt:BookgDt>
+					<camt:ValDt><camt:Dt>2021-06-03</camt:Dt></camt:ValDt>
+					<camt:BkTxCd><camt:Domn><camt:Cd>PMNT</camt:Cd><camt:Fmly><camt:Cd>RCDT</camt:Cd><camt:SubFmlyCd>XBCT</camt:SubFmlyCd></camt:Fmly></camt:Domn></camt:BkTxCd>
+					<camt:NtryDtls>
+						<!-- Transaction 1 in batch -->
+						<camt:TxDtls>
+							<camt:Refs>
+								<camt:InstrId>BATCH-TX-001</camt:InstrId>
+								<camt:EndToEndId>E2E-BATCH-001</camt:EndToEndId>
+								<camt:UETR>aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">450000.00</camt:Amt>
+							<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+							<camt:RltdPties>
+								<camt:Dbtr><camt:Nm>Bergen Imports AS</camt:Nm></camt:Dbtr>
+								<camt:DbtrAcct><camt:Id><camt:IBAN>NO1111222233334444</camt:IBAN></camt:Id></camt:DbtrAcct>
+								<camt:DbtrAgt><camt:FinInstnId><camt:BICFI>DNBANOKK</camt:BICFI></camt:FinInstnId></camt:DbtrAgt>
+								<camt:Cdtr><camt:Nm>Nordic Supplies AS</camt:Nm></camt:Cdtr>
+								<camt:CdtrAcct><camt:Id><camt:IBAN>NO1234567890123</camt:IBAN></camt:Id></camt:CdtrAcct>
+								<camt:CdtrAgt><camt:FinInstnId><camt:BICFI>GUCRNOK1</camt:BICFI></camt:FinInstnId></camt:CdtrAgt>
+							</camt:RltdPties>
+							<camt:RmtInf><camt:Ustrd>Contract payment #1</camt:Ustrd></camt:RmtInf>
+						</camt:TxDtls>
+						<!-- Transaction 2 in batch -->
+						<camt:TxDtls>
+							<camt:Refs>
+								<camt:InstrId>BATCH-TX-002</camt:InstrId>
+								<camt:EndToEndId>E2E-BATCH-002</camt:EndToEndId>
+								<camt:UETR>bbbbbbbb-cccc-dddd-eeee-ffffffffffff</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">350000.00</camt:Amt>
+							<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+							<camt:RltdPties>
+								<camt:Dbtr><camt:Nm>Stavanger Electronics</camt:Nm></camt:Dbtr>
+								<camt:DbtrAcct><camt:Id><camt:IBAN>NO5555666677778888</camt:IBAN></camt:Id></camt:DbtrAcct>
+								<camt:DbtrAgt><camt:FinInstnId><camt:BICFI>SBANNO22</camt:BICFI></camt:FinInstnId></camt:DbtrAgt>
+								<camt:Cdtr><camt:Nm>Nordic Supplies AS</camt:Nm></camt:Cdtr>
+								<camt:CdtrAcct><camt:Id><camt:IBAN>NO1234567890123</camt:IBAN></camt:Id></camt:CdtrAcct>
+								<camt:CdtrAgt><camt:FinInstnId><camt:BICFI>GUCRNOK1</camt:BICFI></camt:FinInstnId></camt:CdtrAgt>
+							</camt:RltdPties>
+							<camt:RmtInf><camt:Ustrd>Contract payment #2</camt:Ustrd></camt:RmtInf>
+						</camt:TxDtls>
+						<!-- Transaction 3 in batch -->
+						<camt:TxDtls>
+							<camt:Refs>
+								<camt:InstrId>BATCH-TX-003</camt:InstrId>
+								<camt:EndToEndId>E2E-BATCH-003</camt:EndToEndId>
+								<camt:UETR>cccccccc-dddd-eeee-ffff-000000000000</camt:UETR>
+							</camt:Refs>
+							<camt:Amt Ccy="NOK">200000.00</camt:Amt>
+							<camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+							<camt:RltdPties>
+								<camt:Dbtr><camt:Nm>Trondheim Logistics</camt:Nm></camt:Dbtr>
+								<camt:DbtrAcct><camt:Id><camt:IBAN>NO9999888877776666</camt:IBAN></camt:Id></camt:DbtrAcct>
+								<camt:DbtrAgt><camt:FinInstnId><camt:BICFI>HANDNOK1</camt:BICFI></camt:FinInstnId></camt:DbtrAgt>
+								<camt:Cdtr><camt:Nm>Nordic Supplies AS</camt:Nm></camt:Cdtr>
+								<camt:CdtrAcct><camt:Id><camt:IBAN>NO1234567890123</camt:IBAN></camt:Id></camt:CdtrAcct>
+								<camt:CdtrAgt><camt:FinInstnId><camt:BICFI>GUCRNOK1</camt:BICFI></camt:FinInstnId></camt:CdtrAgt>
+							</camt:RltdPties>
+							<camt:RmtInf><camt:Ustrd>Logistics services June 2021</camt:Ustrd></camt:RmtInf>
+							<camt:Purp><camt:Cd>SUPP</camt:Cd></camt:Purp>
+						</camt:TxDtls>
+					</camt:NtryDtls>
+				</camt:Ntry>
+
 			</camt:Stmt>
 		</camt:BkToCstmrStmt>
 	</camt:Document>

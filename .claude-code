@@ -1,0 +1,31 @@
+{
+  "tools": {
+    "Bash": {
+      "requireApproval": false
+    },
+    "Read": {
+      "requireApproval": false
+    },
+    "Write": {
+      "requireApproval": false
+    },
+    "Edit": {
+      "requireApproval": false
+    },
+    "Glob": {
+      "requireApproval": false
+    },
+    "Grep": {
+      "requireApproval": false
+    },
+    "WebFetch": {
+      "requireApproval": false
+    },
+    "WebSearch": {
+      "requireApproval": false
+    },
+    "Task": {
+      "requireApproval": false
+    }
+  }
+}
