@@ -397,6 +397,13 @@
                 "overflow": "hidden"
             },
             "$": {
+                "@form-1": {
+                    "style": {
+                        "padding": "8px",
+                        "overflow": "auto"
+                    },
+                    "form": "detail053"
+                },
                 "@form": {
                     "style": {
                         "padding": "8px",
@@ -429,6 +436,44 @@
                 "width": "860px"
             },
             "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": [
+                                            {
+                                                "js": "if (!validate()){throw 'Abort';}"
+                                            },
+                                            {
+                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'save', params: {app: mem}}).then((r)=>{ tm.setTaskTitle(task.key, `Paymment`); })"
+                                            },
+                                            {
+                                                "js": "frontend.closeTask()"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "",
+                                        "icon": "view",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveUser"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
                 "@form": {
                     "className": "vertical",
                     "style": {
@@ -901,6 +946,422 @@
             "actions": {
                 "onTaskCreated": {
                     "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'getSettings'}).then(r => { mem.record = r || {}; forceUpdate(); });"
+                }
+            }
+        },
+        "detail053": {
+            "title": "Statement",
+            "className": "vertical",
+            "style": {
+                "width": "860px"
+            },
+            "$": {
+                "@actions": {
+                    "style": {
+                        "margin": "16px 0px 16px 0px"
+                    },
+                    "$": {
+                        ".ap": {
+                            "control": "ActionPanel",
+                            "controlOpts": {
+                                "actions": [
+                                    {
+                                        "title": "",
+                                        "icon": "save",
+                                        "mini": false,
+                                        "action": [
+                                            {
+                                                "js": "if (!validate()){throw 'Abort';}"
+                                            },
+                                            {
+                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'save', params: {app: mem}}).then((r)=>{ tm.setTaskTitle(task.key, `Paymment`); })"
+                                            },
+                                            {
+                                                "js": "frontend.closeTask()"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title": "",
+                                        "icon": "view",
+                                        "mini": false,
+                                        "action": {
+                                            "name": "saveUser"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "@form": {
+                    "className": "vertical",
+                    "style": {
+                        "padding": "4px"
+                    },
+                    "$": {
+                        "@info": {
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@cost": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "dval": {
+                                                    "label": "Создана",
+                                                    "style": {
+                                                        "width": "200px"
+                                                    },
+                                                    "control": "DateEdit",
+                                                    "readOnly$": true
+                                                },
+                                                "imported": {
+                                                    "label": "Импортирована",
+                                                    "style": {
+                                                        "width": "200px"
+                                                    },
+                                                    "control": "DateEdit",
+                                                    "readOnly$": true
+                                                },
+                                                "code": {
+                                                    "label": "Номер",
+                                                    "style": {
+                                                        "width": "250px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly$": true
+                                                }
+                                            }
+                                        },
+                                        "message": {
+                                            "label": "message",
+                                            "readOnly$": true,
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "multiline": true,
+                                                "minRows": 1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@sender": {
+                            "title": "Счет",
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "snd_acc": {
+                                                    "label": "Номер счета",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_acc_val": {
+                                                    "label": "Валюта",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "100px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_name": {
+                                                    "label": "Наименование",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        },
+                                        "@bank-send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "snd_bank": {
+                                                    "label": "Банк",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "snd_bank_name": {
+                                                    "label": "Наименование",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@dossier": {
+                            "object": "swiftIncome",
+                            "form": "balForm"
+                        },
+                        "@receiver": {
+                            "title": "Список балансов-",
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@bank-send": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "rcv_bank": {
+                                                    "label": "Bank",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "rcv_bank_name": {
+                                                    "label": "Bank Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        },
+                                        "@rcv": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "rcv_acc": {
+                                                    "label": "Account",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                },
+                                                "rcv_name": {
+                                                    "label": "Name",
+                                                    "readOnly$": true,
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "@record-1": {
+                            "title": "Additional",
+                            "className": "vertical",
+                            "style": {
+                                "padding": "4px"
+                            },
+                            "$": {
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@d": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "$": {
+                                                "state": {
+                                                    "label": "State",
+                                                    "control": "TextEdit",
+                                                    "style": {
+                                                        "width": "490px"
+                                                    },
+                                                    "readOnly$": true
+                                                },
+                                                "file_name": {
+                                                    "label": "File Name",
+                                                    "style": {
+                                                        "width": "660px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly$": true
+                                                }
+                                            }
+                                        },
+                                        "error": {
+                                            "label": "Error",
+                                            "readOnly$": true,
+                                            "style": {
+                                                "width": "860px"
+                                            },
+                                            "control": "TextEdit",
+                                            "controlProps": {
+                                                "multiline": true,
+                                                "minRows": 2
+                                            }
+                                        },
+                                        "content": {
+                                            "style": {
+                                                "height": "200px",
+                                                "overflow": "hidden",
+                                                "width": "860px"
+                                            },
+                                            "control": "AceEditor",
+                                            "controlProps": {
+                                                "editorId": "listFormEdit",
+                                                "mode": "xml"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "frontend.closeTask()",
+                                "disableUpdate": true
+                            }
+                        },
+                        "btnApply": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()){throw 'Abort';}"
+                                },
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'save', params: {app: mem}}).then((r)=>{ tm.setTaskTitle(task.key, `Paymment`); })"
+                                },
+                                {
+                                    "js": "frontend.closeTask()"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "balForm": {
+            "title": "Список балансов+",
+            "$": {
+                "@dossier": {
+                    "title": "Досье",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "style": {
+                        "width": "860px"
+                    },
+                    "$": {
+                        ".dossier": {
+                            "control": "ListTable",
+                            "controlProps": {},
+                            "getter": "params.changepoint",
+                            "controlOpts": {
+                                "rowModelType": "infinite",
+                                "id": "docType",
+                                "refreshEvent": "onRefreshDossier",
+                                "columns!": {
+                                    "name": {
+                                        "label": "Тип",
+                                        "flex": 1
+                                    },
+                                    "date": {
+                                        "label": "Дата",
+                                        "width": "200px"
+                                    },
+                                    "amount": {
+                                        "label": "Amount",
+                                        "style": {
+                                            "width": "300px"
+                                        },
+                                        "control": "CurrencyField",
+                                        "controlOpts": {
+                                            "currencyAttr": "currency_code"
+                                        },
+                                        "readOnly$": true
+                                    }
+                                }
+                            },
+                            "actions": {
+                                "onGetRows": {
+                                    "js": "if (context.dossier && !params.docType){onSuccess(context.dossier)}else{backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'getList', params: {id: mem.id}}).then((r)=>{if(params.docType){const d = context.dossier.find((e)=>e.docType==params.docType); context.dossier.splice(context.dossier.indexOf(d), 1, r[0]);}else{context.dossier = r;} onSuccess(r);})}"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
