@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Envelope xmlns="urn:swift:xsd:envelope">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr><head:FIId><head:FinInstnId><head:BICFI>DSBAHKHH</head:BICFI></head:FinInstnId></head:FIId></head:Fr>
+		<head:To><head:FIId><head:FinInstnId><head:BICFI>ID521122</head:BICFI></head:FinInstnId></head:FIId></head:To>
+		<head:BizMsgIdr>pacs8bizmsgidr02</head:BizMsgIdr>
+		<head:MsgDefIdr>pacs.008.001.08</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.02</head:BizSvc>
+		<head:CreDt>2022-10-20T10:25:00+01:00</head:CreDt>
+	</head:AppHdr>
+	<pacs:Document xmlns:pacs="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+		<pacs:FIToFICstmrCdtTrf>
+			<pacs:GrpHdr><pacs:MsgId>pacs8bizmsgidr02</pacs:MsgId><pacs:CreDtTm>2022-10-20T10:25:00+01:00</pacs:CreDtTm><pacs:NbOfTxs>1</pacs:NbOfTxs><pacs:SttlmInf><pacs:SttlmMtd>INDA</pacs:SttlmMtd></pacs:SttlmInf></pacs:GrpHdr>
+			<pacs:CdtTrfTxInf>
+				<pacs:PmtId><pacs:InstrId>pacs8bizmsgidr02</pacs:InstrId><pacs:EndToEndId>pacs008EndToEndId-001</pacs:EndToEndId><pacs:UETR>7a562c67-ca16-48ba-b074-65581be6f001</pacs:UETR></pacs:PmtId>
+				<pacs:IntrBkSttlmAmt Ccy="USD">98725497</pacs:IntrBkSttlmAmt>
+				<pacs:IntrBkSttlmDt>2022-10-20</pacs:IntrBkSttlmDt>
+				<pacs:Dbtr><pacs:Nm>A Capone</pacs:Nm></pacs:Dbtr>
+				<pacs:DbtrAcct><pacs:Id><pacs:Othr><pacs:Id>ACPN-2569874</pacs:Id></pacs:Othr></pacs:Id></pacs:DbtrAcct>
+				<pacs:Cdtr><pacs:Nm>J Smith</pacs:Nm></pacs:Cdtr>
+				<pacs:CdtrAcct><pacs:Id><pacs:Othr><pacs:Id>65479512</pacs:Id></pacs:Othr></pacs:Id></pacs:CdtrAcct>
+			</pacs:CdtTrfTxInf>
+		</pacs:FIToFICstmrCdtTrf>
+	</pacs:Document>
+</Envelope>
