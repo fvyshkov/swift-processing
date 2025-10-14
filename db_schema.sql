@@ -400,6 +400,556 @@ COMMENT ON COLUMN public.swift_entry_tx_dtls.purp_cd IS
     'Purpose code (Purp/Cd): SALA, PENS, SUPP, TRAD, CASH, GOVT, etc.';
 
 -- ============================================================================
+-- REFERENCE TABLES (ISO 20022 Code Sets)
+-- ============================================================================
+
+-- Drop reference tables
+DROP TABLE IF EXISTS public.ref_currency_codes CASCADE;
+DROP TABLE IF EXISTS public.ref_country_codes CASCADE;
+DROP TABLE IF EXISTS public.ref_settlement_method CASCADE;
+DROP TABLE IF EXISTS public.ref_charge_bearer CASCADE;
+DROP TABLE IF EXISTS public.ref_purpose_codes CASCADE;
+DROP TABLE IF EXISTS public.ref_balance_type CASCADE;
+DROP TABLE IF EXISTS public.ref_credit_debit_indicator CASCADE;
+DROP TABLE IF EXISTS public.ref_entry_status CASCADE;
+DROP TABLE IF EXISTS public.ref_bank_tx_domain CASCADE;
+DROP TABLE IF EXISTS public.ref_bank_tx_family CASCADE;
+DROP TABLE IF EXISTS public.ref_bank_tx_subfamily CASCADE;
+DROP TABLE IF EXISTS public.ref_cancellation_reason CASCADE;
+DROP TABLE IF EXISTS public.ref_instruction_priority CASCADE;
+DROP TABLE IF EXISTS public.ref_account_type CASCADE;
+DROP TABLE IF EXISTS public.ref_message_types CASCADE;
+
+-- ----------------------------------------------------------------------------
+-- Currency Codes (ISO 4217)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_currency_codes
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_currency_codes_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_currency_codes IS 'ISO 4217 currency codes';
+
+-- ----------------------------------------------------------------------------
+-- Country Codes (ISO 3166-1 alpha-2)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_country_codes
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_country_codes_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_country_codes IS 'ISO 3166-1 alpha-2 country codes';
+
+-- ----------------------------------------------------------------------------
+-- Settlement Method (SttlmMtd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_settlement_method
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_settlement_method_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_settlement_method IS 'Settlement method codes (SttlmMtd)';
+
+-- ----------------------------------------------------------------------------
+-- Charge Bearer Codes (ChrgBr)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_charge_bearer
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_charge_bearer_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_charge_bearer IS 'Charge bearer codes (ChrgBr) - who pays the fees';
+
+-- ----------------------------------------------------------------------------
+-- Purpose Codes (External Purpose Code)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_purpose_codes
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_purpose_codes_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_purpose_codes IS 'Payment purpose codes (Purp/Cd)';
+
+-- ----------------------------------------------------------------------------
+-- Balance Type Codes (Tp/CdOrPrtry/Cd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_balance_type
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_balance_type_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_balance_type IS 'Balance type codes for camt.053 (Bal/Tp/CdOrPrtry/Cd)';
+
+-- ----------------------------------------------------------------------------
+-- Credit/Debit Indicator (CdtDbtInd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_credit_debit_indicator
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_credit_debit_indicator_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_credit_debit_indicator IS 'Credit/Debit indicator codes (CdtDbtInd)';
+
+-- ----------------------------------------------------------------------------
+-- Entry Status Codes (Sts/Cd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_entry_status
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_entry_status_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_entry_status IS 'Entry status codes for camt.053 (Ntry/Sts/Cd)';
+
+-- ----------------------------------------------------------------------------
+-- Bank Transaction Code Domain (BkTxCd/Domn/Cd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_bank_tx_domain
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_bank_tx_domain_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_bank_tx_domain IS 'Bank transaction code domain (BkTxCd/Domn/Cd)';
+
+-- ----------------------------------------------------------------------------
+-- Bank Transaction Family Codes (BkTxCd/Domn/Fmly/Cd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_bank_tx_family
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_bank_tx_family_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_bank_tx_family IS 'Bank transaction family codes (BkTxCd/Domn/Fmly/Cd)';
+
+-- ----------------------------------------------------------------------------
+-- Bank Transaction Subfamily Codes (BkTxCd/Domn/Fmly/SubFmlyCd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_bank_tx_subfamily
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_bank_tx_subfamily_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_bank_tx_subfamily IS 'Bank transaction subfamily codes (BkTxCd/Domn/Fmly/SubFmlyCd)';
+
+-- ----------------------------------------------------------------------------
+-- Cancellation Reason Codes (camt.056 CxlRsnInf/Rsn/Cd)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_cancellation_reason
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_cancellation_reason_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_cancellation_reason IS 'Cancellation reason codes for camt.056 (CxlRsnInf/Rsn/Cd)';
+
+-- ----------------------------------------------------------------------------
+-- Instruction Priority (InstrPrty)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_instruction_priority
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_instruction_priority_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_instruction_priority IS 'Instruction priority codes (PmtTpInf/InstrPrty)';
+
+-- ----------------------------------------------------------------------------
+-- Account Type Codes (Acct/Tp)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_account_type
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_account_type_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_account_type IS 'Account type codes (Acct/Tp)';
+
+-- ----------------------------------------------------------------------------
+-- Message Types
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.ref_message_types
+(
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    name_combined text NOT NULL,
+    CONSTRAINT ref_message_types_pkey PRIMARY KEY (code)
+) TABLESPACE pg_default;
+
+COMMENT ON TABLE public.ref_message_types IS 'ISO 20022 message type identifiers';
+
+-- ============================================================================
+-- Permissions for Reference Tables
+-- ============================================================================
+ALTER TABLE IF EXISTS public.ref_currency_codes OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_country_codes OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_settlement_method OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_charge_bearer OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_purpose_codes OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_balance_type OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_credit_debit_indicator OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_entry_status OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_bank_tx_domain OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_bank_tx_family OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_bank_tx_subfamily OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_cancellation_reason OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_instruction_priority OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_account_type OWNER TO postgres;
+ALTER TABLE IF EXISTS public.ref_message_types OWNER TO postgres;
+
+GRANT ALL ON TABLE public.ref_currency_codes TO apng;
+GRANT ALL ON TABLE public.ref_currency_codes TO postgres;
+GRANT ALL ON TABLE public.ref_country_codes TO apng;
+GRANT ALL ON TABLE public.ref_country_codes TO postgres;
+GRANT ALL ON TABLE public.ref_settlement_method TO apng;
+GRANT ALL ON TABLE public.ref_settlement_method TO postgres;
+GRANT ALL ON TABLE public.ref_charge_bearer TO apng;
+GRANT ALL ON TABLE public.ref_charge_bearer TO postgres;
+GRANT ALL ON TABLE public.ref_purpose_codes TO apng;
+GRANT ALL ON TABLE public.ref_purpose_codes TO postgres;
+GRANT ALL ON TABLE public.ref_balance_type TO apng;
+GRANT ALL ON TABLE public.ref_balance_type TO postgres;
+GRANT ALL ON TABLE public.ref_credit_debit_indicator TO apng;
+GRANT ALL ON TABLE public.ref_credit_debit_indicator TO postgres;
+GRANT ALL ON TABLE public.ref_entry_status TO apng;
+GRANT ALL ON TABLE public.ref_entry_status TO postgres;
+GRANT ALL ON TABLE public.ref_bank_tx_domain TO apng;
+GRANT ALL ON TABLE public.ref_bank_tx_domain TO postgres;
+GRANT ALL ON TABLE public.ref_bank_tx_family TO apng;
+GRANT ALL ON TABLE public.ref_bank_tx_family TO postgres;
+GRANT ALL ON TABLE public.ref_bank_tx_subfamily TO apng;
+GRANT ALL ON TABLE public.ref_bank_tx_subfamily TO postgres;
+GRANT ALL ON TABLE public.ref_cancellation_reason TO apng;
+GRANT ALL ON TABLE public.ref_cancellation_reason TO postgres;
+GRANT ALL ON TABLE public.ref_instruction_priority TO apng;
+GRANT ALL ON TABLE public.ref_instruction_priority TO postgres;
+GRANT ALL ON TABLE public.ref_account_type TO apng;
+GRANT ALL ON TABLE public.ref_account_type TO postgres;
+GRANT ALL ON TABLE public.ref_message_types TO apng;
+GRANT ALL ON TABLE public.ref_message_types TO postgres;
+
+-- ============================================================================
+-- POPULATE REFERENCE DATA
+-- ============================================================================
+
+-- ============================================================================
+-- Currency Codes (ISO 4217)
+-- ============================================================================
+INSERT INTO public.ref_currency_codes (code, name_en, name_ru, name_combined) VALUES
+('EUR', 'Euro', 'Евро', 'Euro (Евро)'),
+('USD', 'US Dollar', 'Доллар США', 'US Dollar (Доллар США)'),
+('GBP', 'British Pound', 'Фунт стерлингов', 'British Pound (Фунт стерлингов)'),
+('CHF', 'Swiss Franc', 'Швейцарский франк', 'Swiss Franc (Швейцарский франк)'),
+('JPY', 'Japanese Yen', 'Японская йена', 'Japanese Yen (Японская йена)'),
+('RON', 'Romanian Leu', 'Румынский лей', 'Romanian Leu (Румынский лей)'),
+('NOK', 'Norwegian Krone', 'Норвежская крона', 'Norwegian Krone (Норвежская крона)'),
+('SEK', 'Swedish Krona', 'Шведская крона', 'Swedish Krona (Шведская крона)'),
+('DKK', 'Danish Krone', 'Датская крона', 'Danish Krone (Датская крона)'),
+('PLN', 'Polish Zloty', 'Польский злотый', 'Polish Zloty (Польский злотый)'),
+('RUB', 'Russian Ruble', 'Российский рубль', 'Russian Ruble (Российский рубль)'),
+('CNY', 'Chinese Yuan', 'Китайский юань', 'Chinese Yuan (Китайский юань)'),
+('CAD', 'Canadian Dollar', 'Канадский доллар', 'Canadian Dollar (Канадский доллар)'),
+('AUD', 'Australian Dollar', 'Австралийский доллар', 'Australian Dollar (Австралийский доллар)'),
+('HKD', 'Hong Kong Dollar', 'Гонконгский доллар', 'Hong Kong Dollar (Гонконгский доллар)'),
+('SGD', 'Singapore Dollar', 'Сингапурский доллар', 'Singapore Dollar (Сингапурский доллар)'),
+('INR', 'Indian Rupee', 'Индийская рупия', 'Indian Rupee (Индийская рупия)'),
+('KRW', 'South Korean Won', 'Южнокорейская вона', 'South Korean Won (Южнокорейская вона)'),
+('BRL', 'Brazilian Real', 'Бразильский реал', 'Brazilian Real (Бразильский реал)'),
+('MXN', 'Mexican Peso', 'Мексиканское песо', 'Mexican Peso (Мексиканское песо)'),
+('ZAR', 'South African Rand', 'Южноафриканский рэнд', 'South African Rand (Южноафриканский рэнд)'),
+('TRY', 'Turkish Lira', 'Турецкая лира', 'Turkish Lira (Турецкая лира)'),
+('NZD', 'New Zealand Dollar', 'Новозеландский доллар', 'New Zealand Dollar (Новозеландский доллар)'),
+('THB', 'Thai Baht', 'Тайский бат', 'Thai Baht (Тайский бат)'),
+('IDR', 'Indonesian Rupiah', 'Индонезийская рупия', 'Indonesian Rupiah (Индонезийская рупия)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Country Codes (ISO 3166-1 alpha-2)
+-- ============================================================================
+INSERT INTO public.ref_country_codes (code, name_en, name_ru, name_combined) VALUES
+('GB', 'United Kingdom', 'Великобритания', 'United Kingdom (Великобритания)'),
+('RO', 'Romania', 'Румыния', 'Romania (Румыния)'),
+('BE', 'Belgium', 'Бельгия', 'Belgium (Бельгия)'),
+('NO', 'Norway', 'Норвегия', 'Norway (Норвегия)'),
+('DE', 'Germany', 'Германия', 'Germany (Германия)'),
+('FR', 'France', 'Франция', 'France (Франция)'),
+('NL', 'Netherlands', 'Нидерланды', 'Netherlands (Нидерланды)'),
+('IT', 'Italy', 'Италия', 'Italy (Италия)'),
+('ES', 'Spain', 'Испания', 'Spain (Испания)'),
+('CH', 'Switzerland', 'Швейцария', 'Switzerland (Швейцария)'),
+('US', 'United States', 'США', 'United States (США)'),
+('RU', 'Russia', 'Россия', 'Russia (Россия)'),
+('CN', 'China', 'Китай', 'China (Китай)'),
+('JP', 'Japan', 'Япония', 'Japan (Япония)'),
+('IN', 'India', 'Индия', 'India (Индия)'),
+('CA', 'Canada', 'Канада', 'Canada (Канада)'),
+('AU', 'Australia', 'Австралия', 'Australia (Австралия)'),
+('BR', 'Brazil', 'Бразилия', 'Brazil (Бразилия)'),
+('MX', 'Mexico', 'Мексика', 'Mexico (Мексика)'),
+('KR', 'South Korea', 'Южная Корея', 'South Korea (Южная Корея)'),
+('SE', 'Sweden', 'Швеция', 'Sweden (Швеция)'),
+('DK', 'Denmark', 'Дания', 'Denmark (Дания)'),
+('PL', 'Poland', 'Польша', 'Poland (Польша)'),
+('AT', 'Austria', 'Австрия', 'Austria (Австрия)'),
+('FI', 'Finland', 'Финляндия', 'Finland (Финляндия)'),
+('IE', 'Ireland', 'Ирландия', 'Ireland (Ирландия)'),
+('PT', 'Portugal', 'Португалия', 'Portugal (Португалия)'),
+('GR', 'Greece', 'Греция', 'Greece (Греция)'),
+('CZ', 'Czech Republic', 'Чехия', 'Czech Republic (Чехия)'),
+('HU', 'Hungary', 'Венгрия', 'Hungary (Венгрия)'),
+('SG', 'Singapore', 'Сингапур', 'Singapore (Сингапур)'),
+('HK', 'Hong Kong', 'Гонконг', 'Hong Kong (Гонконг)'),
+('AE', 'United Arab Emirates', 'ОАЭ', 'United Arab Emirates (ОАЭ)'),
+('SA', 'Saudi Arabia', 'Саудовская Аравия', 'Saudi Arabia (Саудовская Аравия)'),
+('TR', 'Turkey', 'Турция', 'Turkey (Турция)'),
+('ZA', 'South Africa', 'ЮАР', 'South Africa (ЮАР)'),
+('TH', 'Thailand', 'Таиланд', 'Thailand (Таиланд)'),
+('ID', 'Indonesia', 'Индонезия', 'Indonesia (Индонезия)'),
+('NZ', 'New Zealand', 'Новая Зеландия', 'New Zealand (Новая Зеландия)'),
+('LU', 'Luxembourg', 'Люксембург', 'Luxembourg (Люксембург)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Settlement Method (SttlmMtd)
+-- ============================================================================
+INSERT INTO public.ref_settlement_method (code, name_en, name_ru, name_combined) VALUES
+('INDA', 'Indirect Agent', 'Косвенный агент', 'Indirect Agent (Косвенный агент)'),
+('INGA', 'Instructing Agent', 'Инструктирующий агент', 'Instructing Agent (Инструктирующий агент)'),
+('CLRG', 'Clearing', 'Клиринг', 'Clearing (Клиринг)'),
+('COVE', 'Cover', 'Покрытие', 'Cover (Покрытие)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Charge Bearer Codes (ChrgBr)
+-- ============================================================================
+INSERT INTO public.ref_charge_bearer (code, name_en, name_ru, name_combined) VALUES
+('DEBT', 'Borne by Debtor', 'За счет плательщика', 'Borne by Debtor (За счет плательщика)'),
+('CRED', 'Borne by Creditor', 'За счет получателя', 'Borne by Creditor (За счет получателя)'),
+('SHAR', 'Shared', 'Разделенная комиссия', 'Shared (Разделенная комиссия)'),
+('SLEV', 'Service Level', 'По уровню сервиса', 'Service Level (По уровню сервиса)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Purpose Codes (External Purpose Code)
+-- ============================================================================
+INSERT INTO public.ref_purpose_codes (code, name_en, name_ru, name_combined) VALUES
+('SALA', 'Salary Payment', 'Выплата зарплаты', 'Salary Payment (Выплата зарплаты)'),
+('PENS', 'Pension Payment', 'Пенсионный платеж', 'Pension Payment (Пенсионный платеж)'),
+('SUPP', 'Supplier Payment', 'Платеж поставщику', 'Supplier Payment (Платеж поставщику)'),
+('TRAD', 'Trade Settlement', 'Торговый расчет', 'Trade Settlement (Торговый расчет)'),
+('CASH', 'Cash Management Transfer', 'Управление наличностью', 'Cash Management Transfer (Управление наличностью)'),
+('LOAN', 'Loan', 'Кредит', 'Loan (Кредит)'),
+('INTC', 'Intra-Company Payment', 'Внутрикорпоративный платеж', 'Intra-Company Payment (Внутрикорпоративный платеж)'),
+('TREA', 'Treasury Payment', 'Казначейский платеж', 'Treasury Payment (Казначейский платеж)'),
+('GOVT', 'Government Payment', 'Государственный платеж', 'Government Payment (Государственный платеж)'),
+('BONU', 'Bonus Payment', 'Бонусный платеж', 'Bonus Payment (Бонусный платеж)'),
+('CBFF', 'Capital Building', 'Капитальное строительство', 'Capital Building (Капитальное строительство)'),
+('DIVI', 'Dividend', 'Дивиденд', 'Dividend (Дивиденд)'),
+('CHAR', 'Charity Payment', 'Благотворительный платеж', 'Charity Payment (Благотворительный платеж)'),
+('TAXS', 'Tax Payment', 'Налоговый платеж', 'Tax Payment (Налоговый платеж)'),
+('RENT', 'Rent Payment', 'Оплата аренды', 'Rent Payment (Оплата аренды)'),
+('UTIL', 'Utilities', 'Коммунальные услуги', 'Utilities (Коммунальные услуги)'),
+('REFU', 'Refund', 'Возврат', 'Refund (Возврат)'),
+('INSV', 'Insurance Premium', 'Страховая премия', 'Insurance Premium (Страховая премия)'),
+('INTE', 'Interest Payment', 'Процентный платеж', 'Interest Payment (Процентный платеж)'),
+('FEES', 'Fees', 'Комиссии', 'Fees (Комиссии)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Balance Type Codes (Tp/CdOrPrtry/Cd)
+-- ============================================================================
+INSERT INTO public.ref_balance_type (code, name_en, name_ru, name_combined) VALUES
+('OPBD', 'Opening Booked', 'Начальный проведенный баланс', 'Opening Booked (Начальный проведенный баланс)'),
+('CLBD', 'Closing Booked', 'Конечный проведенный баланс', 'Closing Booked (Конечный проведенный баланс)'),
+('CLAV', 'Closing Available', 'Конечный доступный баланс', 'Closing Available (Конечный доступный баланс)'),
+('FWAV', 'Forward Available', 'Прогнозный доступный баланс', 'Forward Available (Прогнозный доступный баланс)'),
+('ITBD', 'Interim Booked', 'Промежуточный проведенный', 'Interim Booked (Промежуточный проведенный)'),
+('ITAV', 'Interim Available', 'Промежуточный доступный', 'Interim Available (Промежуточный доступный)'),
+('OPAV', 'Opening Available', 'Начальный доступный баланс', 'Opening Available (Начальный доступный баланс)'),
+('PRCD', 'Previously Closed Booked', 'Предыдущий закрытый баланс', 'Previously Closed Booked (Предыдущий закрытый баланс)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Credit/Debit Indicator (CdtDbtInd)
+-- ============================================================================
+INSERT INTO public.ref_credit_debit_indicator (code, name_en, name_ru, name_combined) VALUES
+('CRDT', 'Credit', 'Кредит (Поступление)', 'Credit (Кредит (Поступление))'),
+('DBIT', 'Debit', 'Дебет (Списание)', 'Debit (Дебет (Списание))')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Entry Status Codes (Sts/Cd)
+-- ============================================================================
+INSERT INTO public.ref_entry_status (code, name_en, name_ru, name_combined) VALUES
+('BOOK', 'Booked', 'Проведено', 'Booked (Проведено)'),
+('PDNG', 'Pending', 'В ожидании', 'Pending (В ожидании)'),
+('INFO', 'Information', 'Информационная запись', 'Information (Информационная запись)'),
+('FUTR', 'Future', 'Будущая транзакция', 'Future (Будущая транзакция)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Bank Transaction Code Domain (BkTxCd/Domn/Cd)
+-- ============================================================================
+INSERT INTO public.ref_bank_tx_domain (code, name_en, name_ru, name_combined) VALUES
+('PMNT', 'Payments', 'Платежи', 'Payments (Платежи)'),
+('ACMT', 'Account Management', 'Управление счетом', 'Account Management (Управление счетом)'),
+('CAMT', 'Cash Management', 'Управление наличностью', 'Cash Management (Управление наличностью)'),
+('XTND', 'Extended Domain', 'Расширенный домен', 'Extended Domain (Расширенный домен)'),
+('LDAS', 'Loans and Deposits', 'Кредиты и депозиты', 'Loans and Deposits (Кредиты и депозиты)'),
+('CMDT', 'Commodities', 'Товары', 'Commodities (Товары)'),
+('FORX', 'Foreign Exchange', 'Валютные операции', 'Foreign Exchange (Валютные операции)'),
+('TRAD', 'Trade Services', 'Торговые услуги', 'Trade Services (Торговые услуги)'),
+('SECU', 'Securities', 'Ценные бумаги', 'Securities (Ценные бумаги)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Bank Transaction Family Codes (BkTxCd/Domn/Fmly/Cd)
+-- ============================================================================
+INSERT INTO public.ref_bank_tx_family (code, name_en, name_ru, name_combined) VALUES
+('RCDT', 'Received Credit Transfer', 'Полученный кредитовый перевод', 'Received Credit Transfer (Полученный кредитовый перевод)'),
+('ICDT', 'Issued Credit Transfer', 'Отправленный кредитовый перевод', 'Issued Credit Transfer (Отправленный кредитовый перевод)'),
+('RDDT', 'Received Direct Debit', 'Полученное прямое дебетование', 'Received Direct Debit (Полученное прямое дебетование)'),
+('IDDT', 'Issued Direct Debit', 'Отправленное прямое дебетование', 'Issued Direct Debit (Отправленное прямое дебетование)'),
+('CCRD', 'Customer Card Transaction', 'Карточная транзакция клиента', 'Customer Card Transaction (Карточная транзакция клиента)'),
+('MCRD', 'Merchant Card Transaction', 'Карточная транзакция продавца', 'Merchant Card Transaction (Карточная транзакция продавца)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Bank Transaction Subfamily Codes (BkTxCd/Domn/Fmly/SubFmlyCd)
+-- ============================================================================
+INSERT INTO public.ref_bank_tx_subfamily (code, name_en, name_ru, name_combined) VALUES
+('XBCT', 'Cross Border Credit Transfer', 'Трансграничный кредитовый перевод', 'Cross Border Credit Transfer (Трансграничный кредитовый перевод)'),
+('DMCT', 'Domestic Credit Transfer', 'Внутренний кредитовый перевод', 'Domestic Credit Transfer (Внутренний кредитовый перевод)'),
+('STDO', 'Standing Order', 'Постоянное поручение', 'Standing Order (Постоянное поручение)'),
+('RRTN', 'Return', 'Возврат', 'Return (Возврат)'),
+('REQL', 'Request for Liquidity', 'Запрос ликвидности', 'Request for Liquidity (Запрос ликвидности)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Cancellation Reason Codes (camt.056 CxlRsnInf/Rsn/Cd)
+-- ============================================================================
+INSERT INTO public.ref_cancellation_reason (code, name_en, name_ru, name_combined) VALUES
+('DUPL', 'Duplicate Payment', 'Дублирующий платеж', 'Duplicate Payment (Дублирующий платеж)'),
+('FRAD', 'Fraudulent Origin', 'Мошенничество', 'Fraudulent Origin (Мошенничество)'),
+('TECH', 'Technical Problems', 'Технические проблемы', 'Technical Problems (Технические проблемы)'),
+('CUST', 'Requested By Customer', 'Запрошено клиентом', 'Requested By Customer (Запрошено клиентом)'),
+('CUTA', 'Requested By Customer - Technical Problem', 'Запрошено клиентом - технические проблемы', 'Requested By Customer - Technical Problem (Запрошено клиентом - технические проблемы)'),
+('UPAY', 'Undue Payment', 'Необоснованный платеж', 'Undue Payment (Необоснованный платеж)'),
+('AM09', 'Wrong Amount', 'Неверная сумма', 'Wrong Amount (Неверная сумма)'),
+('AC03', 'Invalid Creditor Account Number', 'Неверный счет кредитора', 'Invalid Creditor Account Number (Неверный счет кредитора)'),
+('AC04', 'Closed Account', 'Закрытый счет', 'Closed Account (Закрытый счет)'),
+('AG01', 'Transaction Forbidden', 'Транзакция запрещена', 'Transaction Forbidden (Транзакция запрещена)'),
+('AG02', 'Invalid Bank Operation Code', 'Неверный операционный код банка', 'Invalid Bank Operation Code (Неверный операционный код банка)'),
+('AGNT', 'Incorrect Agent', 'Неверный агент', 'Incorrect Agent (Неверный агент)'),
+('CURR', 'Incorrect Currency', 'Неверная валюта', 'Incorrect Currency (Неверная валюта)'),
+('FOCR', 'Following Cancellation Request', 'Следуя запросу на отмену', 'Following Cancellation Request (Следуя запросу на отмену)'),
+('LEGL', 'Legal Decision', 'Судебное решение', 'Legal Decision (Судебное решение)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Instruction Priority (InstrPrty)
+-- ============================================================================
+INSERT INTO public.ref_instruction_priority (code, name_en, name_ru, name_combined) VALUES
+('HIGH', 'High Priority', 'Высокий приоритет', 'High Priority (Высокий приоритет)'),
+('NORM', 'Normal Priority', 'Обычный приоритет', 'Normal Priority (Обычный приоритет)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Account Type Codes (Acct/Tp)
+-- ============================================================================
+INSERT INTO public.ref_account_type (code, name_en, name_ru, name_combined) VALUES
+('CACC', 'Current Account', 'Текущий счет', 'Current Account (Текущий счет)'),
+('SVGS', 'Savings Account', 'Сберегательный счет', 'Savings Account (Сберегательный счет)'),
+('TRAN', 'Transactional Account', 'Транзакционный счет', 'Transactional Account (Транзакционный счет)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Message Types
+-- ============================================================================
+INSERT INTO public.ref_message_types (code, name_en, name_ru, name_combined) VALUES
+('pacs.008', 'Customer Credit Transfer', 'Клиентский кредитовый перевод', 'Customer Credit Transfer (Клиентский кредитовый перевод)'),
+('pacs.009', 'Financial Institution Credit Transfer (COV)', 'Межбанковский кредитовый перевод (покрытие)', 'Financial Institution Credit Transfer (COV) (Межбанковский кредитовый перевод (покрытие))'),
+('camt.053', 'Bank to Customer Statement', 'Банковская выписка клиенту', 'Bank to Customer Statement (Банковская выписка клиенту)'),
+('camt.054', 'Bank to Customer Debit/Credit Notification', 'Уведомление о дебете/кредите', 'Bank to Customer Debit/Credit Notification (Уведомление о дебете/кредите)'),
+('camt.056', 'FI to FI Payment Cancellation Request', 'Запрос на отмену платежа', 'FI to FI Payment Cancellation Request (Запрос на отмену платежа)')
+ON CONFLICT (code) DO NOTHING;
+
+-- ============================================================================
+-- Reference Data Summary
+-- ============================================================================
+-- Total records inserted:
+-- Currency Codes: 25
+-- Country Codes: 40
+-- Settlement Method: 4
+-- Charge Bearer: 4
+-- Purpose Codes: 20
+-- Balance Type: 8
+-- Credit/Debit Indicator: 2
+-- Entry Status: 4
+-- Bank Transaction Domain: 9
+-- Bank Transaction Family: 6
+-- Bank Transaction Subfamily: 5
+-- Cancellation Reason: 15
+-- Instruction Priority: 2
+-- Account Type: 3
+-- Message Types: 5
+-- ============================================================================
+-- TOTAL: 152 reference values
+-- ============================================================================
+
+-- ============================================================================
 -- Permissions
 -- ============================================================================
 ALTER TABLE IF EXISTS public.swift_input OWNER TO postgres;
