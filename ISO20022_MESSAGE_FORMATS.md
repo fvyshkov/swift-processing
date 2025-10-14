@@ -6,11 +6,319 @@
 
 ## Содержание
 
-1. [pacs.009 - Financial Institution Credit Transfer (COV)](#pacs009---financial-institution-credit-transfer-cov)
-2. [camt.053 - Bank to Customer Statement](#camt053---bank-to-customer-statement)
-3. [camt.054 - Bank to Customer Debit/Credit Notification](#camt054---bank-to-customer-debitcredit-notification)
-4. [camt.056 - FI to FI Payment Cancellation Request](#camt056---fi-to-fi-payment-cancellation-request)
-5. [Общие коды и справочники](#общие-коды-и-справочники)
+1. [pacs.008 - Customer Credit Transfer](#pacs008---customer-credit-transfer)
+2. [pacs.009 - Financial Institution Credit Transfer (COV)](#pacs009---financial-institution-credit-transfer-cov)
+3. [camt.053 - Bank to Customer Statement](#camt053---bank-to-customer-statement)
+4. [camt.054 - Bank to Customer Debit/Credit Notification](#camt054---bank-to-customer-debitcredit-notification)
+5. [camt.056 - FI to FI Payment Cancellation Request](#camt056---fi-to-fi-payment-cancellation-request)
+6. [Общие коды и справочники](#общие-коды-и-справочники)
+
+---
+
+## pacs.008 - Customer Credit Transfer
+
+### Назначение
+Используется для межбанковского кредитового перевода средств от клиента одного банка клиенту другого банка. Это основной формат для клиентских платежей между финансовыми институтами через SWIFT.
+
+### Структура сообщения
+
+#### Корневой элемент
+```xml
+<pacs:Document xmlns:pacs="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+  <pacs:FIToFICstmrCdtTrf>
+    ...
+  </pacs:FIToFICstmrCdtTrf>
+</pacs:Document>
+```
+
+#### 1. Group Header (GrpHdr) - Заголовок группы
+
+| Элемент | Тип | Описание | Обязательность |
+|---------|-----|----------|----------------|
+| `MsgId` | Text | Уникальный идентификатор сообщения | Обязательный |
+| `CreDtTm` | DateTime | Дата и время создания сообщения | Обязательный |
+| `NbOfTxs` | Number | Количество транзакций в сообщении | Обязательный |
+| `CtrlSum` | Decimal | Контрольная сумма (общая сумма всех транзакций) | Опциональный |
+| `SttlmInf` | Complex | Информация о расчете | Обязательный |
+
+**Settlement Information (SttlmInf):**
+- `SttlmMtd` - Метод расчета:
+  - `INDA` - Indirect Agent (косвенный агент)
+  - `INGA` - Instructing Agent (инструктирующий агент)
+  - `CLRG` - Clearing (клиринг)
+
+#### 2. Credit Transfer Transaction Information (CdtTrfTxInf) - Информация о кредитовом переводе
+
+##### Payment Identification (PmtId) - Идентификация платежа
+
+| Элемент | Тип | Описание | Обязательность |
+|---------|-----|----------|----------------|
+| `InstrId` | Text | Идентификатор инструкции (от инициирующего банка) | Опциональный |
+| `EndToEndId` | Text | End-to-end идентификатор (от клиента-отправителя) | Обязательный |
+| `TxId` | Text | Идентификатор транзакции | Опциональный |
+| `UETR` | UUID | Unique End-to-end Transaction Reference (UUID формат) | Обязательный |
+
+**UETR** - уникальный идентификатор для отслеживания платежа на всем пути следования.
+
+##### Payment Type Information (PmtTpInf) - Тип платежа
+
+| Элемент | Тип | Описание |
+|---------|-----|----------|
+| `InstrPrty` | Code | Приоритет: `HIGH`, `NORM` |
+| `SvcLvl/Cd` | Code | Уровень сервиса: `SEPA`, `SDVA`, `NURG` |
+| `LclInstrm/Cd` | Code | Локальный инструмент |
+| `CtgyPurp/Cd` | Code | Категория назначения |
+
+##### Основные атрибуты транзакции
+
+| Элемент | Тип | Описание | Обязательность |
+|---------|-----|----------|----------------|
+| `IntrBkSttlmAmt` | Amount + Ccy | Сумма межбанковского расчета | Обязательный |
+| `IntrBkSttlmDt` | Date | Дата межбанковского расчета (YYYY-MM-DD) | Обязательный |
+| `InstdAmt` | Amount + Ccy | Инструктированная сумма | Опциональный |
+| `ChrgBr` | Code | Оплата комиссии | Опциональный |
+| `ChrgsInf` | Complex | Информация о комиссиях | Опциональный |
+
+**Коды оплаты комиссии (ChrgBr):**
+- `DEBT` - Borne by Debtor (комиссия за счет плательщика)
+- `CRED` - Borne by Creditor (комиссия за счет получателя)
+- `SHAR` - Shared (разделенная комиссия)
+- `SLEV` - Service Level (по уровню сервиса)
+
+##### Агенты (Banks)
+
+**Instructing Agent (InstgAgt) - Инициирующий банк:**
+- `FinInstnId/BICFI` - BIC код банка
+- `FinInstnId/ClrSysMmbId` - ID в клиринговой системе
+- `FinInstnId/Nm` - Название банка
+- `FinInstnId/PstlAdr` - Адрес банка
+
+**Instructed Agent (InstdAgt) - Инструктированный банк:**
+- Аналогичная структура
+
+**Debtor Agent (DbtrAgt) - Банк плательщика:**
+- Аналогичная структура
+
+**Creditor Agent (CdtrAgt) - Банк получателя:**
+- Аналогичная структура
+
+**Intermediary Agent (IntrmyAgt) - Банк-посредник:**
+- Аналогичная структура (может быть несколько)
+
+##### Debtor (Dbtr) - Дебитор (плательщик)
+
+| Элемент | Тип | Описание |
+|---------|-----|----------|
+| `Nm` | Text | Имя плательщика | Обязательный |
+| `PstlAdr` | Complex | Почтовый адрес | Опциональный |
+| `Id` | Complex | Идентификация | Опциональный |
+| `CtryOfRes` | Code | Страна резидентства | Опциональный |
+| `CtctDtls` | Complex | Контактные данные | Опциональный |
+
+**Postal Address (PstlAdr):**
+- `StrtNm` - Улица
+- `BldgNb` - Номер здания
+- `PstCd` - Почтовый индекс
+- `TwnNm` - Город
+- `CtrySubDvsn` - Регион/область
+- `Ctry` - Страна (ISO 3166, 2 символа)
+- `AdrLine` - Строки адреса (до 7 строк)
+
+##### Debtor Account (DbtrAcct) - Счет плательщика
+
+| Элемент | Тип | Описание |
+|---------|-----|----------|
+| `Id/IBAN` | Text | IBAN счета | Один из вариантов |
+| `Id/Othr/Id` | Text | Другой идентификатор счета | Альтернатива |
+| `Tp/Cd` | Code | Тип счета: `CACC`, `SVGS`, `TRAN` | Опциональный |
+| `Ccy` | Code | Валюта счета (ISO 4217) | Опциональный |
+| `Nm` | Text | Название счета | Опциональный |
+
+##### Creditor (Cdtr) - Кредитор (получатель)
+
+Структура аналогична Debtor:
+- `Nm` - Имя получателя (обязательно)
+- `PstlAdr` - Почтовый адрес
+- `Id` - Идентификация
+- `CtryOfRes` - Страна резидентства
+- `CtctDtls` - Контактные данные
+
+##### Creditor Account (CdtrAcct) - Счет получателя
+
+Структура аналогична DbtrAcct:
+- `Id/IBAN` или `Id/Othr/Id` - Идентификатор счета
+- `Tp` - Тип счета
+- `Ccy` - Валюта
+- `Nm` - Название
+
+##### Purpose (Purp) - Назначение платежа
+
+| Элемент | Тип | Описание |
+|---------|-----|----------|
+| `Cd` | Code | Стандартный код назначения | Один из вариантов |
+| `Prtry` | Text | Проприетарный код назначения | Альтернатива |
+
+**Коды назначения (External Purpose Code):**
+- `SALA` - Salary Payment (зарплата)
+- `PENS` - Pension Payment (пенсия)
+- `SUPP` - Supplier Payment (платеж поставщику)
+- `TRAD` - Trade (торговля)
+- `CASH` - Cash Management
+- `LOAN` - Loan (кредит)
+- `INTC` - Intra-Company Payment (внутрикорпоративный)
+
+##### Remittance Information (RmtInf) - Информация о платеже
+
+| Элемент | Тип | Описание |
+|---------|-----|----------|
+| `Ustrd` | Text | Неструктурированная информация (до 140 символов) | Опциональный |
+| `Strd` | Complex | Структурированная информация | Опциональный |
+
+**Structured Remittance (Strd):**
+- `RfrdDocInf` - Ссылка на документ:
+  - `Tp/CdOrPrtry/Cd` - Тип документа: `CINV` (Commercial Invoice), `DNFA` (Debit Note), и т.д.
+  - `Nb` - Номер документа
+  - `RltdDt` - Дата документа
+- `RfrdDocAmt` - Суммы документа:
+  - `DuePyblAmt` - Сумма к оплате
+  - `DscntApldAmt` - Скидка
+  - `CdtNoteAmt` - Кредит-нота
+  - `TaxAmt` - Налог
+
+##### Regulatory Reporting (RgltryRptg) - Регуляторная отчетность
+
+| Элемент | Тип | Описание |
+|---------|-----|----------|
+| `DbtCdtRptgInd` | Code | Индикатор: `CRED`, `DEBT`, `BOTH` |
+| `Authrty` | Complex | Орган власти |
+| `Dtls/Tp` | Text | Тип отчета |
+| `Dtls/Cd` | Code | Код |
+| `Dtls/Amt` | Amount | Сумма |
+| `Dtls/Inf` | Text | Информация |
+
+### Структура обработки в системе
+
+В таблице `swift_input` для pacs.008 хранятся следующие поля:
+
+| Поле БД | Источник XML | Описание |
+|---------|--------------|----------|
+| `file_name` | - | Имя файла |
+| `msg_type` | `MsgDefIdr` | Тип сообщения: "pacs.008" |
+| `msg_id` | `GrpHdr/MsgId` | ID сообщения |
+| `snd_name` | `Dbtr/Nm` | Имя плательщика |
+| `snd_acc` | `DbtrAcct/Id` | Счет плательщика |
+| `snd_bank` | `DbtrAgt/FinInstnId/BICFI` | BIC банка плательщика |
+| `snd_bank_name` | `DbtrAgt/FinInstnId/Nm` | Название банка плательщика |
+| `rcv_name` | `Cdtr/Nm` | Имя получателя |
+| `rcv_acc` | `CdtrAcct/Id` | Счет получателя |
+| `rcv_bank` | `CdtrAgt/FinInstnId/BICFI` | BIC банка получателя |
+| `rcv_bank_name` | `CdtrAgt/FinInstnId/Nm` | Название банка получателя |
+| `snd_mid_bank` | `IntrmyAgt/FinInstnId/BICFI` | BIC банка-посредника |
+| `snd_mid_bank_name` | `IntrmyAgt/FinInstnId/Nm` | Название банка-посредника |
+| `amount` | `IntrBkSttlmAmt` | Сумма |
+| `currency_code` | `IntrBkSttlmAmt@Ccy` | Валюта |
+| `dval` | `IntrBkSttlmDt` | Дата расчета |
+| `code` | `PmtId/EndToEndId` | End-to-end ID |
+| `message` | `RmtInf/Ustrd` | Назначение платежа |
+
+### Пример pacs.008
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Envelope xmlns="urn:swift:xsd:envelope">
+	<head:AppHdr xmlns:head="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+		<head:Fr><head:FIId><head:FinInstnId><head:BICFI>DSBAHKHH</head:BICFI></head:FinInstnId></head:FIId></head:Fr>
+		<head:To><head:FIId><head:FinInstnId><head:BICFI>ID521122</head:BICFI></head:FinInstnId></head:FIId></head:To>
+		<head:BizMsgIdr>pacs8bizmsgidr02</head:BizMsgIdr>
+		<head:MsgDefIdr>pacs.008.001.08</head:MsgDefIdr>
+		<head:BizSvc>swift.cbprplus.02</head:BizSvc>
+		<head:CreDt>2022-10-20T10:25:00+01:00</head:CreDt>
+	</head:AppHdr>
+	<pacs:Document xmlns:pacs="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+		<pacs:FIToFICstmrCdtTrf>
+			<pacs:GrpHdr>
+				<pacs:MsgId>pacs8bizmsgidr02</pacs:MsgId>
+				<pacs:CreDtTm>2022-10-20T10:25:00+01:00</pacs:CreDtTm>
+				<pacs:NbOfTxs>1</pacs:NbOfTxs>
+				<pacs:SttlmInf>
+					<pacs:SttlmMtd>INDA</pacs:SttlmMtd>
+				</pacs:SttlmInf>
+			</pacs:GrpHdr>
+			<pacs:CdtTrfTxInf>
+				<pacs:PmtId>
+					<pacs:InstrId>pacs8bizmsgidr02</pacs:InstrId>
+					<pacs:EndToEndId>pacs008EndToEndId-001</pacs:EndToEndId>
+					<pacs:UETR>7a562c67-ca16-48ba-b074-65581be6f001</pacs:UETR>
+				</pacs:PmtId>
+				<pacs:IntrBkSttlmAmt Ccy="USD">98725497</pacs:IntrBkSttlmAmt>
+				<pacs:IntrBkSttlmDt>2022-10-20</pacs:IntrBkSttlmDt>
+				<pacs:ChrgBr>SHAR</pacs:ChrgBr>
+				<pacs:InstgAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>DSBAHKHH</pacs:BICFI>
+					</pacs:FinInstnId>
+				</pacs:InstgAgt>
+				<pacs:InstdAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>ID521122</pacs:BICFI>
+					</pacs:FinInstnId>
+				</pacs:InstdAgt>
+				<pacs:Dbtr>
+					<pacs:Nm>A Capone</pacs:Nm>
+					<pacs:PstlAdr>
+						<pacs:Ctry>US</pacs:Ctry>
+					</pacs:PstlAdr>
+				</pacs:Dbtr>
+				<pacs:DbtrAcct>
+					<pacs:Id>
+						<pacs:Othr>
+							<pacs:Id>ACPN-2569874</pacs:Id>
+						</pacs:Othr>
+					</pacs:Id>
+				</pacs:DbtrAcct>
+				<pacs:DbtrAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>DSBAHKHH</pacs:BICFI>
+						<pacs:Nm>Deutsche Bank Hong Kong</pacs:Nm>
+					</pacs:FinInstnId>
+				</pacs:DbtrAgt>
+				<pacs:CdtrAgt>
+					<pacs:FinInstnId>
+						<pacs:BICFI>ID521122</pacs:BICFI>
+						<pacs:Nm>Recipient Bank</pacs:Nm>
+					</pacs:FinInstnId>
+				</pacs:CdtrAgt>
+				<pacs:Cdtr>
+					<pacs:Nm>J Smith</pacs:Nm>
+				</pacs:Cdtr>
+				<pacs:CdtrAcct>
+					<pacs:Id>
+						<pacs:Othr>
+							<pacs:Id>65479512</pacs:Id>
+						</pacs:Othr>
+					</pacs:Id>
+				</pacs:CdtrAcct>
+				<pacs:Purp>
+					<pacs:Cd>SUPP</pacs:Cd>
+				</pacs:Purp>
+				<pacs:RmtInf>
+					<pacs:Ustrd>Invoice #12345 Payment</pacs:Ustrd>
+				</pacs:RmtInf>
+			</pacs:CdtTrfTxInf>
+		</pacs:FIToFICstmrCdtTrf>
+	</pacs:Document>
+</Envelope>
+```
+
+### Отличия pacs.008 от pacs.009
+
+| Характеристика | pacs.008 | pacs.009 |
+|----------------|----------|----------|
+| Назначение | Клиентский платеж (от клиента к клиенту) | Cover payment (покрывающий платеж между банками) |
+| Дебитор/Кредитор | Клиенты банков | Финансовые институты |
+| Underlying | Нет | Содержит UndrlygCstmrCdtTrf с информацией о клиентах |
+| Использование | Прямой платеж | Расчет между банками-корреспондентами |
+| Связь | Может быть независимым | Обычно связан с pacs.008 через UETR |
 
 ---
 
