@@ -1,0 +1,97 @@
+{
+    "lists": {},
+    "forms": {},
+    "js": {},
+    "methods": {
+        "getItemList": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined, \n           color_code, allow_edit, allow_delete\n    FROM process_state\n    ORDER BY type_code, code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\n"
+            }
+        }
+    },
+    "references": {
+        "default": {
+            "form": {
+                "style": {
+                    "width": "1200px",
+                    "height": "600px"
+                },
+                "columns": [
+                    {
+                        "title": "Type",
+                        "field": "type_code",
+                        "width": 120
+                    },
+                    {
+                        "title": "Code",
+                        "field": "code",
+                        "width": 120
+                    },
+                    {
+                        "title": "Name (English)",
+                        "field": "name_en",
+                        "width": 180
+                    },
+                    {
+                        "title": "Name (Russian)",
+                        "field": "name_ru",
+                        "width": 180
+                    },
+                    {
+                        "title": "Combined Name",
+                        "field": "name_combined",
+                        "flex": 1
+                    },
+                    {
+                        "title": "Color",
+                        "field": "color_code",
+                        "width": 100
+                    },
+                    {
+                        "title": "Edit",
+                        "field": "allow_edit",
+                        "width": 80,
+                        "type": "boolean"
+                    },
+                    {
+                        "title": "Delete",
+                        "field": "allow_delete",
+                        "width": 80,
+                        "type": "boolean"
+                    }
+                ],
+                "keyField": "id",
+                "titleField": "name_combined",
+                "method": "getItemList",
+                "filter": {
+                    "className": "vertical",
+                    "$": {
+                        "type_code": {
+                            "label": "Document Type",
+                            "control": "SelectEdit",
+                            "controlProps": {
+                                "object": "processType",
+                                "method": "getItemList",
+                                "valueField": "code",
+                                "displayField": "name_combined"
+                            }
+                        },
+                        "code": {
+                            "label": "State Code",
+                            "control": "TextEdit"
+                        },
+                        "name": {
+                            "label": "Name",
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "filterMethod": {
+                    "script": {
+                        "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE 1=1\n\"\"\"\n\nparams = {}\n\nif parameters.get('type_code'):\n    SQL += \" AND type_code = :type_code\"\n    params['type_code'] = parameters['type_code']\n\nif parameters.get('code'):\n    SQL += \" AND UPPER(code) LIKE UPPER(:code)\"\n    params['code'] = f\"%{parameters['code']}%\"\n\nif parameters.get('name'):\n    SQL += \" AND (UPPER(name_en) LIKE UPPER(:name) OR UPPER(name_ru) LIKE UPPER(:name) OR UPPER(name_combined) LIKE UPPER(:name))\"\n    params['name'] = f\"%{parameters['name']}%\"\n\nSQL += \" ORDER BY type_code, code\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, params)\n    data = fetchall(c)\n"
+                    }
+                }
+            }
+        }
+    }
+}

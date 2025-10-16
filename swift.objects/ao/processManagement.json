@@ -1,0 +1,673 @@
+{
+    "lists": {
+        "typeList": {
+            "columns": {
+                "code": {
+                    "title": "Code",
+                    "width": 150
+                },
+                "name_combined": {
+                    "title": "Name",
+                    "flex": 1
+                },
+                "resource_url": {
+                    "title": "Resource URL",
+                    "flex": 1
+                }
+            },
+            "id": "code",
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Add",
+                    "icon": "add",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "New Document Type",
+                        "params": {
+                            "object": "processManagement",
+                            "form": "editType",
+                            "objectKey": null
+                        }
+                    }
+                },
+                {
+                    "title": "Edit",
+                    "icon": "edit",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Edit Type: ${$listRow.code}`",
+                        "params": {
+                            "object": "processManagement",
+                            "form": "editType",
+                            "objectKey$": "{code: $listRow.code}"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "command": {
+                        "type": "js",
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'deleteType', params: {code: $listRow.code}}).then(()=>forceRefreshList())"
+                    },
+                    "confirm": {
+                        "message$": "`Delete type '${$listRow.code}'?`",
+                        "yes": "Yes",
+                        "no": "No"
+                    },
+                    "disabled$": "!$listRow"
+                }
+            ]
+        },
+        "stateList": {
+            "columns": {
+                "type_code": {
+                    "title": "Type",
+                    "width": 150
+                },
+                "code": {
+                    "title": "State Code",
+                    "width": 150
+                },
+                "name_combined": {
+                    "title": "Name",
+                    "flex": 1
+                },
+                "color_code": {
+                    "title": "Color",
+                    "width": 100,
+                    "control": "chip",
+                    "cellStyle$": "{backgroundColor: $listRow.color_code, color: '#fff', padding: '4px 8px', borderRadius: '4px'}"
+                },
+                "allow_edit": {
+                    "title": "Edit",
+                    "width": 80,
+                    "control": "checkbox",
+                    "readonly": true
+                },
+                "allow_delete": {
+                    "title": "Delete",
+                    "width": 80,
+                    "control": "checkbox",
+                    "readonly": true
+                }
+            },
+            "id": "id",
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Add",
+                    "icon": "add",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "New State",
+                        "params": {
+                            "object": "processManagement",
+                            "form": "editState",
+                            "objectKey": null
+                        }
+                    }
+                },
+                {
+                    "title": "Edit",
+                    "icon": "edit",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Edit State: ${$listRow.code}`",
+                        "params": {
+                            "object": "processManagement",
+                            "form": "editState",
+                            "objectKey$": "{id: $listRow.id}"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "command": {
+                        "type": "js",
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'deleteState', params: {id: $listRow.id}}).then(()=>forceRefreshList())"
+                    },
+                    "confirm": {
+                        "message$": "`Delete state '${$listRow.code}'?`",
+                        "yes": "Yes",
+                        "no": "No"
+                    },
+                    "disabled$": "!$listRow"
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px"
+                    },
+                    "title": "Filter",
+                    "className": "panel vertical",
+                    "$": {
+                        "type_code": {
+                            "label": "Document Type",
+                            "control": "SelectEdit",
+                            "controlProps": {
+                                "object": "processManagement",
+                                "method": "getTypeList",
+                                "valueField": "code",
+                                "displayField": "name_combined"
+                            }
+                        }
+                    }
+                },
+                "query": {
+                    "type_code": {
+                        "sql": "type_code = :type_code"
+                    }
+                }
+            }
+        },
+        "operationList": {
+            "columns": {
+                "type_code": {
+                    "title": "Type",
+                    "width": 150
+                },
+                "code": {
+                    "title": "Operation Code",
+                    "width": 150
+                },
+                "name_combined": {
+                    "title": "Name",
+                    "flex": 1
+                },
+                "icon": {
+                    "title": "Icon",
+                    "width": 100
+                },
+                "resource_url": {
+                    "title": "Resource URL",
+                    "flex": 1
+                }
+            },
+            "id": "id",
+            "actions": [
+                {
+                    "title": "Refresh",
+                    "icon": "refresh",
+                    "mini": true,
+                    "command": {
+                        "type": "standard",
+                        "call": "refresh"
+                    }
+                },
+                {
+                    "title": "Add",
+                    "icon": "add",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title": "New Operation",
+                        "params": {
+                            "object": "processManagement",
+                            "form": "editOperation",
+                            "objectKey": null
+                        }
+                    }
+                },
+                {
+                    "title": "Edit",
+                    "icon": "edit",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`Edit Operation: ${$listRow.code}`",
+                        "params": {
+                            "object": "processManagement",
+                            "form": "editOperation",
+                            "objectKey$": "{id: $listRow.id}"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "command": {
+                        "type": "js",
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'deleteOperation', params: {id: $listRow.id}}).then(()=>forceRefreshList())"
+                    },
+                    "confirm": {
+                        "message$": "`Delete operation '${$listRow.code}'?`",
+                        "yes": "Yes",
+                        "no": "No"
+                    },
+                    "disabled$": "!$listRow"
+                }
+            ],
+            "filter": {
+                "form": {
+                    "style": {
+                        "width": "360px"
+                    },
+                    "title": "Filter",
+                    "className": "panel vertical",
+                    "$": {
+                        "type_code": {
+                            "label": "Document Type",
+                            "control": "SelectEdit",
+                            "controlProps": {
+                                "object": "processManagement",
+                                "method": "getTypeList",
+                                "valueField": "code",
+                                "displayField": "name_combined"
+                            }
+                        }
+                    }
+                },
+                "query": {
+                    "type_code": {
+                        "sql": "type_code = :type_code"
+                    }
+                }
+            }
+        }
+    },
+    "forms": {
+        "editType": {
+            "title": "Document Type",
+            "className": "vertical",
+            "style": {
+                "width": "600px",
+                "padding": "16px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "$": {
+                        "code": {
+                            "label": "Code",
+                            "control": "TextEdit",
+                            "required": true,
+                            "readOnly$": "!!mem.original_code"
+                        },
+                        "name_en": {
+                            "label": "English Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name_ru": {
+                            "label": "Russian Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name_combined": {
+                            "label": "Combined Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "resource_url": {
+                            "label": "Resource URL",
+                            "control": "TextEdit"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end",
+                        "marginTop": "16px"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined"
+                            },
+                            "action": {
+                                "js": "frontend.closeTask()"
+                            }
+                        },
+                        "btnSave": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Validation failed'"
+                                },
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveType', params: mem})"
+                                },
+                                {
+                                    "js": "frontend.closeTask()"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "if (task.params?.objectKey?.code) { return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'getType', params: task.params.objectKey}).then((r) => { Object.assign(mem, r); mem.original_code = r.code; forceUpdate(); }); }"
+                    }
+                ]
+            }
+        },
+        "editState": {
+            "title": "Document State",
+            "className": "vertical",
+            "style": {
+                "width": "600px",
+                "padding": "16px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "$": {
+                        "type_code": {
+                            "label": "Document Type",
+                            "control": "SelectEdit",
+                            "required": true,
+                            "readOnly$": "!!mem.original_type_code",
+                            "controlProps": {
+                                "object": "processManagement",
+                                "method": "getTypeList",
+                                "valueField": "code",
+                                "displayField": "name_combined"
+                            }
+                        },
+                        "code": {
+                            "label": "State Code",
+                            "control": "TextEdit",
+                            "required": true,
+                            "readOnly$": "!!mem.original_code"
+                        },
+                        "name_en": {
+                            "label": "English Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name_ru": {
+                            "label": "Russian Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name_combined": {
+                            "label": "Combined Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "color_code": {
+                            "label": "Color Code (hex)",
+                            "control": "TextEdit",
+                            "placeholder": "#RRGGBB"
+                        },
+                        "@flags": {
+                            "className": "horizontal",
+                            "$": {
+                                "allow_edit": {
+                                    "label": "Allow Edit",
+                                    "control": "Checkbox"
+                                },
+                                "allow_delete": {
+                                    "label": "Allow Delete",
+                                    "control": "Checkbox"
+                                }
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end",
+                        "marginTop": "16px"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined"
+                            },
+                            "action": {
+                                "js": "frontend.closeTask()"
+                            }
+                        },
+                        "btnSave": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Validation failed'"
+                                },
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveState', params: mem})"
+                                },
+                                {
+                                    "js": "frontend.closeTask()"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "if (task.params?.objectKey?.id) { return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'getState', params: task.params.objectKey}).then((r) => { Object.assign(mem, r); mem.original_type_code = r.type_code; mem.original_code = r.code; forceUpdate(); }); }"
+                    }
+                ]
+            }
+        },
+        "editOperation": {
+            "title": "Document Operation",
+            "className": "vertical",
+            "style": {
+                "width": "700px",
+                "padding": "16px"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "$": {
+                        "type_code": {
+                            "label": "Document Type",
+                            "control": "SelectEdit",
+                            "required": true,
+                            "readOnly$": "!!mem.id",
+                            "controlProps": {
+                                "object": "processManagement",
+                                "method": "getTypeList",
+                                "valueField": "code",
+                                "displayField": "name_combined"
+                            }
+                        },
+                        "code": {
+                            "label": "Operation Code",
+                            "control": "TextEdit",
+                            "required": true,
+                            "readOnly$": "!!mem.id"
+                        },
+                        "name_en": {
+                            "label": "English Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name_ru": {
+                            "label": "Russian Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "name_combined": {
+                            "label": "Combined Name",
+                            "control": "TextEdit",
+                            "required": true
+                        },
+                        "icon": {
+                            "label": "Icon",
+                            "control": "TextEdit",
+                            "placeholder": "e.g. send, check, approve"
+                        },
+                        "resource_url": {
+                            "label": "Resource URL",
+                            "control": "TextEdit",
+                            "placeholder": "/api/operation/execute"
+                        },
+                        "availability_condition": {
+                            "label": "Availability Condition (JSON)",
+                            "control": "TextArea",
+                            "controlProps": {
+                                "rows": 3
+                            }
+                        },
+                        "state_codes": {
+                            "label": "Available in States",
+                            "control": "TextArea",
+                            "controlProps": {
+                                "rows": 3,
+                                "placeholder": "Enter state codes, one per line"
+                            }
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "flex-end",
+                        "marginTop": "16px"
+                    },
+                    "$": {
+                        "btnCancel": {
+                            "label": "Cancel",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined"
+                            },
+                            "action": {
+                                "js": "frontend.closeTask()"
+                            }
+                        },
+                        "btnSave": {
+                            "label": "Save",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "action": [
+                                {
+                                    "js": "if (!validate()) throw 'Validation failed'"
+                                },
+                                {
+                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveOperation', params: mem})"
+                                },
+                                {
+                                    "js": "frontend.closeTask()"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "if (task.params?.objectKey?.id) { return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'getOperation', params: task.params.objectKey}).then((r) => { Object.assign(mem, r); forceUpdate(); }); }"
+                    }
+                ]
+            }
+        }
+    },
+    "methods": {
+        "getTypeList": {
+            "script": {
+                "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url\n    FROM process_type\n    ORDER BY code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\n"
+            }
+        },
+        "getType": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url\n    FROM process_type\n    WHERE code = %(code)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+            }
+        },
+        "saveType": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    INSERT INTO process_type (code, name_en, name_ru, name_combined, resource_url)\n    VALUES (%(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, %(resource_url)s)\n    ON CONFLICT (code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        resource_url = EXCLUDED.resource_url\n    RETURNING code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+            }
+        },
+        "deleteType": {
+            "script": {
+                "py": "SQL = \"\"\"\n    DELETE FROM process_type WHERE code = %(code)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = {'success': True}\n"
+            }
+        },
+        "getStateList": {
+            "script": {
+                "py": "from apng_core.db import fetchall\nfrom apng_core.aoa.services import filter as aoa\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined, \n           color_code, allow_edit, allow_delete\n    FROM process_state\n    ORDER BY type_code, code\n\"\"\"\n\nrequest = parameters.get('request', {})\nfilterModel2 = request.get('filterModel2', {})\nif filterModel2.get('filterData'):\n    filterModel2 = filterModel2['filterData']\n\nqueryParams = {}\n\nif filterModel2:\n    filterDef = aoa.buildFilterSql({\n        'objectCode': 'processManagement',\n        'filterData': filterModel2\n    })\n    filter_text = filterDef['sql'].replace('\"', '')\n    SQL = 'SELECT * FROM (' + SQL + ') t ' + filter_text\n    queryParams = filterDef['params']\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, queryParams)\n    data = fetchall(c)\n"
+            }
+        },
+        "getState": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE id = %(id)s::uuid\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+            }
+        },
+        "saveState": {
+            "script": {
+                "py": "from apng_core.db import fetchone\nimport uuid\n\n# Get or generate state ID\nstate_id = parameters.get('id')\nif not state_id:\n    state_id = str(uuid.uuid4())\n    parameters['id'] = state_id\n\nSQL = \"\"\"\n    INSERT INTO process_state \n        (id, type_code, code, name_en, name_ru, name_combined, color_code, allow_edit, allow_delete)\n    VALUES \n        (%(id)s::uuid, %(type_code)s, %(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, \n         %(color_code)s, %(allow_edit)s, %(allow_delete)s)\n    ON CONFLICT (type_code, code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        color_code = EXCLUDED.color_code,\n        allow_edit = EXCLUDED.allow_edit,\n        allow_delete = EXCLUDED.allow_delete\n    RETURNING id\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+            }
+        },
+        "deleteState": {
+            "script": {
+                "py": "SQL = \"\"\"\n    DELETE FROM process_state \n    WHERE id = %(id)s::uuid\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = {'success': True}\n"
+            }
+        },
+        "getOperationList": {
+            "script": {
+                "py": "from apng_core.db import fetchall\nfrom apng_core.aoa.services import filter as aoa\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           icon, resource_url, availability_condition\n    FROM process_operation\n    ORDER BY type_code, code\n\"\"\"\n\nrequest = parameters.get('request', {})\nfilterModel2 = request.get('filterModel2', {})\nif filterModel2.get('filterData'):\n    filterModel2 = filterModel2['filterData']\n\nqueryParams = {}\n\nif filterModel2:\n    filterDef = aoa.buildFilterSql({\n        'objectCode': 'processManagement',\n        'filterData': filterModel2\n    })\n    filter_text = filterDef['sql'].replace('\"', '')\n    SQL = 'SELECT * FROM (' + SQL + ') t ' + filter_text\n    queryParams = filterDef['params']\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, queryParams)\n    data = fetchall(c)\n"
+            }
+        },
+        "getOperation": {
+            "script": {
+                "py": "from apng_core.db import fetchone, fetchall\n\nSQL_OP = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           icon, resource_url, availability_condition\n    FROM process_operation\n    WHERE id = %(id)s\n\"\"\"\n\nSQL_STATES = \"\"\"\n    SELECT state_code\n    FROM process_operation_states\n    WHERE operation_id = %(id)s\n    ORDER BY state_code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL_OP, parameters)\n    data = fetchone(c)\n    \n    if data:\n        c.execute(SQL_STATES, parameters)\n        states = fetchall(c)\n        state_codes_list = [s['state_code'] for s in states]\n        data['state_codes'] = '\\n'.join(state_codes_list)\n"
+            }
+        },
+        "saveOperation": {
+            "script": {
+                "py": "from apng_core.db import fetchone\nimport uuid\n\n# Parse state codes from textarea (one per line)\nstate_codes_text = parameters.get('state_codes', '')\nstate_codes = [s.strip() for s in state_codes_text.split('\\n') if s.strip()]\n\n# Get or generate operation ID\noperation_id = parameters.get('id')\nif not operation_id:\n    operation_id = str(uuid.uuid4())\n    parameters['id'] = operation_id\n\nSQL_OP = \"\"\"\n    INSERT INTO process_operation \n        (id, type_code, code, name_en, name_ru, name_combined, icon, resource_url, availability_condition)\n    VALUES \n        (%(id)s::uuid, %(type_code)s, %(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, \n         %(icon)s, %(resource_url)s, %(availability_condition)s)\n    ON CONFLICT (type_code, code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        icon = EXCLUDED.icon,\n        resource_url = EXCLUDED.resource_url,\n        availability_condition = EXCLUDED.availability_condition\n    RETURNING id\n\"\"\"\n\nSQL_DELETE_STATES = \"\"\"\n    DELETE FROM process_operation_states WHERE operation_id = %(id)s::uuid\n\"\"\"\n\nSQL_INSERT_STATE = \"\"\"\n    INSERT INTO process_operation_states (operation_id, state_code)\n    VALUES (%(operation_id)s::uuid, %(state_code)s)\n    ON CONFLICT DO NOTHING\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL_OP, parameters)\n    result = fetchone(c)\n    \n    # Delete old state associations\n    c.execute(SQL_DELETE_STATES, {'id': result['id']})\n    \n    # Insert new state associations\n    for state_code in state_codes:\n        c.execute(SQL_INSERT_STATE, {\n            'operation_id': result['id'],\n            'state_code': state_code\n        })\n    \n    data = result\n"
+            }
+        },
+        "deleteOperation": {
+            "script": {
+                "py": "SQL = \"\"\"\n    DELETE FROM process_operation WHERE id = %(id)s::uuid\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = {'success': True}\n"
+            }
+        }
+    }
+}
