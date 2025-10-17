@@ -7,7 +7,7 @@
             "sql": {
                 "sqlType": "query",
                 "database": "default",
-                "sql": "SELECT o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined, o.icon, o.resource_url, o.availability_condition, string_agg(os.state_code, ', ' ORDER BY os.state_code) as states FROM process_operation o LEFT JOIN process_operation_states os ON o.id = os.operation_id GROUP BY o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined, o.icon, o.resource_url, o.availability_condition ORDER BY o.type_code, o.code"
+                "sql": "SELECT o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined, o.icon, o.resource_url, o.availability_condition, string_agg(s.code, ', ' ORDER BY s.code) as states FROM process_operation o LEFT JOIN process_operation_states os ON o.id = os.operation_id LEFT JOIN process_state s ON os.state_id = s.id GROUP BY o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined, o.icon, o.resource_url, o.availability_condition ORDER BY o.type_code, o.code"
             },
             "script": {}
         }
@@ -93,19 +93,10 @@
                         "database": "default"
                     },
                     "script": {
-                        "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined,\n           o.icon, o.resource_url, o.availability_condition,\n           string_agg(os.state_code, ', ' ORDER BY os.state_code) as states\n    FROM process_operation o\n    LEFT JOIN process_operation_states os ON o.id = os.operation_id\n    WHERE 1=1\n\"\"\"\n\nparams = {}\n\nif parameters.get('type_code'):\n    SQL += \" AND o.type_code = :type_code\"\n    params['type_code'] = parameters['type_code']\n\nif parameters.get('code'):\n    SQL += \" AND UPPER(o.code) LIKE UPPER(:code)\"\n    params['code'] = f\"%{parameters['code']}%\"\n\nif parameters.get('name'):\n    SQL += \" AND (UPPER(o.name_en) LIKE UPPER(:name) OR UPPER(o.name_ru) LIKE UPPER(:name) OR UPPER(o.name_combined) LIKE UPPER(:name))\"\n    params['name'] = f\"%{parameters['name']}%\"\n\nSQL += \"\"\"\n    GROUP BY o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined,\n             o.icon, o.resource_url, o.availability_condition\n    ORDER BY o.type_code, o.code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, params)\n    data = fetchall(c)\n"
+                        "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined,\n           o.icon, o.resource_url, o.availability_condition,\n           string_agg(s.code, ', ' ORDER BY s.code) as states\n    FROM process_operation o\n    LEFT JOIN process_operation_states os ON o.id = os.operation_id\n    LEFT JOIN process_state s ON os.state_id = s.id\n    WHERE 1=1\n\"\"\"\n\nparams = {}\n\nif parameters.get('type_code'):\n    SQL += \" AND o.type_code = :type_code\"\n    params['type_code'] = parameters['type_code']\n\nif parameters.get('code'):\n    SQL += \" AND UPPER(o.code) LIKE UPPER(:code)\"\n    params['code'] = f\"%{parameters['code']}%\"\n\nif parameters.get('name'):\n    SQL += \" AND (UPPER(o.name_en) LIKE UPPER(:name) OR UPPER(o.name_ru) LIKE UPPER(:name) OR UPPER(o.name_combined) LIKE UPPER(:name))\"\n    params['name'] = f\"%{parameters['name']}%\"\n\nSQL += \"\"\"\n    GROUP BY o.id, o.type_code, o.code, o.name_en, o.name_ru, o.name_combined,\n             o.icon, o.resource_url, o.availability_condition\n    ORDER BY o.type_code, o.code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, params)\n    data = fetchall(c)\n"
                     }
                 }
             }
         }
-    },
-    "method": {
-        "sql": {
-            "sqlType": "query",
-            "database": "colvir_cbs",
-            "sql": "select\n  T_VAL.CODE VAL_CODE,       -- валюта\n  G_ACCBLN.CODE ACC_CODE,    -- корсчетунас\n  G_BNK.CODE BANK,        -- корреспонденткодбанка\n  substr(g_pkgBnk.fGetLongNameBnk_Id(G_BNK.ID),1,250) BANK_NAME\n from \n  T_PROCESS, T_PROCMEM, T_BOP_STAT, T_DEA, T_DEACLS,\n  G_ACCBLN, G_BNK, P_ACCDSC, T_VAL, \n  P_BNKACC, I_BNKREL, I_DEAREL\nwhere\n  I_DEAREL.COR_ID = I_BNKREL.ID\n  and I_BNKREL.ID = P_BNKACC.ID\n  and P_BNKACC.DEP_ID = G_ACCBLN.DEP_ID (+)\n  and P_BNKACC.LINK_ID = G_ACCBLN.ID (+)\n  and P_ACCDSC.ID = P_BNKACC.ACC_ID\n  and T_VAL.ID = P_BNKACC.VAL_ID\n  and I_BNKREL.CLI_ID = G_BNK.ID\n  and I_BNKREL.DEP_ID = T_PROCMEM.DEP_ID and I_BNKREL.ORD_ID = T_PROCMEM.ORD_ID\n  and T_PROCMEM.MAINFL = '1'\n  and T_PROCESS.ID = T_PROCMEM.ID\n  and T_PROCESS.BOP_ID = T_BOP_STAT.ID and T_PROCESS.NSTAT = T_BOP_STAT.NORD\n  and I_BNKREL.DEP_ID = T_DEA.DEP_ID and I_BNKREL.ORD_ID = T_DEA.ID\n  and T_DEA.DCL_ID = T_DEACLS.ID",
-            "params": []
-        },
-        "script": {}
     }
 }

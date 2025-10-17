@@ -71,9 +71,7 @@
                         "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url\n    FROM process_type\n    WHERE 1=1\n\"\"\"\n\nparams = {}\n\nif parameters.get('code'):\n    SQL += \" AND UPPER(code) LIKE UPPER(:code)\"\n    params['code'] = f\"%{parameters['code']}%\"\n\nif parameters.get('name'):\n    SQL += \" AND (UPPER(name_en) LIKE UPPER(:name) OR UPPER(name_ru) LIKE UPPER(:name) OR UPPER(name_combined) LIKE UPPER(:name))\"\n    params['name'] = f\"%{parameters['name']}%\"\n\nSQL += \" ORDER BY code\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, params)\n    data = fetchall(c)\n"
                     }
                 }
-            }
-        }
-    },
+            },
      "method": {
                 "sql": {
                     "sqlType": "query",
@@ -83,4 +81,6 @@
                 },
                 "script": {}
             }
+        }
+    }
 }

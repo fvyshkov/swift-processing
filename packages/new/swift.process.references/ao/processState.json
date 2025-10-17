@@ -98,9 +98,7 @@
                         "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE 1=1\n\"\"\"\n\nparams = {}\n\nif parameters.get('type_code'):\n    SQL += \" AND type_code = :type_code\"\n    params['type_code'] = parameters['type_code']\n\nif parameters.get('code'):\n    SQL += \" AND UPPER(code) LIKE UPPER(:code)\"\n    params['code'] = f\"%{parameters['code']}%\"\n\nif parameters.get('name'):\n    SQL += \" AND (UPPER(name_en) LIKE UPPER(:name) OR UPPER(name_ru) LIKE UPPER(:name) OR UPPER(name_combined) LIKE UPPER(:name))\"\n    params['name'] = f\"%{parameters['name']}%\"\n\nSQL += \" ORDER BY type_code, code\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, params)\n    data = fetchall(c)\n"
                     }
                 }
-            }
-        }
-    },
+            },
     "method": {
         "sql": {
             "sqlType": "query",
@@ -109,5 +107,7 @@
             "params": []
         },
         "script": {}
+    }
+        }
     }
 }

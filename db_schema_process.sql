@@ -151,13 +151,19 @@ CREATE INDEX IF NOT EXISTS idx_process_operation_code
 CREATE TABLE IF NOT EXISTS public.process_operation_states
 (
     operation_id uuid NOT NULL,
-    state_code text NOT NULL,
+    state_id uuid NOT NULL,
 
-    CONSTRAINT process_operation_states_pkey PRIMARY KEY (operation_id, state_code),
+    CONSTRAINT process_operation_states_pkey PRIMARY KEY (operation_id, state_id),
 
     CONSTRAINT process_operation_states_operation_fkey
         FOREIGN KEY (operation_id)
         REFERENCES public.process_operation (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT process_operation_states_state_fkey
+        FOREIGN KEY (state_id)
+        REFERENCES public.process_state (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) TABLESPACE pg_default;
@@ -167,11 +173,13 @@ COMMENT ON TABLE public.process_operation_states IS
 
 COMMENT ON COLUMN public.process_operation_states.operation_id IS
     'Reference to operation (FK to process_operation)';
-COMMENT ON COLUMN public.process_operation_states.state_code IS
-    'State code when operation is available';
+COMMENT ON COLUMN public.process_operation_states.state_id IS
+    'Reference to state (FK to process_state)';
 
 CREATE INDEX IF NOT EXISTS idx_process_operation_states_operation_id
     ON public.process_operation_states(operation_id);
+CREATE INDEX IF NOT EXISTS idx_process_operation_states_state_id
+    ON public.process_operation_states(state_id);
 
 -- ============================================================================
 -- Permissions
