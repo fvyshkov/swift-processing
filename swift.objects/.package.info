@@ -28,6 +28,50 @@
         {
             "model_name": "aoa.Object",
             "model_title": "Прикладной объект",
+            "object_id": "88888888-8888-8888-8888-888888888888",
+            "object_name": "Process Management",
+            "object_attrs": {
+                "code": "processManagement",
+                "name": "Process Management"
+            },
+            "file_name": "ao/processManagement.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+            "object_name": "Process Operation",
+            "object_attrs": {
+                "code": "processOperation",
+                "name": "Process Operation"
+            },
+            "file_name": "ao/processOperation.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+            "object_name": "Process State",
+            "object_attrs": {
+                "code": "processState",
+                "name": "Process State"
+            },
+            "file_name": "ao/processState.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
+            "object_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            "object_name": "Process Type",
+            "object_attrs": {
+                "code": "processType",
+                "name": "Process Type"
+            },
+            "file_name": "ao/processType.json"
+        },
+        {
+            "model_name": "aoa.Object",
+            "model_title": "Прикладной объект",
             "object_id": "33333333-3333-3333-3333-333333333333",
             "object_name": "SWIFT Income",
             "object_attrs": {
@@ -46,6 +90,14 @@
                 "name": "SWIFT Outcome"
             },
             "file_name": "ao/swiftOutcome.json"
+        },
+        {
+            "model_name": "workplace.Workplace",
+            "model_title": "Рабочее место",
+            "object_id": "99999999-9999-9999-9999-999999999999",
+            "object_name": "Process Manager",
+            "object_attrs": null,
+            "file_name": "workplace/process.manager.xml"
         },
         {
             "model_name": "workplace.Workplace",

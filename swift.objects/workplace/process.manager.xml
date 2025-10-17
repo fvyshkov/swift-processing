@@ -1,0 +1,16 @@
+<workplace code="process.manager" name="Process Manager">
+  <menu name="Process Management">
+    <menu name="Document Types" call="/aoa/ObjectListTask">
+      <p name="object" value="processManagement" />
+      <p name="list" value="typeList" />
+    </menu>
+    <menu name="Document States" call="/aoa/ObjectListTask">
+      <p name="object" value="processManagement" />
+      <p name="list" value="stateList" />
+    </menu>
+    <menu name="Document Operations" call="/aoa/ObjectListTask">
+      <p name="object" value="processManagement" />
+      <p name="list" value="operationList" />
+    </menu>
+  </menu>
+</workplace>

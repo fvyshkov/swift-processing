@@ -3,7 +3,7 @@
         "default": {
             "columns": {
                 "imported": {
-                    "title": "Imported",
+                    "title": "Импортирован",
                     "width": 170,
                     "fields": {
                         "imported": {
@@ -11,16 +11,20 @@
                         }
                     }
                 },
-                "snd_name": {
-                    "title": "Sender",
+                "msg_type": {
+                    "title": "Тип",
+                    "width": 170
+                },
+                "msg_type_name": {
+                    "title": "Название",
                     "flex": 1
                 },
-                "rcv_name": {
-                    "title": "Receiver",
-                    "flex": 1
+                "file_name": {
+                    "title": "Файл",
+                    "width": 200
                 },
                 "SDOK": {
-                    "title": "Amount",
+                    "title": "Сумма",
                     "cellStyle": {
                         "textAlign": "right"
                     },
@@ -32,7 +36,7 @@
                     }
                 },
                 "state": {
-                    "title": "State",
+                    "title": "Состояние",
                     "width": 175,
                     "control": "chip",
                     "decode": {
@@ -61,6 +65,7 @@
                 {
                     "title": "View",
                     "icon": "view",
+                    "mini": true,
                     "command": {
                         "type": "task",
                         "call": "/aoa/ObjectTask",
@@ -74,7 +79,7 @@
                     }
                 },
                 {
-                    "title": "runJob",
+                    "title": "Обработка файлов",
                     "icon": "addCircle",
                     "command": {
                         "type": "js",
@@ -82,6 +87,313 @@
                         "title$": "",
                         "disabled$": "!$listRow"
                     }
+                },
+                {
+                    "title": "Journal",
+                    "icon": "history",
+                    "command": {
+                        "type": "task",
+                        "call": "/aoa/ObjectTask",
+                        "title$": "`${_('Application journal')} ${$listRow.appNo}, ${$listRow.cli_name}`",
+                        "params": {
+                            "object": "easyflow",
+                            "form": "objectJournalTask",
+                            "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                        }
+                    },
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Operations",
+                    "split": true,
+                    "actions": [
+                        {
+                            "title": "Demo review",
+                            "command": {
+                                "type": "workflow",
+                                "call": "AI try",
+                                "params": {
+                                    "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                }
+                            }
+                        },
+                        {
+                            "title": "Demo review 2",
+                            "command": {
+                                "type": "workflow",
+                                "call": "AI_TEST_001",
+                                "params": {
+                                    "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                }
+                            }
+                        },
+                        {
+                            "title": "Customer refuse",
+                            "command": {
+                                "call": "APP_DECLINE_CLIENT",
+                                "type": "workflow",
+                                "params": {
+                                    "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                }
+                            },
+                            "confirm": {
+                                "message$": "`${_('Do execute customer refuse for application')} ${$listRow.appNo}?`",
+                                "yes": "Yes",
+                                "no": "No"
+                            },
+                            "visible$": "['CREDEA'].includes($listRow.state)"
+                        },
+                        {
+                            "title": "Cancel review",
+                            "command": {
+                                "call": "APP_CANCEL_REVIEW",
+                                "type": "workflow",
+                                "params": {
+                                    "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                }
+                            },
+                            "confirm": {
+                                "message$": "`${_('Do cancel application review')} ${$listRow.appNo}`",
+                                "yes": "Yes",
+                                "no": "No"
+                            },
+                            "visible$": "['START', 'ON_REVIEW', 'CREDEA'].includes($listRow.state) && user.groups.includes('GO_ADMINS') "
+                        },
+                        {
+                            "title": "Set government decision",
+                            "command": {
+                                "type": "workflow",
+                                "call": "APP_SET_GOVERNMENT",
+                                "params": {
+                                    "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                }
+                            },
+                            "confirm": {
+                                "message$": "`${_('Do set property \"Government decision\" for application')} ${$listRow.appNo}`",
+                                "yes": "Yes",
+                                "no": "No"
+                            },
+                            "visible$": "['START'].includes($listRow.state) && user.groups.includes('LOAN_ADMINS')"
+                        },
+                        {
+                            "title": "Change initiator",
+                            "command": {
+                                "type": "task",
+                                "call": "/aoa/ObjectTask",
+                                "title$": "`${_('Do you want to change application initiator')} ${$listRow.appNo}, ${$listRow.cli_name}?`",
+                                "params": {
+                                    "object": "loanapp",
+                                    "form": "changeInitiator",
+                                    "mem$": "{user: $listRow.created_user, appId: $listRow.appId, objectKey:`loanapp:${$listRow.dep_id},${$listRow.id}`}"
+                                }
+                            },
+                            "visible$": "user.superuser || user.groups.includes('LOAN_ADMINS')"
+                        },
+                        {
+                            "title": "Generate new application Id",
+                            "command": {
+                                "call": "APP_RENEW_ID",
+                                "type": "workflow",
+                                "params": {
+                                    "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                }
+                            },
+                            "confirm": {
+                                "message$": "`${_('Do you want to generate new claim_id')} ${$listRow.appNo}?`",
+                                "yes": "Да",
+                                "no": "Нет"
+                            },
+                            "visible$": "user.superuser"
+                        },
+                        {
+                            "title": "Requests",
+                            "command": {
+                                "type": "task",
+                                "call": "/aoa/ObjectListTask",
+                                "title$": "`${_('Application requests')} ${$listRow.appNo}`",
+                                "params": {
+                                    "object": "ext.request",
+                                    "list": "default",
+                                    "listParams": {
+                                        "app": {
+                                            "dep_id$": "$listRow.dep_id",
+                                            "id$": "$listRow.id"
+                                        }
+                                    }
+                                }
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "Technical information",
+                            "command": {
+                                "type": "js",
+                                "js": "frontend.displayInfo(JSON.stringify($listRow, null, 4));"
+                            },
+                            "disabled$": "!$listRow"
+                        },
+                        {
+                            "title": "Priveliged",
+                            "split": true,
+                            "actions": [
+                                {
+                                    "title": "Reconsideration",
+                                    "command": {
+                                        "type": "js",
+                                        "js": "backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'repeatReview', params: {dep_id: $listRow.dep_id, id: $listRow.id}})"
+                                    }
+                                },
+                                {
+                                    "title": "Delete processes",
+                                    "command": {
+                                        "type": "js",
+                                        "js": "backend.post('/aoa/execObjectMethod', {object: 'loanapp', method: 'cleanReview', params: {dep_id: $listRow.dep_id, id: $listRow.id}})"
+                                    },
+                                    "confirm": {
+                                        "message$": "`Удалить все процессы для заявки ${$listRow.appNo}`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    },
+                                    "visible$": "user.code == 'ASEMENOV' || user.code == 'KMATVEYONOK'"
+                                },
+                                {
+                                    "title": "Link to contract",
+                                    "command": {
+                                        "type": "js",
+                                        "js": "frontend.dialog({object: 'loanapp', form: 'linkToDeaDialog', mem: {}, params: {code: $listRow.appNo, dep_id: $listRow.dep_id, id: $listRow.id} });",
+                                        "disableUpdate": true
+                                    },
+                                    "visible$": "user.superuser || user.groups.includes('LOAN_ADMINS')"
+                                },
+                                {
+                                    "title": "Modify JSON",
+                                    "command": {
+                                        "type": "task",
+                                        "call": "/aoa/ObjectTask",
+                                        "title$": "`Коррекция заявки ${$listRow.appNo}`",
+                                        "params": {
+                                            "object": "app",
+                                            "form": "appEditJsonTask",
+                                            "appKey": {
+                                                "dep_id$": "$listRow.dep_id",
+                                                "id$": "$listRow.id"
+                                            }
+                                        }
+                                    }
+                                }
+                            ],
+                            "visible$": "user.superuser && user.groups.includes('LOAN_ADMINS')"
+                        },
+                        {
+                            "title": "Reregistration",
+                            "split": true,
+                            "actions": [
+                                {
+                                    "title": "Регистрация в ГРКИ онлайн",
+                                    "command": {
+                                        "call": "NIKI_REGISTER_ONLINE",
+                                        "type": "workflow",
+                                        "params": {
+                                            "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`",
+                                            "updateClient": false,
+                                            "localReview": false
+                                        }
+                                    },
+                                    "confirm": {
+                                        "message$": "`Выполнить регистрацию в ГРКИ онлайн заявки ${$listRow.appNo}`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    },
+                                    "visible$": "user.superuser && user.groups.includes('LOAN_ADMINS')"
+                                },
+                                {
+                                    "title": "Регистрация в АСОКИ",
+                                    "command": {
+                                        "call": "KATM_REGISTER",
+                                        "type": "workflow",
+                                        "params": {
+                                            "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`",
+                                            "updateClient": false,
+                                            "localReview": false
+                                        }
+                                    },
+                                    "confirm": {
+                                        "message$": "`Выполнить регистрацию в АСОКИ заявки ${$listRow.appNo}`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    },
+                                    "visible$": "user.superuser && user.groups.includes('LOAN_ADMINS')"
+                                },
+                                {
+                                    "title": "Регистрация отказа в ГРКИ онлайн",
+                                    "command": {
+                                        "call": "NIKI_REJECT_ONLINE",
+                                        "type": "workflow",
+                                        "params": {
+                                            "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                        }
+                                    },
+                                    "confirm": {
+                                        "message$": "`Выполнить регистрацию отказа в ГРКИ онлайн заявки ${$listRow.appNo}`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    },
+                                    "visible$": "user.superuser || user.groups.includes('LOAN_ADMINS')"
+                                },
+                                {
+                                    "title": "Регистрация отказа в АСОКИ",
+                                    "command": {
+                                        "call": "KATM_REJECT",
+                                        "type": "workflow",
+                                        "params": {
+                                            "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                        }
+                                    },
+                                    "confirm": {
+                                        "message$": "`Выполнить регистрацию отказа в АСОКИ заявки ${$listRow.appNo}`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    },
+                                    "visible$": "user.superuser || user.groups.includes('LOAN_ADMINS')"
+                                },
+                                {
+                                    "title": "Изменение атрибутов заявки",
+                                    "command": {
+                                        "type": "workflow",
+                                        "call": "APP_CHANGE_ATTR",
+                                        "params": {
+                                            "objectKey$": "`loanapp:${$listRow.dep_id},${$listRow.id}`"
+                                        }
+                                    },
+                                    "visible$": "['ON_REVIEW', 'CREDEA'].includes($listRow.state) && (user.superuser || user.groups.includes('LOAN_ADMINS'))"
+                                },
+                                {
+                                    "title": "Изменение решения по заявке",
+                                    "command": {
+                                        "js": "frontend.dialog({object: 'app', form: 'modifyDecisionDialog', mem: {}, params: {code: $listRow.appNo, dep_id: $listRow.dep_id, id: $listRow.id} });",
+                                        "disableUpdate": true,
+                                        "visible$": "user.groups.includes('GO_ADMINS') || user.groups.includes('LOAN_ADMINS')"
+                                    }
+                                }
+                            ],
+                            "visible$": "user.superuser || user.groups.includes('LOAN_ADMINS')"
+                        }
+                    ],
+                    "disabled$": "!$listRow"
+                },
+                {
+                    "title": "Delete",
+                    "icon": "delete",
+                    "command": {
+                        "type": "js",
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'app', method: 'deleteApplication', params: {dep_id: $listRow.dep_id, id: $listRow.id}})"
+                    },
+                    "confirm": {
+                        "message$": "`Удалить заявку ${$listRow.appNo}, ${$listRow.cli_name} ?`",
+                        "yes": "Да",
+                        "no": "Нет"
+                    },
+                    "disabled$": "$listRow?.state != 'START'"
                 }
             ],
             "filter": {
@@ -388,10 +700,11 @@
             }
         },
         "transactions": {
+            "getList": "getTransactions",
             "columns": {
                 "bookg_dt": {
-                    "title": "Booking Date",
-                    "width": 120,
+                    "title": "Дата проводки",
+                    "width": 200,
                     "fields": {
                         "bookg_dt": {
                             "format": "date"
@@ -399,8 +712,8 @@
                     }
                 },
                 "val_dt": {
-                    "title": "Value Date",
-                    "width": 120,
+                    "title": "Дата валютирования",
+                    "width": 200,
                     "fields": {
                         "val_dt": {
                             "format": "date"
@@ -408,7 +721,7 @@
                     }
                 },
                 "amount": {
-                    "title": "Amount",
+                    "title": "Сумма",
                     "width": 150,
                     "cellStyle": {
                         "textAlign": "right"
@@ -421,7 +734,7 @@
                     }
                 },
                 "cdt_dbt_ind": {
-                    "title": "C/D",
+                    "title": "Дт/Кт",
                     "width": 60,
                     "control": "chip",
                     "decode": {
@@ -435,9 +748,9 @@
                         }
                     }
                 },
-                "sts_cd": {
-                    "title": "Status",
-                    "width": 80,
+                "sts_cd_name": {
+                    "title": "Статус",
+                    "width": 200,
                     "control": "chip",
                     "decode": {
                         "BOOK": {
@@ -455,55 +768,30 @@
                     }
                 },
                 "bk_tx_codes": {
-                    "title": "Bank Tx Code",
+                    "title": "Банковские коды транзакции",
                     "flex": 1,
                     "fields|": {
                         "bk_tx_cd_domn_cd": {},
                         "bk_tx_cd_fmly_cd": {},
                         "bk_tx_cd_sub_fmly_cd": {}
-                    },
-                    "format": "template",
-                    "template": "{bk_tx_cd_domn_cd}/{bk_tx_cd_fmly_cd}/{bk_tx_cd_sub_fmly_cd}"
-                },
-                "ntry_ref": {
-                    "title": "Entry Ref",
-                    "width": 150
+                    }
                 }
             },
             "id": "id",
-            "method": "getTransactionsList",
-            "passObjectKey": true,
             "actions": [
                 {
-                    "title": "Refresh",
-                    "icon": "refresh",
-                    "mini": true,
-                    "command": {
-                        "type": "standard",
-                        "call": "refresh"
-                    }
-                },
-                {
-                    "title": "View Details",
+                    "title": "",
                     "icon": "view",
                     "command": {
                         "type": "task",
                         "call": "/aoa/ObjectTask",
-                        "title$": "Transaction Details",
+                        "title$": "",
                         "params": {
                             "object": "swiftIncome",
-                            "form": "transactionDetail",
+                            "form": "trnForm",
                             "objectKey$": "{id: $listRow.id}"
                         },
                         "disabled$": "!$listRow"
-                    }
-                },
-                {
-                    "title": "Close",
-                    "icon": "close",
-                    "command": {
-                        "type": "standard",
-                        "call": "close"
                     }
                 }
             ]
@@ -524,40 +812,21 @@
                         "overflow": "auto"
                     },
                     "form": "detail053",
-                    "$": {
-                        "viewTransactionsBtn": {
-                            "control": "button",
-                            "title": "View Transactions",
-                            "icon": "list",
-                            "style": {
-                                "marginTop": "16px"
-                            },
-                            "command": {
-                                "type": "task",
-                                "call": "/aoa/ObjectTask",
-                                "title": "Statement Transactions",
-                                "params": {
-                                    "object": "swiftIncome",
-                                    "list": "transactions",
-                                    "objectKey$": "{swift_input_id: $formData.id}"
-                                }
-                            },
-                            "visible$": "$formData.msg_type === 'camt.053'"
-                        }
-                    }
+                    "visible$": "mem.file?.msg_type && mem.file.msg_type=='camt.053'"
                 },
                 "@form": {
                     "style": {
                         "padding": "8px",
                         "overflow": "auto"
                     },
-                    "form": "editFormInner"
+                    "form": "editFormInner",
+                    "visible$": "mem.file?.msg_type && mem.file.msg_type=='pacs.008'"
                 }
             },
             "actions": {
                 "onTaskCreated": [
                     {
-                        "js": "return !task.params?.componentPath && task.params?.objectKey && backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'get', params: {...task.params.objectKey}}).then((r)=>{mem.file=r; mem.record=r; mem.out_fields =r;if(!task.params.taskId)action({name: 'onSetTaskTitle'});  forceUpdate();})"
+                        "js": "return !task.params?.componentPath && task.params?.objectKey && backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'get', params: {...task.params.objectKey}}).then((r)=>{mem.file=r; mem.record=r; mem.out_fields =r;if(!task.params.taskId)action({name: 'onSetTaskTitle'});  forceUpdate(); })"
                     },
                     {
                         "js": "if(task.params.app){mem.app = task.params.app} else if(!task.params?.componentPath && !task.params?.objectKey){mem.app = task.data.forms}"
@@ -566,9 +835,14 @@
                         "js": "context.readOnly = (task.params && 'readOnly' in task.params)?task.params.readOnly : mem.app?.state && mem.app?.state != 'START'"
                     }
                 ],
-                "onSetTaskTitle": {
-                    "js": "tm.setTaskTitle(task.key, `Payment`);"
-                }
+                "onSetTaskTitle": [
+                    {
+                        "js": "console.log('MMM', mem);"
+                    },
+                    {
+                        "js": "tm.setTaskTitle(task.key, `${mem.record.msg_type_name} ${mem.record.msg_id || mem.record.code}`);"
+                    }
+                ]
             }
         },
         "editFormInner": {
@@ -1108,28 +1382,14 @@
                             "controlOpts": {
                                 "actions": [
                                     {
-                                        "title": "",
-                                        "icon": "save",
+                                        "title": "Транзакции",
+                                        "icon": "view",
                                         "mini": false,
                                         "action": [
                                             {
-                                                "js": "if (!validate()){throw 'Abort';}"
-                                            },
-                                            {
-                                                "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'save', params: {app: mem}}).then((r)=>{ tm.setTaskTitle(task.key, `Paymment`); })"
-                                            },
-                                            {
-                                                "js": "frontend.closeTask()"
+                                                "js": "console.log('M', mem);tm.newTask({path: '/aoa/ObjectListTask', title: 'Транзакции', params: {getList: 'getTransactions', object: 'swiftIncome', list: 'transactions', listParams: {app: {input_id:mem.file.id}}}})"
                                             }
                                         ]
-                                    },
-                                    {
-                                        "title": "",
-                                        "icon": "view",
-                                        "mini": false,
-                                        "action": {
-                                            "name": "saveUser"
-                                        }
                                     }
                                 ]
                             }
@@ -1161,12 +1421,20 @@
                                                 "width": "860px"
                                             },
                                             "$": {
-                                                "dval": {
-                                                    "label": "Создана",
+                                                "msg_type": {
+                                                    "label": "Тип",
+                                                    "style": {
+                                                        "width": "100px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly$": true
+                                                },
+                                                "msg_type_name": {
+                                                    "label": "Наименование",
                                                     "style": {
                                                         "width": "200px"
                                                     },
-                                                    "control": "DateEdit",
+                                                    "control": "TextEdit",
                                                     "readOnly$": true
                                                 },
                                                 "imported": {
@@ -1177,26 +1445,14 @@
                                                     "control": "DateEdit",
                                                     "readOnly$": true
                                                 },
-                                                "code": {
+                                                "msg_id": {
                                                     "label": "Номер",
                                                     "style": {
-                                                        "width": "250px"
+                                                        "width": "350px"
                                                     },
                                                     "control": "TextEdit",
                                                     "readOnly$": true
                                                 }
-                                            }
-                                        },
-                                        "message": {
-                                            "label": "message",
-                                            "readOnly$": true,
-                                            "style": {
-                                                "width": "860px"
-                                            },
-                                            "control": "TextEdit",
-                                            "controlProps": {
-                                                "multiline": true,
-                                                "minRows": 1
                                             }
                                         }
                                     }
@@ -1223,7 +1479,7 @@
                                                 "width": "860px"
                                             },
                                             "$": {
-                                                "snd_acc": {
+                                                "acct_id": {
                                                     "label": "Номер счета",
                                                     "readOnly$": true,
                                                     "style": {
@@ -1231,7 +1487,7 @@
                                                     },
                                                     "control": "TextEdit"
                                                 },
-                                                "snd_acc_val": {
+                                                "acct_ccy": {
                                                     "label": "Валюта",
                                                     "readOnly$": true,
                                                     "style": {
@@ -1277,78 +1533,12 @@
                                 }
                             }
                         },
-                        "@dossier": {
+                        "@bal": {
                             "object": "swiftIncome",
                             "form": "balForm"
                         },
-                        "@receiver": {
-                            "title": "Список балансов-",
-                            "className": "vertical",
-                            "style": {
-                                "padding": "4px"
-                            },
-                            "$": {
-                                "record": {
-                                    "className": "vertical",
-                                    "style": {
-                                        "padding": "4px",
-                                        "margin-top": "10px"
-                                    },
-                                    "$": {
-                                        "@bank-send": {
-                                            "className": "horizontal",
-                                            "style": {
-                                                "width": "860px"
-                                            },
-                                            "$": {
-                                                "rcv_bank": {
-                                                    "label": "Bank",
-                                                    "readOnly$": true,
-                                                    "style": {
-                                                        "width": "490px"
-                                                    },
-                                                    "control": "TextEdit"
-                                                },
-                                                "rcv_bank_name": {
-                                                    "label": "Bank Name",
-                                                    "readOnly$": true,
-                                                    "style": {
-                                                        "width": "660px"
-                                                    },
-                                                    "control": "TextEdit"
-                                                }
-                                            }
-                                        },
-                                        "@rcv": {
-                                            "className": "horizontal",
-                                            "style": {
-                                                "width": "860px"
-                                            },
-                                            "$": {
-                                                "rcv_acc": {
-                                                    "label": "Account",
-                                                    "readOnly$": true,
-                                                    "style": {
-                                                        "width": "490px"
-                                                    },
-                                                    "control": "TextEdit"
-                                                },
-                                                "rcv_name": {
-                                                    "label": "Name",
-                                                    "readOnly$": true,
-                                                    "style": {
-                                                        "width": "660px"
-                                                    },
-                                                    "control": "TextEdit"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
                         "@record-1": {
-                            "title": "Additional",
+                            "title": "Дополнительно",
                             "className": "vertical",
                             "style": {
                                 "padding": "4px"
@@ -1368,7 +1558,7 @@
                                             },
                                             "$": {
                                                 "state": {
-                                                    "label": "State",
+                                                    "label": "Состояние",
                                                     "control": "TextEdit",
                                                     "style": {
                                                         "width": "490px"
@@ -1376,7 +1566,7 @@
                                                     "readOnly$": true
                                                 },
                                                 "file_name": {
-                                                    "label": "File Name",
+                                                    "label": "Файл",
                                                     "style": {
                                                         "width": "660px"
                                                     },
@@ -1386,7 +1576,7 @@
                                             }
                                         },
                                         "error": {
-                                            "label": "Error",
+                                            "label": "Ошибка обработки",
                                             "readOnly$": true,
                                             "style": {
                                                 "width": "860px"
@@ -1414,45 +1604,6 @@
                             }
                         }
                     }
-                },
-                "@buttons": {
-                    "className": "horizontal",
-                    "style": {
-                        "justifyContent": "end"
-                    },
-                    "$": {
-                        "btnCancel": {
-                            "label": "Cancel",
-                            "control": "Button",
-                            "controlProps": {
-                                "variant": "outlined",
-                                "color": "primary"
-                            },
-                            "action": {
-                                "js": "frontend.closeTask()",
-                                "disableUpdate": true
-                            }
-                        },
-                        "btnApply": {
-                            "label": "Save",
-                            "control": "Button",
-                            "controlProps": {
-                                "variant": "contained",
-                                "color": "primary"
-                            },
-                            "action": [
-                                {
-                                    "js": "if (!validate()){throw 'Abort';}"
-                                },
-                                {
-                                    "js": "return backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'save', params: {app: mem}}).then((r)=>{ tm.setTaskTitle(task.key, `Paymment`); })"
-                                },
-                                {
-                                    "js": "frontend.closeTask()"
-                                }
-                            ]
-                        }
-                    }
                 }
             }
         },
@@ -1460,7 +1611,7 @@
             "title": "Список балансов+",
             "$": {
                 "@dossier": {
-                    "title": "Досье",
+                    "title": "Балансы",
                     "titleClass": "navigated-title",
                     "className": "vertical navigated-content",
                     "style": {
@@ -1476,30 +1627,38 @@
                                 "id": "docType",
                                 "refreshEvent": "onRefreshDossier",
                                 "columns!": {
-                                    "name": {
+                                    "tp_cd": {
                                         "label": "Тип",
-                                        "flex": 1
-                                    },
-                                    "date": {
-                                        "label": "Дата",
-                                        "width": "200px"
-                                    },
-                                    "amount": {
-                                        "label": "Amount",
                                         "style": {
-                                            "width": "300px"
-                                        },
-                                        "control": "CurrencyField",
-                                        "controlOpts": {
-                                            "currencyAttr": "currency_code"
-                                        },
-                                        "readOnly$": true
+                                            "width": "100px"
+                                        }
+                                    },
+                                    "dt": {
+                                        "label": "Дата",
+                                        "style": {
+                                            "width": "150px"
+                                        }
+                                    },
+                                    "amt": {
+                                        "label": "Сумма"
+                                    },
+                                    "amt_ccy": {
+                                        "label": "Валюта",
+                                        "style": {
+                                            "width": "100px"
+                                        }
+                                    },
+                                    "cdt_dbt_ind": {
+                                        "label": "Дт/Кр",
+                                        "style": {
+                                            "width": "100px"
+                                        }
                                     }
                                 }
                             },
                             "actions": {
                                 "onGetRows": {
-                                    "js": "if (context.dossier && !params.docType){onSuccess(context.dossier)}else{backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'getList', params: {id: mem.id}}).then((r)=>{if(params.docType){const d = context.dossier.find((e)=>e.docType==params.docType); context.dossier.splice(context.dossier.indexOf(d), 1, r[0]);}else{context.dossier = r;} onSuccess(r);})}"
+                                    "js": "setTimeout(() => {const id = mem.record?.id; console.log('ID=', id); if (context.bal) { onSuccess(context.bal); } else { backend.post('/aoa/execObjectMethod', { object: 'swiftIncome', method: 'getBalList', params: { id: id } }).then((r) => { context.bal = r; onSuccess(r); }); }}, 1000); "
                                 }
                             }
                         }
@@ -1507,212 +1666,154 @@
                 }
             }
         },
-        "transactionDetail": {
-            "title": "Transaction Details",
+        "trnForm": {
+            "title": "Statement",
             "className": "vertical",
             "style": {
-                "width": "900px"
+                "width": "860px"
             },
-            "method": "getTransaction",
             "$": {
                 "@form": {
                     "className": "vertical",
                     "style": {
-                        "flex": "1",
-                        "overflow": "auto",
-                        "padding": "16px"
+                        "padding": "4px"
                     },
                     "$": {
-                        "entry_header": {
-                            "control": "fieldset",
-                            "title": "Entry Information",
-                            "$": {
-                                "row1": {
-                                    "className": "horizontal",
-                                    "$": {
-                                        "ntry_ref": {
-                                            "control": "textbox",
-                                            "title": "Entry Reference",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "acct_svcr_ref": {
-                                            "control": "textbox",
-                                            "title": "Account Servicer Ref",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        }
-                                    }
-                                },
-                                "row2": {
-                                    "className": "horizontal",
-                                    "$": {
-                                        "amt": {
-                                            "control": "textbox",
-                                            "title": "Amount",
-                                            "style": {
-                                                "width": "150px"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "amt_ccy": {
-                                            "control": "textbox",
-                                            "title": "Currency",
-                                            "style": {
-                                                "width": "100px"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "cdt_dbt_ind": {
-                                            "control": "textbox",
-                                            "title": "C/D Indicator",
-                                            "style": {
-                                                "width": "120px"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "sts_cd": {
-                                            "control": "textbox",
-                                            "title": "Status",
-                                            "style": {
-                                                "width": "100px"
-                                            },
-                                            "readOnly": true
-                                        }
-                                    }
-                                },
-                                "row3": {
-                                    "className": "horizontal",
-                                    "$": {
-                                        "bookg_dt": {
-                                            "control": "textbox",
-                                            "title": "Booking Date",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "val_dt": {
-                                            "control": "textbox",
-                                            "title": "Value Date",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        }
-                                    }
-                                },
-                                "row4": {
-                                    "className": "horizontal",
-                                    "$": {
-                                        "bk_tx_cd_domn_cd": {
-                                            "control": "textbox",
-                                            "title": "Domain Code",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "bk_tx_cd_fmly_cd": {
-                                            "control": "textbox",
-                                            "title": "Family Code",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        },
-                                        "bk_tx_cd_sub_fmly_cd": {
-                                            "control": "textbox",
-                                            "title": "SubFamily Code",
-                                            "style": {
-                                                "flex": "1"
-                                            },
-                                            "readOnly": true
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "tx_details_section": {
-                            "control": "fieldset",
-                            "title": "Transaction Details",
+                        "@info": {
+                            "className": "vertical",
                             "style": {
-                                "marginTop": "16px",
-                                "minHeight": "300px"
+                                "padding": "4px"
                             },
                             "$": {
-                                ".tx_details": {
-                                    "control": "ListTable",
-                                    "getter": "$formData.tx_details",
-                                    "controlOpts": {
-                                        "rowModelType": "clientSide",
-                                        "columns!": {
-                                            "instr_id": {
-                                                "label": "Instr ID",
-                                                "width": "150px"
+                                "record": {
+                                    "className": "vertical",
+                                    "style": {
+                                        "padding": "4px",
+                                        "margin-top": "10px"
+                                    },
+                                    "$": {
+                                        "@cost": {
+                                            "className": "horizontal",
+                                            "style": {
+                                                "width": "860px"
                                             },
-                                            "end_to_end_id": {
-                                                "label": "E2E ID",
-                                                "width": "150px"
-                                            },
-                                            "uetr": {
-                                                "label": "UETR",
-                                                "width": "200px"
-                                            },
-                                            "amt": {
-                                                "label": "Amount",
-                                                "width": "120px"
-                                            },
-                                            "amt_ccy": {
-                                                "label": "Ccy",
-                                                "width": "60px"
-                                            },
-                                            "dbtr_nm": {
-                                                "label": "Debtor",
-                                                "flex": 1
-                                            },
-                                            "cdtr_nm": {
-                                                "label": "Creditor",
-                                                "flex": 1
-                                            },
-                                            "rmt_inf_ustrd": {
-                                                "label": "Remittance Info",
-                                                "flex": 1
+                                            "$": {
+                                                "cdt_dbt_ind": {
+                                                    "label": "Дт/Кт",
+                                                    "style": {
+                                                        "width": "100px"
+                                                    },
+                                                    "control": "TextEdit",
+                                                    "readOnly$": true
+                                                },
+                                                "amt": {
+                                                    "label": "Сумма",
+                                                    "style": {
+                                                        "width": "300px"
+                                                    },
+                                                    "control": "CurrencyField",
+                                                    "controlOpts": {
+                                                        "currencyAttr": "amt_ccy"
+                                                    },
+                                                    "readOnly$": true
+                                                },
+                                                "val_dt": {
+                                                    "label": "Дата",
+                                                    "style": {
+                                                        "width": "200px"
+                                                    },
+                                                    "control": "DateEdit",
+                                                    "readOnly$": true
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+                        },
+                        "@bal": {
+                            "object": "swiftIncome",
+                            "form": "trnDtlForm"
                         }
                     }
-                },
-                "@buttons": {
-                    "className": "horizontal",
+                }
+            },
+            "actions": {
+                "onTaskCreated": [
+                    {
+                        "js": "return !task.params?.componentPath && task.params?.objectKey && backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'getTransactions', params: {...task.params.objectKey}}).then((r)=>{console.log('r',r);mem.file; mem.record=r; mem.out_fields =r;if(!task.params.taskId)action({name: 'onSetTaskTitle'});  forceUpdate();})"
+                    },
+                    {
+                        "js": "if(task.params.app){mem.app = task.params.app} else if(!task.params?.componentPath && !task.params?.objectKey){mem.app = task.data.forms}"
+                    },
+                    {
+                        "js": "context.readOnly = (task.params && 'readOnly' in task.params)?task.params.readOnly : mem.app?.state && mem.app?.state != 'START'"
+                    }
+                ],
+                "onSetTaskTitle": {
+                    "js": "tm.setTaskTitle(task.key, `Транзакция`);"
+                }
+            }
+        },
+        "trnDtlForm": {
+            "title": "Список балансов+",
+            "$": {
+                "@dossier": {
+                    "title": "Детали",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
                     "style": {
-                        "justifyContent": "flex-end",
-                        "padding": "8px 16px",
-                        "borderTop": "1px solid #ddd"
+                        "width": "860px"
                     },
                     "$": {
-                        "actions": {
-                            "$": {
-                                "actions": [
-                                    {
-                                        "title": "Close",
-                                        "icon": "close",
-                                        "command": {
-                                            "type": "standard",
-                                            "call": "close"
+                        ".dossier": {
+                            "control": "ListTable",
+                            "controlProps": {},
+                            "getter": "params.changepoint",
+                            "controlOpts": {
+                                "rowModelType": "infinite",
+                                "id": "docType",
+                                "refreshEvent": "onRefreshDossier",
+                                "columns!": {
+                                    "trad_dt": {
+                                        "label": "Дата",
+                                        "style": {
+                                            "width": "150px"
+                                        }
+                                    },
+                                    "amt": {
+                                        "label": "Сумма"
+                                    },
+                                    "amt_ccy": {
+                                        "label": "Валюта",
+                                        "style": {
+                                            "width": "100px"
+                                        }
+                                    },
+                                    "cdt_dbt_ind": {
+                                        "label": "Дт/Кр",
+                                        "style": {
+                                            "width": "100px"
+                                        }
+                                    },
+                                    "cdtr_acct_iban": {
+                                        "label": "Счет Кт",
+                                        "style": {
+                                            "width": "100px"
+                                        }
+                                    },
+                                    "dbtr_acct_iban": {
+                                        "label": "Счет Дт",
+                                        "style": {
+                                            "width": "100px"
                                         }
                                     }
-                                ]
+                                }
                             },
-                            "style": {
-                                "gap": "8px"
+                            "actions": {
+                                "onGetRows": {
+                                    "js": "setTimeout(() => {const id = mem.record?.id; console.log('ID=', id); if (context.bal) { onSuccess(context.bal); } else { backend.post('/aoa/execObjectMethod', { object: 'swiftIncome', method: 'getTrnDtl', params: { id: id } }).then((r) => { context.bal = r; onSuccess(r); }); }}, 1000); "
+                                }
                             }
                         }
                     }
@@ -1723,15 +1824,25 @@
     "methods": {
         "getList": {
             "script": {
-                "py": "# Get all records from simple_list table\nfrom apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nfrom apng_core.aoa.services.filter import applyFilterModel, applyFilterModel2\nfrom datetime import datetime\nfrom django.utils.timezone import make_aware\n\nSQL = \"\"\"\n    SELECT *\n    FROM swift_input\n    WHERE 1=1\n\n\"\"\"\n\ndef parseDT(s):\n    return make_aware(datetime.strptime(s, '%d.%m.%Y %H:%M:%S'))\n\n\n\n\nfilterModel2 = parameters.get('request', {}).get('filterModel2')\n\nfilterDef = None\n\nif filterModel2:\n    from apng_core.aoa.services import filter as aoa\n    filterDef = aoa.buildFilterSql({\n        'objectCode': 'swiftIncome',\n        'filterData': filterModel2\n    })\n    #raise Exception (filterDef['sql'])\n    SQL =  'select * from (' + SQL + ') '+ filterDef['sql']\n    \n    #raise Exception (rawSQL)\n    #queryParams = {\n    #    **queryParams,\n    #    **filterDef['params']\n    #}\n\n    #raise Exception(filterDef['params'])                \n\"\"\"                \nif filterModel2:\n    if 'fromDate' in filterModel2:\n        SQL += f\" and imported >= \\'{parseDT(filterModel2[\\'fromDate\\])}\\'\"\n        \n    if 'toDate' in filterModel2:\n        SQL += f\" and imported <= \\'{parseDT(filterModel2[\\'toDate\\])}\\'\"\n\"\"\n\n\"\"\"\n#raise Exception(SQL)\n\nSQL += \" ORDER BY Imported DESC\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        if filterDef is not None:\n            c.execute(SQL, filterDef['params'])\n        else:\n            c.execute(SQL)\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching records',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n"
+                "py": "from apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nfrom apng_core.aoa.services.filter import applyFilterModel, applyFilterModel2\nfrom datetime import datetime\nfrom django.utils.timezone import make_aware\n\nSQL = \"\"\"\n\nselect\n  si.id,\n  si.imported,\n  coalesce(\n    si.amount,\n    (\n      select sum(sn.amt)\n      from swift_stmt_ntry sn\n      where sn.swift_input_id = si.id\n    )\n  ) as amount,\n  coalesce(\n    si.currency_code,\n      (\n        select sn.amt_ccy\n        from swift_stmt_ntry sn\n        where sn.swift_input_id = si.id\n        limit 1\n      )\n  ) as currency_code,\n  state,\n  msg_type,\n  mt.name_ru msg_type_name,\n  file_name\nfrom swift_input si, ref_message_types mt\nwhere si.msg_type = mt.code\n\n\n\"\"\"\n\ndef parseDT(s):\n    return make_aware(datetime.strptime(s, '%d.%m.%Y %H:%M:%S'))\n\n\n\nfilterModel2 = parameters.get('request', {}).get('filterModel2')\nfilterDef = None\n\nif filterModel2:\n    from apng_core.aoa.services import filter as aoa\n    filterDef = aoa.buildFilterSql({\n        'objectCode': 'swiftIncome',\n        'filterData': filterModel2\n    })\n    SQL =  'select * from (' + SQL + ') '+ filterDef['sql']\n\nSQL += \" ORDER BY Imported DESC\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        if filterDef is not None:\n            c.execute(SQL, filterDef['params'])\n        else:\n            c.execute(SQL)\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching records',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n\n      \n"
             },
             "sql": {}
         },
         "get": {
             "script": {
-                "py": "# Get single record by ID\nfrom apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    SELECT *\n    FROM swift_input\n    WHERE id = %(id)s\n\"\"\"\n\n#raise Exception(parameters)\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = fetchone(c)\n        if not data:\n            raise UserException('Record not found')\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching record',\n            'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'id': parameters.get('id')})\n        }).withError(e)\n"
+                "py": "# Get single record by ID\nfrom apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    SELECT  si.*, \n            mt.name_ru msg_type_name\n    from swift_input si, ref_message_types mt\n    where si.msg_type = mt.code\n    and id = %(id)s\n\"\"\"\n\n#raise Exception(parameters)\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = fetchone(c)\n        if not data:\n            raise UserException('Record not found')\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching record',\n            'description': 'SQL:\\n%s\\nparams: %s' % (SQL, {'id': parameters.get('id')})\n        }).withError(e)\n"
             },
             "sql": {}
+        },
+        "DATABASE_UPDATE": {
+            "sql": {
+                "sqlType": "query",
+                "database": "default",
+                "sql": "\n"
+            },
+            "script": {
+                "py": "-- Table: public.swift_input\n\n-- DROP TABLE IF EXISTS public.swift_input;\n\nCREATE TABLE IF NOT EXISTS public.swift_input\n(\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    file_name text COLLATE pg_catalog.\"default\" NOT NULL,\n    status text COLLATE pg_catalog.\"default\" NOT NULL,\n    content text COLLATE pg_catalog.\"default\",\n    imported timestamp without time zone DEFAULT now(),\n    content_out text COLLATE pg_catalog.\"default\",\n    error text COLLATE pg_catalog.\"default\",\n    txt_ben text COLLATE pg_catalog.\"default\",\n    txt_pay text COLLATE pg_catalog.\"default\",\n    nsdok numeric,\n    val_code text COLLATE pg_catalog.\"default\",\n    dval timestamp without time zone,\n    CONSTRAINT swift_input_job_item_pkey PRIMARY KEY (id)\n)\n\nTABLESPACE pg_default;\n\nALTER TABLE IF EXISTS public.swift_input\n    OWNER to postgres;\n\nGRANT ALL ON TABLE public.swift_input TO apng;\n\nGRANT ALL ON TABLE public.swift_input TO postgres;"
+            }
         },
         "getSettings": {
             "script": {
@@ -1740,7 +1851,7 @@
         },
         "saveSettings": {
             "script": {
-                "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n  if parameters.get('id'):\n    SQL = 'UPDATE swift_settings SET folder_in=%(folder_in)s, folder_out=%(folder_out)s, server=%(server)s WHERE id=%(id)s RETURNING id::text AS id'\n    params = {'id': parameters.get('id'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'server': parameters.get('server')}\n  else:\n    SQL = 'INSERT INTO swift_settings(folder_in, folder_out, active) VALUES(%(folder_in)s, %(folder_out)s, %(server)s) RETURNING id::text AS id'\n    params = {'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'server': parameters.get('server')}\n  try:\n    c.execute(SQL, params)\n    data = fetchone(c)\n  except Exception as e:\n    raise UserException({'message': 'Error saving settings'}).withError(e)\n"
+                "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\n\nwith initDbSession(database='default').cursor() as c:\n  if parameters.get('id'):\n    SQL = 'UPDATE swift_settings SET folder_in=%(folder_in)s, folder_out=%(folder_out)s, server=%(server)s WHERE id=%(id)s RETURNING id::text AS id'\n    params = {'id': parameters.get('id'), 'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'server': parameters.get('server')}\n  else:\n    SQL = 'INSERT INTO swift_settings(folder_in, folder_out, server) VALUES(%(folder_in)s, %(folder_out)s, %(server)s) RETURNING id::text AS id'\n    params = {'folder_in': parameters.get('folder_in'), 'folder_out': parameters.get('folder_out'), 'server': parameters.get('server')}\n  try:\n    c.execute(SQL, params)\n    data = fetchone(c)\n  except Exception as e:\n    raise UserException({'message': 'Error saving settings'}).withError(e)\n"
             },
             "sql": {}
         },
@@ -1755,26 +1866,21 @@
                 "py": "from apng_core.db import fetchone\nfrom apng_core.exceptions import UserException\nfrom apng_core.auth import getUser\n\nwith initDbSession(database='default').cursor() as c:\n    SQL = \"\"\"\n            \n            update swift_input set\n            snd_mid_bank = %(snd_mid_bank)s,\n            snd_mid_bank_name = %(snd_mid_bank_name)s,\n            snd_mid_bank_acc = %(snd_mid_bank_acc)s,\n            snd_mid_bank_acc_val = %(snd_mid_bank_acc_val)s\n            where id = %(id)s;\n    \"\"\"\n    try:\n      c.execute(SQL, { \n                        'id': parameters.get('app').get('record').get('id'), \n                        'snd_mid_bank': parameters.get('app').get('out_fields').get('snd_mid_bank'), \n                        'snd_mid_bank_name': parameters.get('app').get('out_fields').get('snd_mid_bank_name'), \n                        'snd_mid_bank_acc': parameters.get('app').get('out_fields').get('snd_mid_bank_acc'), \n                        'snd_mid_bank_acc_val': parameters.get('app').get('out_fields').get('snd_mid_bank_acc_val') \n          \n      })\n    except Exception as e:\n      raise UserException({'message': str(e)})\n"
             }
         },
-        "DB_CREATE": {
-            "sql": {
-                "sqlType": "query",
-                "database": "default",
-                "sql": "\n"
-            },
+        "getBalList": {
+            "sql": {},
             "script": {
-                "py": "-- ============================================================================\n-- SWIFT ISO 20022 Message Storage Schema\n-- Parent table: swift_input (incoming SWIFT messages)\n-- Child tables: balances, entries, transaction details\n-- Additional tables: settings, output fields\n-- ============================================================================\n\n-- Drop existing tables (in correct order due to FK constraints)\nDROP TABLE IF EXISTS public.swift_entry_tx_dtls CASCADE;\nDROP TABLE IF EXISTS public.swift_stmt_ntry CASCADE;\nDROP TABLE IF EXISTS public.swift_stmt_bal CASCADE;\nDROP TABLE IF EXISTS public.swift_out_fields CASCADE;\nDROP TABLE IF EXISTS public.swift_settings CASCADE;\nDROP TABLE IF EXISTS public.swift_input CASCADE;\n\n-- ============================================================================\n-- Parent Table: swift_input\n-- Stores incoming SWIFT messages (pacs.008, pacs.009, camt.053, camt.054, etc.)\n-- ============================================================================\nCREATE TABLE IF NOT EXISTS public.swift_input\n(\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    file_name text COLLATE pg_catalog.\"default\" NOT NULL,\n    state text COLLATE pg_catalog.\"default\" NOT NULL,\n    content text COLLATE pg_catalog.\"default\",\n    imported timestamp without time zone DEFAULT now(),\n    error text COLLATE pg_catalog.\"default\",\n\n    -- Message identification\n    msg_id text COLLATE pg_catalog.\"default\",\n    msg_def_idr text COLLATE pg_catalog.\"default\",\n    msg_type text COLLATE pg_catalog.\"default\",\n    cre_dt_tm timestamp without time zone,\n\n    -- Statement identification (for camt.053/054)\n    stmt_id text COLLATE pg_catalog.\"default\",\n    elctrnc_seq_nb numeric,\n\n    -- Account information\n    acct_id text COLLATE pg_catalog.\"default\",\n    acct_ccy text COLLATE pg_catalog.\"default\",\n\n    -- Transaction summary\n    amount numeric,\n    currency_code text COLLATE pg_catalog.\"default\",\n    dval timestamp without time zone,\n\n    -- Payment details\n    message text COLLATE pg_catalog.\"default\",\n    code text COLLATE pg_catalog.\"default\",\n\n    -- Debtor (Sender) information\n    snd_acc text COLLATE pg_catalog.\"default\",\n    snd_name text COLLATE pg_catalog.\"default\",\n    snd_bank text COLLATE pg_catalog.\"default\",\n    snd_bank_name text COLLATE pg_catalog.\"default\",\n    snd_mid_bank text COLLATE pg_catalog.\"default\",\n    snd_mid_bank_name text COLLATE pg_catalog.\"default\",\n    snd_mid_bank_acc text COLLATE pg_catalog.\"default\",\n\n    -- Creditor (Receiver) information\n    rcv_acc text COLLATE pg_catalog.\"default\",\n    rcv_name text COLLATE pg_catalog.\"default\",\n    rcv_bank text COLLATE pg_catalog.\"default\",\n    rcv_bank_name text COLLATE pg_catalog.\"default\",\n\n    CONSTRAINT swift_input_pkey PRIMARY KEY (id),\n\n    CONSTRAINT swift_input_msg_type_check\n        CHECK (msg_type IN ('pacs.008', 'pacs.009', 'camt.053', 'camt.054', 'camt.056', NULL))\n)\nTABLESPACE pg_default;\n\nCREATE INDEX IF NOT EXISTS idx_swift_input_msg_id\n    ON public.swift_input(msg_id);\nCREATE INDEX IF NOT EXISTS idx_swift_input_msg_type\n    ON public.swift_input(msg_type);\nCREATE INDEX IF NOT EXISTS idx_swift_input_stmt_id\n    ON public.swift_input(stmt_id);\nCREATE INDEX IF NOT EXISTS idx_swift_input_state\n    ON public.swift_input(state);\nCREATE INDEX IF NOT EXISTS idx_swift_input_imported\n    ON public.swift_input(imported);\nCREATE INDEX IF NOT EXISTS idx_swift_input_dval\n    ON public.swift_input(dval);\n\nCOMMENT ON TABLE public.swift_input IS\n    'Parent table for incoming SWIFT ISO 20022 messages (pacs.008, pacs.009, camt.053, camt.054, camt.056)';\n\n-- ============================================================================\n-- Settings Table: swift_settings\n-- Stores system settings for SWIFT processing\n-- ============================================================================\nCREATE TABLE IF NOT EXISTS public.swift_settings\n(\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    folder_in text COLLATE pg_catalog.\"default\" NOT NULL,\n    folder_out text COLLATE pg_catalog.\"default\" NOT NULL,\n    server text COLLATE pg_catalog.\"default\",\n    CONSTRAINT swift_settings_pkey PRIMARY KEY (id)\n)\nTABLESPACE pg_default;\n\nCOMMENT ON TABLE public.swift_settings IS\n    'System settings for SWIFT message processing (input/output folders, server configuration)';\n\n-- Insert default settings\nINSERT INTO public.swift_settings (folder_in, folder_out, server)\nVALUES ('/mnt/apng-swift/in', '/mnt/apng-swift/out', 'default')\nON CONFLICT DO NOTHING;\n\n-- ============================================================================\n-- Output Fields Table: swift_out_fields\n-- Stores additional output fields for departments\n-- ============================================================================\nCREATE TABLE IF NOT EXISTS public.swift_out_fields\n(\n    dep_id integer NOT NULL,\n    id integer NOT NULL,\n    field1 text COLLATE pg_catalog.\"default\",\n    field2 text COLLATE pg_catalog.\"default\",\n    modified timestamp without time zone,\n    CONSTRAINT swift_out_fields_pkey PRIMARY KEY (dep_id, id)\n)\nTABLESPACE pg_default;\n\nCOMMENT ON TABLE public.swift_out_fields IS\n    'Additional output fields for SWIFT message processing by department';\n\n-- ============================================================================\n-- Child Table 1: swift_stmt_bal\n-- Stores Balance entries from camt.053 (BkToCstmrStmt/Stmt/Bal)\n-- Each statement typically has 2-5 balances (OPBD, CLBD, CLAV, etc.)\n-- ============================================================================\nCREATE TABLE IF NOT EXISTS public.swift_stmt_bal\n(\n    swift_input_id uuid NOT NULL,\n    tp_cd text COLLATE pg_catalog.\"default\" NOT NULL,\n    amt numeric(18, 2) NOT NULL,\n    amt_ccy text COLLATE pg_catalog.\"default\",\n    cdt_dbt_ind text COLLATE pg_catalog.\"default\" NOT NULL,\n    dt timestamp without time zone NOT NULL,\n    created_at timestamp without time zone DEFAULT now(),\n\n    CONSTRAINT swift_stmt_bal_pkey\n        PRIMARY KEY (swift_input_id, tp_cd),\n\n    CONSTRAINT swift_stmt_bal_swift_input_fkey\n        FOREIGN KEY (swift_input_id)\n        REFERENCES public.swift_input (id)\n        ON DELETE CASCADE\n        ON UPDATE CASCADE,\n\n    CONSTRAINT swift_stmt_bal_tp_cd_check\n        CHECK (tp_cd IN ('OPBD', 'CLBD', 'CLAV', 'FWAV', 'ITBD', 'ITAV', 'OPAV', 'PRCD')),\n\n    CONSTRAINT swift_stmt_bal_cdt_dbt_ind_check\n        CHECK (cdt_dbt_ind IN ('CRDT', 'DBIT'))\n)\nTABLESPACE pg_default;\n\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_bal_swift_input_id\n    ON public.swift_stmt_bal(swift_input_id);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_bal_dt\n    ON public.swift_stmt_bal(dt);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_bal_tp_cd\n    ON public.swift_stmt_bal(tp_cd);\n\nCOMMENT ON TABLE public.swift_stmt_bal IS\n    'Balance entries (Bal) from camt.053 statements. Tp/CdOrPrtry/Cd codes: OPBD=Opening Booked, CLBD=Closing Booked, CLAV=Closing Available, ITBD=Interim Booked';\n\nCOMMENT ON COLUMN public.swift_stmt_bal.tp_cd IS\n    'Balance type code (Tp/CdOrPrtry/Cd): OPBD, CLBD, CLAV, FWAV, ITBD, ITAV, OPAV, PRCD';\nCOMMENT ON COLUMN public.swift_stmt_bal.amt IS\n    'Balance amount (Amt)';\nCOMMENT ON COLUMN public.swift_stmt_bal.amt_ccy IS\n    'Currency code (Amt/@Ccy) - ISO 4217';\nCOMMENT ON COLUMN public.swift_stmt_bal.cdt_dbt_ind IS\n    'Credit/Debit indicator (CdtDbtInd): CRDT=Credit/Positive, DBIT=Debit/Negative';\nCOMMENT ON COLUMN public.swift_stmt_bal.dt IS\n    'Balance date (Dt/Dt)';\n\n-- ============================================================================\n-- Child Table 2: swift_stmt_ntry\n-- Stores Entry records from camt.053 (BkToCstmrStmt/Stmt/Ntry)\n-- Each entry represents a transaction or group of transactions\n-- ============================================================================\nCREATE TABLE IF NOT EXISTS public.swift_stmt_ntry\n(\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    swift_input_id uuid NOT NULL,\n\n    -- Entry identification\n    ntry_ref text COLLATE pg_catalog.\"default\",\n    acct_svcr_ref text COLLATE pg_catalog.\"default\",\n\n    -- Amount\n    amt numeric(18, 2) NOT NULL,\n    amt_ccy text COLLATE pg_catalog.\"default\",\n    cdt_dbt_ind text COLLATE pg_catalog.\"default\" NOT NULL,\n    rvsl_ind boolean DEFAULT false,\n\n    -- Status\n    sts_cd text COLLATE pg_catalog.\"default\" NOT NULL,\n\n    -- Dates\n    bookg_dt date,\n    val_dt date,\n\n    -- Bank Transaction Code (BkTxCd)\n    bk_tx_cd_domn_cd text COLLATE pg_catalog.\"default\",\n    bk_tx_cd_fmly_cd text COLLATE pg_catalog.\"default\",\n    bk_tx_cd_sub_fmly_cd text COLLATE pg_catalog.\"default\",\n    bk_tx_cd_prtry text COLLATE pg_catalog.\"default\",\n\n    -- Additional information\n    addtl_ntry_inf text COLLATE pg_catalog.\"default\",\n\n    created_at timestamp without time zone DEFAULT now(),\n\n    CONSTRAINT swift_stmt_ntry_pkey PRIMARY KEY (id),\n\n    CONSTRAINT swift_stmt_ntry_swift_input_fkey\n        FOREIGN KEY (swift_input_id)\n        REFERENCES public.swift_input (id)\n        ON DELETE CASCADE\n        ON UPDATE CASCADE,\n\n    CONSTRAINT swift_stmt_ntry_cdt_dbt_ind_check\n        CHECK (cdt_dbt_ind IN ('CRDT', 'DBIT')),\n\n    CONSTRAINT swift_stmt_ntry_sts_cd_check\n        CHECK (sts_cd IN ('BOOK', 'PDNG', 'INFO', 'FUTR'))\n)\nTABLESPACE pg_default;\n\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_swift_input_id\n    ON public.swift_stmt_ntry(swift_input_id);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_ntry_ref\n    ON public.swift_stmt_ntry(ntry_ref);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_acct_svcr_ref\n    ON public.swift_stmt_ntry(acct_svcr_ref);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_bookg_dt\n    ON public.swift_stmt_ntry(bookg_dt);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_val_dt\n    ON public.swift_stmt_ntry(val_dt);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_sts_cd\n    ON public.swift_stmt_ntry(sts_cd);\nCREATE INDEX IF NOT EXISTS idx_swift_stmt_ntry_bk_tx_cd_domn\n    ON public.swift_stmt_ntry(bk_tx_cd_domn_cd);\n\nCOMMENT ON TABLE public.swift_stmt_ntry IS\n    'Entry records (Ntry) from camt.053 statements. Each entry represents a transaction or batch of transactions.';\n\nCOMMENT ON COLUMN public.swift_stmt_ntry.ntry_ref IS\n    'Entry reference (NtryRef) - unique identifier for the entry';\nCOMMENT ON COLUMN public.swift_stmt_ntry.acct_svcr_ref IS\n    'Account servicer reference (AcctSvcrRef) - bank internal reference';\nCOMMENT ON COLUMN public.swift_stmt_ntry.amt IS\n    'Entry amount (Amt)';\nCOMMENT ON COLUMN public.swift_stmt_ntry.cdt_dbt_ind IS\n    'Credit/Debit indicator (CdtDbtInd): CRDT or DBIT';\nCOMMENT ON COLUMN public.swift_stmt_ntry.rvsl_ind IS\n    'Reversal indicator (RvslInd) - true if this is a reversal entry';\nCOMMENT ON COLUMN public.swift_stmt_ntry.sts_cd IS\n    'Status code (Sts/Cd): BOOK=Booked, PDNG=Pending, INFO=Information, FUTR=Future';\nCOMMENT ON COLUMN public.swift_stmt_ntry.bookg_dt IS\n    'Booking date (BookgDt/Dt)';\nCOMMENT ON COLUMN public.swift_stmt_ntry.val_dt IS\n    'Value date (ValDt/Dt)';\nCOMMENT ON COLUMN public.swift_stmt_ntry.bk_tx_cd_domn_cd IS\n    'Bank transaction code domain (BkTxCd/Domn/Cd): PMNT, ACMT, CAMT, LDAS, FORX, TRAD, SECU';\nCOMMENT ON COLUMN public.swift_stmt_ntry.bk_tx_cd_fmly_cd IS\n    'Bank transaction code family (BkTxCd/Domn/Fmly/Cd): RCDT, ICDT, RDDT, IDDT, CCRD, MCRD';\nCOMMENT ON COLUMN public.swift_stmt_ntry.bk_tx_cd_sub_fmly_cd IS\n    'Bank transaction code subfamily (BkTxCd/Domn/Fmly/SubFmlyCd): XBCT, DMCT, STDO, RRTN';\n\n-- ============================================================================\n-- Child Table 3: swift_entry_tx_dtls\n-- Stores Transaction Details from camt.053 (BkToCstmrStmt/Stmt/Ntry/NtryDtls/TxDtls)\n-- One entry (Ntry) can contain multiple transaction details (batch payments)\n-- ============================================================================\nCREATE TABLE IF NOT EXISTS public.swift_entry_tx_dtls\n(\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    ntry_id uuid NOT NULL,\n\n    -- References (Refs)\n    msg_id text COLLATE pg_catalog.\"default\",\n    acct_svcr_ref text COLLATE pg_catalog.\"default\",\n    pmt_inf_id text COLLATE pg_catalog.\"default\",\n    instr_id text COLLATE pg_catalog.\"default\",\n    end_to_end_id text COLLATE pg_catalog.\"default\",\n    tx_id text COLLATE pg_catalog.\"default\",\n    uetr uuid,\n    mndt_id text COLLATE pg_catalog.\"default\",\n    chq_nb text COLLATE pg_catalog.\"default\",\n    clr_sys_ref text COLLATE pg_catalog.\"default\",\n\n    -- Amount details (AmtDtls)\n    amt numeric(18, 2),\n    amt_ccy text COLLATE pg_catalog.\"default\",\n    cdt_dbt_ind text COLLATE pg_catalog.\"default\",\n\n    -- Related dates (RltdDts)\n    accptnc_dt_tm timestamp without time zone,\n    intr_bk_sttlm_dt date,\n    trad_dt date,\n\n    -- Related parties (RltdPties)\n    dbtr_nm text COLLATE pg_catalog.\"default\",\n    dbtr_pstl_adr_ctry text COLLATE pg_catalog.\"default\",\n    dbtr_acct_id text COLLATE pg_catalog.\"default\",\n    dbtr_acct_iban text COLLATE pg_catalog.\"default\",\n    dbtr_agt_bicfi text COLLATE pg_catalog.\"default\",\n    dbtr_agt_nm text COLLATE pg_catalog.\"default\",\n\n    cdtr_nm text COLLATE pg_catalog.\"default\",\n    cdtr_pstl_adr_ctry text COLLATE pg_catalog.\"default\",\n    cdtr_acct_id text COLLATE pg_catalog.\"default\",\n    cdtr_acct_iban text COLLATE pg_catalog.\"default\",\n    cdtr_agt_bicfi text COLLATE pg_catalog.\"default\",\n    cdtr_agt_nm text COLLATE pg_catalog.\"default\",\n\n    -- Remittance information (RmtInf)\n    rmt_inf_ustrd text COLLATE pg_catalog.\"default\",\n    rmt_inf_strd text COLLATE pg_catalog.\"default\",\n\n    -- Purpose (Purp)\n    purp_cd text COLLATE pg_catalog.\"default\",\n    purp_prtry text COLLATE pg_catalog.\"default\",\n\n    -- Additional information\n    addtl_tx_inf text COLLATE pg_catalog.\"default\",\n\n    created_at timestamp without time zone DEFAULT now(),\n\n    CONSTRAINT swift_entry_tx_dtls_pkey PRIMARY KEY (id),\n\n    CONSTRAINT swift_entry_tx_dtls_ntry_fkey\n        FOREIGN KEY (ntry_id)\n        REFERENCES public.swift_stmt_ntry (id)\n        ON DELETE CASCADE\n        ON UPDATE CASCADE,\n\n    CONSTRAINT swift_entry_tx_dtls_cdt_dbt_ind_check\n        CHECK (cdt_dbt_ind IN ('CRDT', 'DBIT', NULL))\n)\nTABLESPACE pg_default;\n\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_ntry_id\n    ON public.swift_entry_tx_dtls(ntry_id);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_uetr\n    ON public.swift_entry_tx_dtls(uetr);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_end_to_end_id\n    ON public.swift_entry_tx_dtls(end_to_end_id);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_instr_id\n    ON public.swift_entry_tx_dtls(instr_id);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_tx_id\n    ON public.swift_entry_tx_dtls(tx_id);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_intr_bk_sttlm_dt\n    ON public.swift_entry_tx_dtls(intr_bk_sttlm_dt);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_dbtr_agt_bicfi\n    ON public.swift_entry_tx_dtls(dbtr_agt_bicfi);\nCREATE INDEX IF NOT EXISTS idx_swift_entry_tx_dtls_cdtr_agt_bicfi\n    ON public.swift_entry_tx_dtls(cdtr_agt_bicfi);\n\nCOMMENT ON TABLE public.swift_entry_tx_dtls IS\n    'Transaction details (TxDtls) from camt.053 entries. One entry (Ntry) can contain multiple TxDtls (batch payments, salary payments, etc.)';\n\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.ntry_id IS\n    'Foreign key to swift_stmt_ntry (parent entry)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.msg_id IS\n    'Message identification (Refs/MsgId)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.instr_id IS\n    'Instruction identification (Refs/InstrId)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.end_to_end_id IS\n    'End-to-end identification (Refs/EndToEndId)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.tx_id IS\n    'Transaction identification (Refs/TxId)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.uetr IS\n    'Unique End-to-end Transaction Reference (Refs/UETR)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.intr_bk_sttlm_dt IS\n    'Interbank settlement date (RltdDts/IntrBkSttlmDt)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.dbtr_nm IS\n    'Debtor name (RltdPties/Dbtr/Nm)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.dbtr_acct_iban IS\n    'Debtor account IBAN (RltdPties/DbtrAcct/Id/IBAN)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.dbtr_agt_bicfi IS\n    'Debtor agent BIC (RltdPties/DbtrAgt/FinInstnId/BICFI)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.cdtr_nm IS\n    'Creditor name (RltdPties/Cdtr/Nm)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.cdtr_acct_iban IS\n    'Creditor account IBAN (RltdPties/CdtrAcct/Id/IBAN)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.cdtr_agt_bicfi IS\n    'Creditor agent BIC (RltdPties/CdtrAgt/FinInstnId/BICFI)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.rmt_inf_ustrd IS\n    'Unstructured remittance information (RmtInf/Ustrd)';\nCOMMENT ON COLUMN public.swift_entry_tx_dtls.purp_cd IS\n    'Purpose code (Purp/Cd): SALA, PENS, SUPP, TRAD, CASH, GOVT, etc.';\n\n-- ============================================================================\n-- Permissions\n-- ============================================================================\nALTER TABLE IF EXISTS public.swift_input OWNER TO postgres;\nALTER TABLE IF EXISTS public.swift_settings OWNER TO postgres;\nALTER TABLE IF EXISTS public.swift_out_fields OWNER TO postgres;\nALTER TABLE IF EXISTS public.swift_stmt_bal OWNER TO postgres;\nALTER TABLE IF EXISTS public.swift_stmt_ntry OWNER TO postgres;\nALTER TABLE IF EXISTS public.swift_entry_tx_dtls OWNER TO postgres;\n\nGRANT ALL ON TABLE public.swift_input TO apng;\nGRANT ALL ON TABLE public.swift_input TO postgres;\nGRANT ALL ON TABLE public.swift_settings TO apng;\nGRANT ALL ON TABLE public.swift_settings TO postgres;\nGRANT ALL ON TABLE public.swift_out_fields TO apng;\nGRANT ALL ON TABLE public.swift_out_fields TO postgres;\nGRANT ALL ON TABLE public.swift_stmt_bal TO apng;\nGRANT ALL ON TABLE public.swift_stmt_bal TO postgres;\nGRANT ALL ON TABLE public.swift_stmt_ntry TO apng;\nGRANT ALL ON TABLE public.swift_stmt_ntry TO postgres;\nGRANT ALL ON TABLE public.swift_entry_tx_dtls TO apng;\nGRANT ALL ON TABLE public.swift_entry_tx_dtls TO postgres;\n"
+                "py": "# Get all records from simple_list table\nfrom apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nfrom apng_core.aoa.services.filter import applyFilterModel, applyFilterModel2\nfrom datetime import datetime\nfrom django.utils.timezone import make_aware\n\n\nSQL = \"\"\"\n    SELECT *\n    FROM swift_stmt_bal\n    WHERE swift_input_id = %(id)s\n\n\"\"\"\n\n#raise Exception(parameters)\n\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching records',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n"
             }
         },
-        "getTransactionsList": {
-            "type": "script",
+        "getTransactions": {
+            "sql": {},
             "script": {
-                "py": "# Get transactions list for a statement\nfrom apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nSQL = \"\"\"\n    SELECT\n        n.id::text as id,\n        n.swift_input_id::text as swift_input_id,\n        n.ntry_ref,\n        n.acct_svcr_ref,\n        n.amt,\n        n.amt_ccy,\n        n.cdt_dbt_ind,\n        n.rvsl_ind,\n        n.sts_cd,\n        n.bookg_dt,\n        n.val_dt,\n        n.bk_tx_cd_domn_cd,\n        n.bk_tx_cd_fmly_cd,\n        n.bk_tx_cd_sub_fmly_cd,\n        n.created_at,\n        i.file_name,\n        i.stmt_id\n    FROM swift_stmt_ntry n\n    JOIN swift_input i ON n.swift_input_id = i.id\n    WHERE n.swift_input_id = %(swift_input_id)s\n    ORDER BY n.bookg_dt DESC, n.created_at DESC\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'swift_input_id': parameters.get('swift_input_id')})\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching transactions',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n"
+                "py": "# Get transactions list for a statement\nfrom apng_core.db import fetchall, fetchone\nfrom apng_core.exceptions import UserException\n\n\ninput_id = None \nif parameters.get('listParams'):\n    input_id = parameters.get('listParams').get('app').get('input_id')\n\nid = parameters.get('id')\n\n\nSQL = \"\"\" \n\n        SELECT n.id::text as id, n.swift_input_id::text as swift_input_id, \n                n.ntry_ref, n.acct_svcr_ref, n.amt, n.amt_ccy, n.cdt_dbt_ind, \n                n.rvsl_ind, \n                \n                n.sts_cd, \n                es.name_ru sts_cd_name, \n                n.bookg_dt, n.val_dt, n.bk_tx_cd_domn_cd, \n                n.bk_tx_cd_fmly_cd, n.bk_tx_cd_sub_fmly_cd, n.created_at, \n                i.file_name, i.stmt_id ,\n                mt.name_ru msg_type_name\n        FROM swift_stmt_ntry n , swift_input i, ref_entry_status es, ref_message_types mt\n        WHERE   es.code = n.sts_cd\n        and n.swift_input_id = i.id \n        and i.msg_type = mt.code\n        and n.swift_input_id = COALESCE(%(swift_input_id)s, n.swift_input_id ) \n        and n.id = COALESCE(%(id)s, n.id) \n        ORDER BY n.bookg_dt DESC, n.created_at DESC \n        \"\"\"\nwith initDbSession(database='default').cursor() as c: \n    try: \n        c.execute(SQL, {'swift_input_id': input_id, 'id': id }) \n        if id:\n            data = fetchone(c) \n        else:\n            data = fetchall(c) \n        #if id:\n        #    raise Exception(data)\n    except Exception as e: \n        raise UserException({'message': 'Error fetching transactions', 'description': 'SQL:\\n%s' % SQL}).withError(e)"
             }
         },
-        "getTransaction": {
-            "type": "script",
+        "getTrnDtl": {
             "script": {
-                "py": "# Get single transaction with details\nfrom apng_core.db import fetchone, fetchall\nfrom apng_core.exceptions import UserException\n\n# Get main transaction record\nSQL_NTRY = \"\"\"\n    SELECT\n        n.id::text as id,\n        n.swift_input_id::text as swift_input_id,\n        n.ntry_ref,\n        n.acct_svcr_ref,\n        n.amt,\n        n.amt_ccy,\n        n.cdt_dbt_ind,\n        n.rvsl_ind,\n        n.sts_cd,\n        n.bookg_dt,\n        n.val_dt,\n        n.bk_tx_cd_domn_cd,\n        n.bk_tx_cd_fmly_cd,\n        n.bk_tx_cd_sub_fmly_cd,\n        n.bk_tx_cd_prtry,\n        n.addtl_ntry_inf,\n        n.created_at,\n        i.file_name,\n        i.stmt_id,\n        i.msg_type\n    FROM swift_stmt_ntry n\n    JOIN swift_input i ON n.swift_input_id = i.id\n    WHERE n.id = %(id)s\n\"\"\"\n\n# Get transaction details\nSQL_TX_DTLS = \"\"\"\n    SELECT\n        id::text as id,\n        msg_id,\n        acct_svcr_ref,\n        pmt_inf_id,\n        instr_id,\n        end_to_end_id,\n        tx_id,\n        uetr::text as uetr,\n        amt,\n        amt_ccy,\n        cdt_dbt_ind,\n        intr_bk_sttlm_dt,\n        dbtr_nm,\n        dbtr_acct_iban,\n        dbtr_agt_bicfi,\n        dbtr_agt_nm,\n        cdtr_nm,\n        cdtr_acct_iban,\n        cdtr_agt_bicfi,\n        cdtr_agt_nm,\n        rmt_inf_ustrd,\n        purp_cd,\n        addtl_tx_inf\n    FROM swift_entry_tx_dtls\n    WHERE ntry_id = %(ntry_id)s\n    ORDER BY created_at\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        # Get main record\n        c.execute(SQL_NTRY, {'id': parameters.get('id')})\n        data = fetchone(c)\n        if not data:\n            raise UserException('Transaction not found')\n\n        # Get transaction details\n        c.execute(SQL_TX_DTLS, {'ntry_id': parameters.get('id')})\n        data['tx_details'] = fetchall(c)\n\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching transaction',\n            'description': str(e)\n        }).withError(e)\n"
+                "py": "# Get all records from simple_list table\nfrom apng_core.db import fetchall\nfrom apng_core.exceptions import UserException\n\nfrom apng_core.aoa.services.filter import applyFilterModel, applyFilterModel2\nfrom datetime import datetime\nfrom django.utils.timezone import make_aware\n\n\nSQL = \"\"\"\n    SELECT *\n    FROM swift_entry_tx_dtls\n    WHERE ntry_id = %(id)s\n\n\"\"\"\n\n#raise Exception(parameters)\n\n\nwith initDbSession(database='default').cursor() as c:\n    try:\n        c.execute(SQL, {'id': parameters.get('id')})\n        data = fetchall(c)\n    except Exception as e:\n        raise UserException({\n            'message': 'Error fetching records',\n            'description': 'SQL:\\n%s' % SQL\n        }).withError(e)\n"
             }
         }
     },

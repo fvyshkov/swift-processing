@@ -1,6 +1,7 @@
 {
     "lists": {
         "typeList": {
+            "getList": "getTypeList",
             "columns": {
                 "code": {
                     "title": "Code",
@@ -72,6 +73,8 @@
             ]
         },
         "stateList": {
+            "getList": "getStateList",
+            "getRowStyle": "{background: data?.color_code}",
             "columns": {
                 "type_code": {
                     "title": "Type",
@@ -87,9 +90,7 @@
                 },
                 "color_code": {
                     "title": "Color",
-                    "width": 100,
-                    "control": "chip",
-                    "cellStyle$": "{backgroundColor: $listRow.color_code, color: '#fff', padding: '4px 8px', borderRadius: '4px'}"
+                    "width": 100
                 },
                 "allow_edit": {
                     "title": "Edit",
@@ -139,7 +140,7 @@
                         "params": {
                             "object": "processManagement",
                             "form": "editState",
-                            "objectKey$": "{id: $listRow.id}"
+                            "objectKey$": "{type_code: $listRow.type_code, code: $listRow.code}"
                         }
                     },
                     "disabled$": "!$listRow"
@@ -149,7 +150,7 @@
                     "icon": "delete",
                     "command": {
                         "type": "js",
-                        "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'deleteState', params: {id: $listRow.id}}).then(()=>forceRefreshList())"
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'deleteState', params: {type_code: $listRow.type_code, code: $listRow.code}}).then(()=>forceRefreshList())"
                     },
                     "confirm": {
                         "message$": "`Delete state '${$listRow.code}'?`",
@@ -187,6 +188,7 @@
             }
         },
         "operationList": {
+            "getList": "getOperationList",
             "columns": {
                 "type_code": {
                     "title": "Type",
@@ -390,15 +392,21 @@
                     "className": "vertical",
                     "$": {
                         "type_code": {
-                            "label": "Document Type",
-                            "control": "SelectEdit",
-                            "required": true,
-                            "readOnly$": "!!mem.original_type_code",
+                            "label": "Type",
+                            "style": {
+                                "width": "250px"
+                            },
+                            "control": "ObjectReference",
                             "controlProps": {
-                                "object": "processManagement",
-                                "method": "getTypeList",
-                                "valueField": "code",
-                                "displayField": "name_combined"
+                                "object": "processType"
+                            },
+                            "required": true,
+                            "actions": {
+                                "onChange": [
+                                    {
+                                        "js": "const copy = { ...params.row }; console.log(mem); mem.snd_mid_bank = copy.BANK; mem.snd_mid_bank_acc_val = copy.VAL_CODE; mem.snd_mid_bank_acc = copy.ACC_CODE; mem.snd_mid_bank_name = copy.BANK_NAME;  "
+                                    }
+                                ]
                             }
                         },
                         "code": {
@@ -439,6 +447,13 @@
                                     "control": "Checkbox"
                                 }
                             }
+                        },
+                        "@form-1": {
+                            "style": {
+                                "padding": "8px",
+                                "overflow": "auto"
+                            },
+                            "form": "operInnerList"
                         }
                     }
                 },
@@ -484,7 +499,7 @@
             "actions": {
                 "onTaskCreated": [
                     {
-                        "js": "if (task.params?.objectKey?.id) { return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'getState', params: task.params.objectKey}).then((r) => { Object.assign(mem, r); mem.original_type_code = r.type_code; mem.original_code = r.code; forceUpdate(); }); }"
+                        "js": "if (task.params?.objectKey?.code) { return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'getState', params: task.params.objectKey}).then((r) => { Object.assign(mem, r); mem.original_type_code = r.type_code; mem.original_code = r.code; forceUpdate(); }); }"
                     }
                 ]
             }
@@ -500,16 +515,33 @@
                 "@fields": {
                     "className": "vertical",
                     "$": {
-                        "type_code": {
-                            "label": "Document Type",
-                            "control": "SelectEdit",
-                            "required": true,
-                            "readOnly$": "!!mem.id",
-                            "controlProps": {
-                                "object": "processManagement",
-                                "method": "getTypeList",
-                                "valueField": "code",
-                                "displayField": "name_combined"
+                        "@type": {
+                            "className": "horizontal",
+                            "$": {
+                                "type_code": {
+                                    "label": "Type",
+                                    "style": {
+                                        "width": "250px"
+                                    },
+                                    "control": "ObjectReference",
+                                    "controlProps": {
+                                        "object": "processType"
+                                    },
+                                    "required": true,
+                                    "actions": {
+                                        "onChange": [
+                                            {
+                                                "js": "const copy = { ...params.row }; console.log(mem); mem.type_code = copy.code;  mem.type_name = copy.name_ru; console.log('MM', mem);  "
+                                            }
+                                        ]
+                                    }
+                                },
+                                "type_name": {
+                                    "label": "Name",
+                                    "width": "500px",
+                                    "control": "TextEdit",
+                                    "readOnly$": "true;"
+                                }
                             }
                         },
                         "code": {
@@ -586,7 +618,7 @@
                             },
                             "action": [
                                 {
-                                    "js": "if (!validate()) throw 'Validation failed'"
+                                    "js": "if (!validate()){throw 'Abort';}"
                                 },
                                 {
                                     "js": "return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveOperation', params: mem})"
@@ -606,13 +638,252 @@
                     }
                 ]
             }
+        },
+        "operInnerList": {
+            "title": "Залоги",
+            "className": "vertical",
+            "$": {
+                ".ap": {
+                    "control": "ActionPanel",
+                    "controlOpts": {
+                        "actions": [
+                            {
+                                "title": "Добавить",
+                                "icon": "add",
+                                "split": true,
+                                "actions$x": "context.oper?.map?.((t)=>{console.log('selected oper', t, 'mem', mem);return {title: t.name_ru, command: ()=>{console.log('ctx', context);backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveStateOper', params: { state_id: mem.id, operation_id: t.id}}).then((r)=>{console.log('rrr', r);mem.oper=[{id: 1, name: '11111'}]; mem.oper = [...mem.oper]; forceUpdate();})}}}); ",
+                                "actions$": "context.oper?.map?.((t)=>{console.log('selected oper', t, 'mem', mem);return {title: t.name_ru, command: ()=>{console.log('t', t); action({name: 'addAction', params: {operation_id: t.id, state_id: mem.id,name: t.name_ru}})}}})",
+                                "disabled$": "isReadOnly"
+                            },
+                            {
+                                "title": "Удалить",
+                                "icon": "delete",
+                                "mini": true,
+                                "action": {
+                                    "name": "deletePledge",
+                                    "confirm": {
+                                        "title": "Удаление",
+                                        "message$": "`Удалить объект обеспечения ${context.selectedOper.description||context.selectedOper.ens_name}`",
+                                        "yes": "Да",
+                                        "no": "Нет"
+                                    }
+                                },
+                                "disabled$": "isReadOnly || !context.selectedOper ||context.selectedOper?.isObjectOfCredit"
+                            }
+                        ]
+                    }
+                },
+                "|oper": {
+                    "className": "vertical",
+                    "style": {
+                        "marginBottom": "4px"
+                    },
+                    "control": "ListTable",
+                    "controlProps": {
+                        "context$": "context"
+                    },
+                    "controlOpts": {
+                        "columns!": {
+                            "name": {
+                                "label": "Операция",
+                                "flex": 1
+                            }
+                        }
+                    },
+                    "actions": {
+                        "onRowDoubleClicked": {
+                            "name": "viewPledge",
+                            "params": {
+                                "client$": "params.client"
+                            }
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "addAction": [
+                    {
+                        "js": "console.log('addAction', params);"
+                    },
+                    {
+                        "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveStateOper', params: { state_id: mem.id, operation_id: params.operation_id}}).then((r)=>{ mem.oper.push(params);mem.oper = [...mem.oper]; forceUpdate();})"
+                    }
+                ],
+                "viewPledge": {
+                    "js": "frontend.dialog({object: 'processManagement', form: 'operAnyDialog', mem: {oper: {...context.selectedOper}}, params: params});"
+                },
+                "onSavePledge": {
+                    "js": ""
+                },
+                "addOper": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveStateOper', params: { state_id: mem.id, operation_id: t.id}}).then((r)=>{console.log('MMM', mem);mem.oper=[{id: 1, name: '111112'}]; mem.oper = [...mem.oper]; forceUpdate();})}}}); "
+                },
+                "deletePledge": {
+                    "js": "console.log('sel', context.selectedOper); backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'deleteStateOper', params: { state_id: context.selectedOper.state_id, operation_id: context.selectedOper.operation_id}}).then((r)=>{mem.oper.splice(mem.oper.indexOf(context.selectedOper), 1); mem.oper = [...mem.oper]; context.selectedOper = null; forceUpdate();})"
+                },
+                "closeDialog": {
+                    "js": "dialog.actions.close();"
+                },
+                "onSelectionChanged": {
+                    "js": "context.selectedOper = selectedRow;"
+                },
+                "onElementCreated": [
+                    {
+                        "js": "return backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'getOperationList', params: {mem}}, {useCache: true}).then(r => { console.log(r); context.oper=r.filter((t)=>1==1); console.log('mem.oper', mem.oper); forceUpdate(); });",
+                        "disableUpdate": true
+                    }
+                ]
+            }
+        },
+        "operAnyDialog": {
+            "title$": "`Операция: ${mem.oper?.name}`",
+            "className": "vertical",
+            "style": {
+                "overflow": "hidden"
+            },
+            "$": {
+                "@fields": {
+                    "className": "vertical",
+                    "style": {
+                        "paddingTop": "8px",
+                        "overflowY": "auto"
+                    },
+                    "$": {
+                        "pledge": {
+                            "className": "vertical",
+                            "$": {
+                                "@enscode": {
+                                    "className": "horizontal",
+                                    "$": {
+                                        "ens_code": {
+                                            "label": "Вид обеспечения",
+                                            "style": {
+                                                "width": "280px"
+                                            },
+                                            "control": "ObjectReference",
+                                            "controlProps": {
+                                                "object": "pledgeType",
+                                                "reference": "default",
+                                                "textReadOnly": true
+                                            },
+                                            "controlOpts": {
+                                                "referenceParams": {
+                                                    "baseType$": "mem.baseType"
+                                                }
+                                            },
+                                            "required": true,
+                                            "actions": {
+                                                "onChange": {
+                                                    "name": "onChangeEnsCode"
+                                                }
+                                            }
+                                        },
+                                        "ens_name": {
+                                            "style": {
+                                                "width": "560px"
+                                            },
+                                            "control": "TextEdit",
+                                            "readOnly": true
+                                        }
+                                    }
+                                },
+                                "@pledgeDetail": {
+                                    "form$": "`pledge-${mem.type}-Form`",
+                                    "visible$": "!!mem.type"
+                                }
+                            }
+                        }
+                    },
+                    "readOnly$": "!!mem.pledge.isObjectOfCredit || params.readOnly",
+                    "actions": {
+                        "onChangeEnsCode": {
+                            "js": "mem.pledge.ens_name=params.row.name;"
+                        }
+                    }
+                },
+                "@buttons": {
+                    "className": "horizontal",
+                    "style": {
+                        "justifyContent": "end"
+                    },
+                    "$": {
+                        ".btnCancel": {
+                            "label": "Отменить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "outlined",
+                                "color": "primary"
+                            },
+                            "action": {
+                                "js": "actions.close();",
+                                "disableUpdate": true
+                            }
+                        },
+                        ".btnApply": {
+                            "label": "Сохранить",
+                            "control": "Button",
+                            "controlProps": {
+                                "variant": "contained",
+                                "color": "primary"
+                            },
+                            "readOnly$": "!!mem.pledge.isObjectOfCredit || params.readOnly",
+                            "action": [
+                                {
+                                    "js": "if (!validate()){throw 'Abort';}"
+                                },
+                                {
+                                    "name": "onSavePledge",
+                                    "params": {
+                                        "pledge$": "mem.pledge"
+                                    }
+                                },
+                                {
+                                    "js": "actions.close();",
+                                    "disableUpdate": true
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "actions": {
+                "onElementCreated": {
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'settings', method: 'get'}, {useCache: true, silent: true}).then(r=>{context.myIdVisible = r?.loanapp?.identifyMyId; context.identifyPin = r?.loanapp?.identifyPin; forceUpdate();})"
+                }
+            }
+        },
+        "operForm": {
+            "title": "Орпеации",
+            "className": "vertical",
+            "$": {
+                "@oper": {
+                    "title": "Операции",
+                    "titleClass": "navigated-title",
+                    "className": "vertical navigated-content",
+                    "style": {
+                        "width": "860px"
+                    },
+                    "$": {
+                        "@list": {
+                            "object": "processManagement",
+                            "form": "operInnerList"
+                        }
+                    },
+                    "actions": {
+                        "refresh": {
+                            "js": ";"
+                        }
+                    }
+                }
+            }
         }
     },
     "methods": {
         "getTypeList": {
             "script": {
                 "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url\n    FROM process_type\n    ORDER BY code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\n"
-            }
+            },
+            "sql": {}
         },
         "getType": {
             "script": {
@@ -632,21 +903,23 @@
         "getStateList": {
             "script": {
                 "py": "from apng_core.db import fetchall\nfrom apng_core.aoa.services import filter as aoa\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined, \n           color_code, allow_edit, allow_delete\n    FROM process_state\n    ORDER BY type_code, code\n\"\"\"\n\nrequest = parameters.get('request', {})\nfilterModel2 = request.get('filterModel2', {})\nif filterModel2.get('filterData'):\n    filterModel2 = filterModel2['filterData']\n\nqueryParams = {}\n\nif filterModel2:\n    filterDef = aoa.buildFilterSql({\n        'objectCode': 'processManagement',\n        'filterData': filterModel2\n    })\n    filter_text = filterDef['sql'].replace('\"', '')\n    SQL = 'SELECT * FROM (' + SQL + ') t ' + filter_text\n    queryParams = filterDef['params']\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, queryParams)\n    data = fetchall(c)\n"
-            }
+            },
+            "sql": {}
         },
         "getState": {
             "script": {
-                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE id = %(id)s::uuid\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+                "py": "from apng_core.db import fetchone, fetchall\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE type_code = %(type_code)s AND code = %(code)s\n\"\"\"\n\n\nSQL_OPER = \"\"\"\n    SELECT o.id , os.*, o.name_ru name\n    FROM process_operation_states os, process_operation o\n    WHERE os.state_id = (select id from process_state where code=%(code)s)\n    and os.operation_id = o.id\n\"\"\"\n\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n    \n    #raise Exception(parameters)\n    c.execute(SQL_OPER, {\"code\": parameters.get('code')})\n    data_oper = fetchall(c)\n    data['oper'] = data_oper\n"
             }
         },
         "saveState": {
             "script": {
-                "py": "from apng_core.db import fetchone\nimport uuid\n\n# Get or generate state ID\nstate_id = parameters.get('id')\nif not state_id:\n    state_id = str(uuid.uuid4())\n    parameters['id'] = state_id\n\nSQL = \"\"\"\n    INSERT INTO process_state \n        (id, type_code, code, name_en, name_ru, name_combined, color_code, allow_edit, allow_delete)\n    VALUES \n        (%(id)s::uuid, %(type_code)s, %(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, \n         %(color_code)s, %(allow_edit)s, %(allow_delete)s)\n    ON CONFLICT (type_code, code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        color_code = EXCLUDED.color_code,\n        allow_edit = EXCLUDED.allow_edit,\n        allow_delete = EXCLUDED.allow_delete\n    RETURNING id\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
-            }
+                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    INSERT INTO process_state \n        (type_code, code, name_en, name_ru, name_combined, color_code, allow_edit, allow_delete)\n    VALUES \n        (%(type_code)s, %(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, \n         %(color_code)s, %(allow_edit)s, %(allow_delete)s)\n    ON CONFLICT (type_code, code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        color_code = EXCLUDED.color_code,\n        allow_edit = EXCLUDED.allow_edit,\n        allow_delete = EXCLUDED.allow_delete\n    RETURNING type_code, code\n\"\"\"\n\nparameters['color_code'] = parameters.get('color_code')\nparameters['allow_edit'] = parameters.get('allow_edit')\nparameters['allow_delete'] = parameters.get('allow_delete')\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+            },
+            "sql": {}
         },
         "deleteState": {
             "script": {
-                "py": "SQL = \"\"\"\n    DELETE FROM process_state \n    WHERE id = %(id)s::uuid\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = {'success': True}\n"
+                "py": "SQL = \"\"\"\n    DELETE FROM process_state \n    WHERE type_code = %(type_code)s AND code = %(code)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = {'success': True}\n"
             }
         },
         "getOperationList": {
@@ -656,18 +929,32 @@
         },
         "getOperation": {
             "script": {
-                "py": "from apng_core.db import fetchone, fetchall\n\nSQL_OP = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           icon, resource_url, availability_condition\n    FROM process_operation\n    WHERE id = %(id)s\n\"\"\"\n\nSQL_STATES = \"\"\"\n    SELECT state_code\n    FROM process_operation_states\n    WHERE operation_id = %(id)s\n    ORDER BY state_code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL_OP, parameters)\n    data = fetchone(c)\n    \n    if data:\n        c.execute(SQL_STATES, parameters)\n        states = fetchall(c)\n        state_codes_list = [s['state_code'] for s in states]\n        data['state_codes'] = '\\n'.join(state_codes_list)\n"
+                "py": "from apng_core.db import fetchone, fetchall\n\nSQL_OP = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           icon, resource_url, availability_condition\n    FROM process_operation\n    WHERE id = %(id)s\n\"\"\"\n\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL_OP, parameters)\n    data = fetchone(c)\n    \n"
             }
         },
         "saveOperation": {
             "script": {
-                "py": "from apng_core.db import fetchone\nimport uuid\n\n# Parse state codes from textarea (one per line)\nstate_codes_text = parameters.get('state_codes', '')\nstate_codes = [s.strip() for s in state_codes_text.split('\\n') if s.strip()]\n\n# Get or generate operation ID\noperation_id = parameters.get('id')\nif not operation_id:\n    operation_id = str(uuid.uuid4())\n    parameters['id'] = operation_id\n\nSQL_OP = \"\"\"\n    INSERT INTO process_operation \n        (id, type_code, code, name_en, name_ru, name_combined, icon, resource_url, availability_condition)\n    VALUES \n        (%(id)s::uuid, %(type_code)s, %(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, \n         %(icon)s, %(resource_url)s, %(availability_condition)s)\n    ON CONFLICT (type_code, code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        icon = EXCLUDED.icon,\n        resource_url = EXCLUDED.resource_url,\n        availability_condition = EXCLUDED.availability_condition\n    RETURNING id\n\"\"\"\n\nSQL_DELETE_STATES = \"\"\"\n    DELETE FROM process_operation_states WHERE operation_id = %(id)s::uuid\n\"\"\"\n\nSQL_INSERT_STATE = \"\"\"\n    INSERT INTO process_operation_states (operation_id, state_code)\n    VALUES (%(operation_id)s::uuid, %(state_code)s)\n    ON CONFLICT DO NOTHING\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL_OP, parameters)\n    result = fetchone(c)\n    \n    # Delete old state associations\n    c.execute(SQL_DELETE_STATES, {'id': result['id']})\n    \n    # Insert new state associations\n    for state_code in state_codes:\n        c.execute(SQL_INSERT_STATE, {\n            'operation_id': result['id'],\n            'state_code': state_code\n        })\n    \n    data = result\n"
+                "py": "from apng_core.db import fetchone\nimport uuid\n\n\n# Parse state codes from textarea (one per line)\nstate_codes_text = parameters.get('state_codes', '')\nstate_codes = [s.strip() for s in state_codes_text.split('\\n') if s.strip()]\n\n# Get or generate operation ID\noperation_id = parameters.get('id')\nif not operation_id:\n    operation_id = str(uuid.uuid4())\n    parameters['id'] = operation_id\n\nSQL_OP = \"\"\"\n    INSERT INTO process_operation \n        (id, type_code, code, name_en, name_ru, name_combined, icon, resource_url, availability_condition)\n    VALUES \n        (%(id)s::uuid, %(type_code)s, %(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, \n         %(icon)s, %(resource_url)s, %(availability_condition)s)\n    ON CONFLICT (type_code, code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        icon = EXCLUDED.icon,\n        resource_url = EXCLUDED.resource_url,\n        availability_condition = EXCLUDED.availability_condition\n    RETURNING id\n\"\"\"\n\nSQL_DELETE_STATES = \"\"\"\n    DELETE FROM process_operation_states WHERE operation_id = %(id)s::uuid\n\"\"\"\n\nSQL_INSERT_STATE = \"\"\"\n    INSERT INTO process_operation_states (operation_id, state_code)\n    VALUES (%(operation_id)s::uuid, %(state_code)s)\n    ON CONFLICT DO NOTHING\n\"\"\"\n\nparameters['icon'] = parameters.get('icon')\nparameters['resource_url'] = parameters.get('resource_url')\nparameters['availability_condition'] = parameters.get('availability_condition')\n\n\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL_OP, parameters)\n    result = fetchone(c)\n    \n    # Delete old state associations\n    c.execute(SQL_DELETE_STATES, {'id': result['id']})\n    \n    # Insert new state associations\n    for state_code in state_codes:\n        c.execute(SQL_INSERT_STATE, {\n            'operation_id': result['id'],\n            'state_code': state_code\n        })\n    \n    data = result\n"
             }
         },
         "deleteOperation": {
             "script": {
                 "py": "SQL = \"\"\"\n    DELETE FROM process_operation WHERE id = %(id)s::uuid\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = {'success': True}\n"
             }
+        },
+        "saveStateOper": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\n#raise Exception(parameters)\nSQL = \"\"\"\n    INSERT INTO process_operation_states (operation_id, state_id)\n    VALUES (%(operation_id)s, %(state_id)s)\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n"
+            }
+        },
+        "deleteStateOper": {
+            "script": {
+                "py": "from apng_core.db import fetchone\n\n#raise Exception(parameters)\nSQL = \"\"\"\n    DELETE FROM process_operation_states \n    where operation_id =  %(operation_id)s and state_id = %(state_id)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n"
+            }
         }
-    }
+    },
+    "js": {
+        "make_add_actions": "// TEST ONLY\nreturn context.oper?.map?.((t)=>{\n    console.log('selected oper', t, 'mem', mem);\n    return {\n        title: t.name_ru,\n        action: {\n            name: 'addAction',\n            params: {\n                operation_id: t.id\n            }\n        }\n\n    }\n});\n\n\n        /*\n        command: ()=>{\n            console.log('ctx', context);\n            backend.post('/aoa/execObjectMethod', {object: 'processManagement', method: 'saveStateOper', params: { state_id: mem.id, operation_id: t.id}})\n                .then((r)=>{\n                    console.log('MMM', mem);\n                    mem.oper=[{id: 1, name: '11111'}]; \n                    mem.oper = [...mem.oper]; \n                    forceUpdate();\n                })\n            \n        }\n        */"
+    },
+    "references": {}
 }
