@@ -820,7 +820,7 @@ def read_and_import_files():
                 # Extract fields based on message type
                 if msg_type in ['pacs.008', 'pacs.009']:
                     fields = extract_pacs008_fields(content)
-                    state_value = 'finished' if not fields.get('error') else 'error'
+                    state_value = 'LOADED'  # Initial state for all loaded documents
 
                     # Insert into swift_input
                     insert_sql = """
@@ -845,7 +845,7 @@ def read_and_import_files():
                         fields.get('error')
                     ))
                     imported_count += 1
-                    logger.debug(f'  Successfully imported {msg_type} file: {filename}')
+                    logger.debug(f'  Successfully imported {msg_type} file: {filename} with state LOADED')
 
                 elif msg_type == 'camt.053':
                     # Extract basic info
@@ -895,7 +895,7 @@ def read_and_import_files():
                         RETURNING id
                     """
                     c.execute(insert_sql, (
-                        filename, 'finished', content, current_date, msg_type,
+                        filename, 'LOADED', content, current_date, msg_type,
                         msg_id, stmt_id, elctrnc_seq_nb, acct_id, acct_ccy
                     ))
 
@@ -924,9 +924,9 @@ def read_and_import_files():
                         )
                         VALUES (%s, %s, %s, %s, %s)
                     """
-                    c.execute(insert_sql, (filename, 'finished', content, current_date, msg_type))
+                    c.execute(insert_sql, (filename, 'LOADED', content, current_date, msg_type))
                     imported_count += 1
-                    logger.debug(f'  Successfully imported {msg_type} file: {filename}')
+                    logger.debug(f'  Successfully imported {msg_type} file: {filename} with state LOADED')
 
                 # Copy to folder_out
                 dest_file_path = os.path.join(FOLDER_OUT, filename)
