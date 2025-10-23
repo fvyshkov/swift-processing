@@ -21,15 +21,16 @@ logger.debug('===========================================')
 # Global variables for folder paths from settings
 FOLDER_IN = None
 FOLDER_OUT = None
+FOLDER_UNPROCESSED = None
 
 def load_settings_from_db():
     """Load settings from swift_settings table"""
-    global FOLDER_IN, FOLDER_OUT
+    global FOLDER_IN, FOLDER_OUT, FOLDER_UNPROCESSED
 
     logger.debug('Loading settings from swift_settings table...')
 
     sql = """
-        SELECT folder_in, folder_out, server
+        SELECT folder_in, folder_out, folder_unprocessed, server
         FROM swift_settings
         LIMIT 1
     """
@@ -48,6 +49,7 @@ def load_settings_from_db():
             settings = result[0]
             FOLDER_IN = settings.get('folder_in')
             FOLDER_OUT = settings.get('folder_out')
+            FOLDER_UNPROCESSED = settings.get('folder_unprocessed')
             server = settings.get('server')
 
             if not FOLDER_IN:
@@ -62,15 +64,24 @@ def load_settings_from_db():
                     'description': 'Please set folder_out in SWIFT settings'
                 })
 
+            if not FOLDER_UNPROCESSED:
+                raise UserException({
+                    'message': 'folder_unprocessed is not configured in swift_settings',
+                    'description': 'Please set folder_unprocessed in SWIFT settings'
+                })
+
             logger.debug('='*60)
             logger.debug('SETTINGS LOADED FROM DATABASE:')
-            logger.debug(f'  folder_in:  {FOLDER_IN}')
-            logger.debug(f'  folder_out: {FOLDER_OUT}')
-            logger.debug(f'  server:     {server or "not set"}')
+            logger.debug(f'  folder_in:          {FOLDER_IN}')
+            logger.debug(f'  folder_out:         {FOLDER_OUT}')
+            logger.debug(f'  folder_unprocessed: {FOLDER_UNPROCESSED}')
+            logger.debug(f'  server:             {server or "not set"}')
             logger.debug('='*60)
 
             # Check and create folders
-            for folder_path, folder_name in [(FOLDER_IN, 'folder_in'), (FOLDER_OUT, 'folder_out')]:
+            for folder_path, folder_name in [(FOLDER_IN, 'folder_in'), 
+                                             (FOLDER_OUT, 'folder_out'),
+                                             (FOLDER_UNPROCESSED, 'folder_unprocessed')]:
                 if not os.path.exists(folder_path):
                     logger.warning(f'{folder_name} does not exist: {folder_path}')
                     logger.debug(f'Creating {folder_name}: {folder_path}')
@@ -1524,11 +1535,11 @@ def read_and_import_files():
                 supported_types = ['pacs.008', 'pacs.009', 'camt.053', 'camt.054', 'camt.056']
 
                 if msg_type not in supported_types:
-                    # Unknown or unsupported message type - silently move to folder_out
+                    # Unknown or unsupported message type - silently move to folder_unprocessed
                     skipped_count += 1
 
-                    # Move to folder_out without noise
-                    dest_file_path = os.path.join(FOLDER_OUT, filename)
+                    # Move to folder_unprocessed without noise
+                    dest_file_path = os.path.join(FOLDER_UNPROCESSED, filename)
                     try:
                         shutil.move(file_path, dest_file_path)
                     except Exception:
@@ -1843,12 +1854,12 @@ def read_and_import_files():
                 error_msg = 'UTF-8 decode failed'
                 error_count += 1
 
-                # Move file with error to folder_out
+                # Move file with error to folder_unprocessed
                 try:
-                    dest_file_path = os.path.join(FOLDER_OUT, filename)
+                    dest_file_path = os.path.join(FOLDER_UNPROCESSED, filename)
                     shutil.move(file_path, dest_file_path)
 
-                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
+                    error_file_path = os.path.join(FOLDER_UNPROCESSED, f'{filename}.error.txt')
                     with open(error_file_path, 'w', encoding='utf-8') as err_f:
                         err_f.write(f'Error processing file: {filename}\\n')
                         err_f.write(f'Timestamp: {datetime.now()}\\n')
@@ -1860,12 +1871,12 @@ def read_and_import_files():
             except Exception as e:
                 error_count += 1
 
-                # Move file with error to folder_out
+                # Move file with error to folder_unprocessed
                 try:
-                    dest_file_path = os.path.join(FOLDER_OUT, filename)
+                    dest_file_path = os.path.join(FOLDER_UNPROCESSED, filename)
                     shutil.move(file_path, dest_file_path)
 
-                    error_file_path = os.path.join(FOLDER_OUT, f'{filename}.error.txt')
+                    error_file_path = os.path.join(FOLDER_UNPROCESSED, f'{filename}.error.txt')
                     tb = traceback.format_exc()
                     with open(error_file_path, 'w', encoding='utf-8') as err_f:
                         err_f.write(f'Error processing file: {filename}\\n')

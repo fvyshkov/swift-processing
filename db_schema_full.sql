@@ -168,6 +168,9 @@ TABLESPACE pg_default;
 COMMENT ON TABLE public.swift_settings IS
     'System settings for SWIFT message processing (input/output folders, server configuration)';
 
+COMMENT ON COLUMN public.swift_settings.folder_unprocessed IS
+    'Folder for files that could not be processed (unsupported types, errors)';
+
 -- Insert default settings (only if table is empty)
 INSERT INTO public.swift_settings (folder_in, folder_out, folder_unprocessed, server)
 SELECT '/mnt/apng-swift/in', '/mnt/apng-swift/out', '/mnt/apng-swift/unprocessed', 'default'
