@@ -201,6 +201,9 @@ CREATE TABLE IF NOT EXISTS public.swift_out_fields
     snd_street text COLLATE pg_catalog."default",
     snd_building text COLLATE pg_catalog."default",
     
+    -- Generated XML content for outgoing payment
+    content text COLLATE pg_catalog."default",
+    
     -- Legacy fields (deprecated, kept for compatibility)
     field1 text COLLATE pg_catalog."default",
     field2 text COLLATE pg_catalog."default",
@@ -225,6 +228,9 @@ COMMENT ON COLUMN public.swift_out_fields.rcv_street IS
     'Receiver street (parsed from address by LLM)';
 COMMENT ON COLUMN public.swift_out_fields.rcv_building IS
     'Receiver building number (parsed from address by LLM)';
+
+COMMENT ON COLUMN public.swift_out_fields.content IS
+    'Generated XML content for outgoing payment (pacs.008 format)';
 
 -- ============================================================================
 -- Child Table 1: swift_stmt_bal
