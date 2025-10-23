@@ -184,15 +184,47 @@ CREATE TABLE IF NOT EXISTS public.swift_out_fields
 (
     dep_id integer NOT NULL,
     id integer NOT NULL,
+    
+    -- Receiver address fields (parsed by LLM)
+    rcv_postal_code text COLLATE pg_catalog."default",
+    rcv_country text COLLATE pg_catalog."default",
+    rcv_region text COLLATE pg_catalog."default",
+    rcv_city text COLLATE pg_catalog."default",
+    rcv_street text COLLATE pg_catalog."default",
+    rcv_building text COLLATE pg_catalog."default",
+    
+    -- Sender address fields (parsed by LLM)
+    snd_postal_code text COLLATE pg_catalog."default",
+    snd_country text COLLATE pg_catalog."default",
+    snd_region text COLLATE pg_catalog."default",
+    snd_city text COLLATE pg_catalog."default",
+    snd_street text COLLATE pg_catalog."default",
+    snd_building text COLLATE pg_catalog."default",
+    
+    -- Legacy fields (deprecated, kept for compatibility)
     field1 text COLLATE pg_catalog."default",
     field2 text COLLATE pg_catalog."default",
-    modified timestamp without time zone,
+    
+    modified timestamp without time zone DEFAULT now(),
     CONSTRAINT swift_out_fields_pkey PRIMARY KEY (dep_id, id)
 )
 TABLESPACE pg_default;
 
 COMMENT ON TABLE public.swift_out_fields IS
     'Additional output fields for SWIFT message processing by department';
+
+COMMENT ON COLUMN public.swift_out_fields.rcv_postal_code IS
+    'Receiver postal code (parsed from address by LLM)';
+COMMENT ON COLUMN public.swift_out_fields.rcv_country IS
+    'Receiver country (parsed from address by LLM)';
+COMMENT ON COLUMN public.swift_out_fields.rcv_region IS
+    'Receiver region/oblast (parsed from address by LLM)';
+COMMENT ON COLUMN public.swift_out_fields.rcv_city IS
+    'Receiver city (parsed from address by LLM)';
+COMMENT ON COLUMN public.swift_out_fields.rcv_street IS
+    'Receiver street (parsed from address by LLM)';
+COMMENT ON COLUMN public.swift_out_fields.rcv_building IS
+    'Receiver building number (parsed from address by LLM)';
 
 -- ============================================================================
 -- Child Table 1: swift_stmt_bal

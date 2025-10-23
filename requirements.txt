@@ -1,0 +1,8 @@
+# SWIFT ISO 20022 Message Processing
+# Core dependencies
+
+# HTTP requests for Claude API
+requests>=2.31.0
+
+# Note: apng_core is internal and should be installed separately
+
