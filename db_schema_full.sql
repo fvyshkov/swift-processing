@@ -157,8 +157,9 @@ COMMENT ON COLUMN public.swift_input.cxl_rsn_cd IS
 CREATE TABLE IF NOT EXISTS public.swift_settings
 (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
-    folder_in text COLLATE pg_catalog."default" NOT NULL,
-    folder_out text COLLATE pg_catalog."default" NOT NULL,
+    folder_in text COLLATE pg_catalog."default" ,
+    folder_unprocessed text COLLATE pg_catalog."default" ,
+    folder_out text COLLATE pg_catalog."default" ,
     server text COLLATE pg_catalog."default",
     CONSTRAINT swift_settings_pkey PRIMARY KEY (id)
 )
@@ -168,8 +169,8 @@ COMMENT ON TABLE public.swift_settings IS
     'System settings for SWIFT message processing (input/output folders, server configuration)';
 
 -- Insert default settings (only if table is empty)
-INSERT INTO public.swift_settings (folder_in, folder_out, server)
-SELECT '/mnt/apng-swift/in', '/mnt/apng-swift/out', 'default'
+INSERT INTO public.swift_settings (folder_in, folder_out, folder_unprocessed, server)
+SELECT '/mnt/apng-swift/in', '/mnt/apng-swift/out', '/mnt/apng-swift/unprocessed', 'default'
 WHERE NOT EXISTS (SELECT 1 FROM public.swift_settings);
 
 -- ============================================================================
