@@ -35,6 +35,7 @@
 3. **НЕ изменяйте данные в Oracle** - только чтение
 4. **ВСЕГДА следуйте существующим паттернам**
 5. **Python в JSON** - одна строка с `\n` для переводов
+6. **Операции процессов** - используйте `runOperations`, НЕ создавайте отдельные методы!
 
 ## 📁 Структура проекта
 
@@ -74,6 +75,19 @@ backend.post('/aoa/execObjectMethod', {
     object: 'swiftIncome',
     method: 'getList',
     params: {filter: 'active'}
+})
+```
+
+### Вызов операции процесса
+```javascript
+// ВСЕГДА через runOperations!
+backend.post('/aoa/execObjectMethod', {
+    object: 'swiftIncome',
+    method: 'runOperations',
+    params: {
+        process_id: processId,
+        operation_code: 'MARK_AS_PROCESSED'
+    }
 })
 ```
 

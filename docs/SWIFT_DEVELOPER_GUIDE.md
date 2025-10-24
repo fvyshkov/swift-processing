@@ -204,15 +204,36 @@ with initDbSession(application='colvir_cbs').cursor() as c:
 4. **Process** - экземпляры процессов
 
 ### Добавление новой операции
+
+**ВАЖНО**: Операции выполняются через унифицированный метод `runOperations`! НЕ создавайте отдельные методы.
+
 ```sql
 -- 1. Создать операцию
 INSERT INTO process_operation (type_code, code, name_ru, to_state)
 VALUES ('pacs.008', 'VALIDATE', 'Проверить', 'VALIDATED');
 
--- 2. Связать с состояниями
+-- 2. Связать с состояниями  
 INSERT INTO process_operation_states (operation_id, state_id)
 SELECT o.id, s.id FROM process_operation o, process_state s
 WHERE o.code = 'VALIDATE' AND s.code = 'LOADED';
+
+-- 3. Если нужна специальная логика:
+-- Для PL/SQL (Oracle):
+UPDATE process_operation SET resource_url = 'DECLARE ... BEGIN ... END;'
+WHERE code = 'VALIDATE';
+
+-- Для Python:
+UPDATE process_operation SET database = 'python', resource_url = 'validateMethod'
+WHERE code = 'VALIDATE';
+```
+
+Операция вызывается через:
+```javascript
+backend.post('/aoa/execObjectMethod', {
+    object: 'swiftIncome',
+    method: 'runOperations',
+    params: {process_id: id, operation_code: 'VALIDATE'}
+})
 ```
 
 ## Типовые задачи

@@ -384,77 +384,25 @@ WHERE o.code = 'SEND_NOTIFICATION'
   AND s.code = 'LOADED';
 ```
 
-2. Добавьте метод в объект:
+2. **Операции обрабатываются автоматически через систему!**
 
-```json
-"methods": {
-    "sendNotification": {
-        "script": {
-            "py": """
-from apng_core.db import fetchone
-from apng_core.exceptions import UserException
-import requests
-import json
+Операция будет выполнена через унифицированный метод `runOperations`. Вам НЕ нужно создавать отдельные методы для операций.
 
-# Получаем данные сообщения
-swift_id = parameters.get('swift_input_id')
+Если операция требует специальной логики, она указывается в поле `resource_url` операции:
 
-SQL = '''
-    SELECT 
-        id, msg_id, amount, currency_code,
-        snd_name, rcv_name
-    FROM swift_input
-    WHERE id = %(id)s
-'''
+```sql
+-- В resource_url можно указать PL/SQL код для Oracle
+UPDATE process_operation 
+SET resource_url = 'DECLARE ... BEGIN ... END;'
+WHERE code = 'SEND_NOTIFICATION';
+```
 
-with initDbSession(database='default').cursor() as c:
-    c.execute(SQL, {'id': swift_id})
-    swift_data = fetchone(c)
-    
-if not swift_data:
-    raise UserException('Сообщение не найдено')
-
-# Формируем уведомление
-notification = {
-    'type': 'SWIFT_PAYMENT',
-    'message_id': swift_data['msg_id'],
-    'amount': float(swift_data['amount']),
-    'currency': swift_data['currency_code'],
-    'sender': swift_data['snd_name'],
-    'receiver': swift_data['rcv_name']
-}
-
-# Отправляем уведомление (пример)
-try:
-    # response = requests.post('https://api.example.com/notify', json=notification)
-    # if response.status_code != 200:
-    #     raise Exception(f'API error: {response.status_code}')
-    
-    # Для примера просто логируем
-    print(f"Notification sent: {json.dumps(notification)}")
-    
-    # Обновляем состояние
-    SQL_UPDATE = '''
-        UPDATE process 
-        SET state_id = (
-            SELECT id FROM process_state 
-            WHERE type_code = 'pacs.008' AND code = 'PROCESSED'
-        )
-        WHERE swift_input_id = %(swift_id)s
-    '''
-    c.execute(SQL_UPDATE, {'swift_id': swift_id})
-    
-    data = {'success': True, 'message': 'Уведомление отправлено'}
-    
-except Exception as e:
-    raise UserException({
-        'message': 'Ошибка отправки уведомления',
-        'description': str(e)
-    })
-"""
-        }
-    }
-}
+Или для Python логики используйте поле `database`:
+```sql
+UPDATE process_operation 
+SET database = 'python',
+    resource_url = 'notificationLogic'  -- имя метода
+WHERE code = 'SEND_NOTIFICATION';
 ```
 
 3. Добавьте кнопку операции в список:

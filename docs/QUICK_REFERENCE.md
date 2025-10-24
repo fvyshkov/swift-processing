@@ -148,6 +148,28 @@ with initDbSession(application='colvir_cbs').cursor() as c:
 
 `refresh`, `add`, `edit`, `delete`, `save`, `send`, `check`, `undo`, `visibility`, `payment`, `close`
 
+## ⚡ Операции процессов
+
+**ВАЖНО**: Операции выполняются через унифицированный метод `runOperations`!
+
+```javascript
+// ✅ Правильно - использовать runOperations
+backend.post('/aoa/execObjectMethod', {
+    object: 'swiftIncome',
+    method: 'runOperations',
+    params: {
+        process_id: processId,
+        operation_code: 'MARK_AS_PROCESSED'
+    }
+})
+
+// ❌ Неправильно - создавать отдельные методы для операций
+```
+
+Логика операции указывается в БД:
+- `resource_url` - PL/SQL код для Oracle
+- `database` + `resource_url` - для Python методов
+
 ## 🚨 Частые ошибки
 
 ❌ **Неправильно:**
