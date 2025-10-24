@@ -571,9 +571,12 @@
                             "placeholder": "e.g. send, check, approve"
                         },
                         "resource_url": {
-                            "label": "Resource URL",
+                            "label": "Procedure",
                             "control": "TextEdit",
-                            "placeholder": "/api/operation/execute"
+                            "controlProps": {
+                                "multiline": true,
+                                "minRows": 1
+                            }
                         },
                         "availability_condition": {
                             "label": "Availability Condition (JSON)",
@@ -908,8 +911,9 @@
         },
         "getState": {
             "script": {
-                "py": "from apng_core.db import fetchone, fetchall\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE type_code = %(type_code)s AND code = %(code)s\n\"\"\"\n\n\nSQL_OPER = \"\"\"\n    SELECT o.id , os.*, o.name_ru name\n    FROM process_operation_states os, process_operation o\n    WHERE os.state_id = (select id from process_state where code=%(code)s)\n    and os.operation_id = o.id\n\"\"\"\n\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n    \n    #raise Exception(parameters)\n    c.execute(SQL_OPER, {\"code\": parameters.get('code')})\n    data_oper = fetchall(c)\n    data['oper'] = data_oper\n"
-            }
+                "py": "from apng_core.db import fetchone, fetchall\n\nSQL = \"\"\"\n    SELECT id, type_code, code, name_en, name_ru, name_combined,\n           color_code, allow_edit, allow_delete\n    FROM process_state\n    WHERE type_code = %(type_code)s AND code = %(code)s\n\"\"\"\n#raise Exception (parameters)\n\nSQL_OPER = \"\"\"\n    SELECT o.id , os.*, o.name_ru name\n    FROM process_operation_states os, process_operation o\n    WHERE os.state_id = (select id from process_state where type_code = %(type_code)s and code=%(code)s)\n    and os.operation_id = o.id\n\"\"\"\n\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n    \n    #raise Exception(parameters)\n    c.execute(SQL_OPER, parameters)\n    data_oper = fetchall(c)\n    data['oper'] = data_oper\n"
+            },
+            "sql": {}
         },
         "saveState": {
             "script": {

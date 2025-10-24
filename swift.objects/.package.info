@@ -94,14 +94,6 @@
         {
             "model_name": "workplace.Workplace",
             "model_title": "Рабочее место",
-            "object_id": "99999999-9999-9999-9999-999999999999",
-            "object_name": "Process Manager",
-            "object_attrs": null,
-            "file_name": "workplace/process.manager.xml"
-        },
-        {
-            "model_name": "workplace.Workplace",
-            "model_title": "Рабочее место",
             "object_id": "44444444-4444-4444-4444-444444444444",
             "object_name": "SWIFT",
             "object_attrs": null,
