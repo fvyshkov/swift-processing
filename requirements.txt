@@ -4,5 +4,8 @@
 # HTTP requests for Claude API
 requests>=2.31.0
 
+# Date calculations for package uploader
+python-dateutil>=2.8.2
+
 # Note: apng_core is internal and should be installed separately
 
