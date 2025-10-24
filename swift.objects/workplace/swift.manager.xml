@@ -1,6 +1,6 @@
 <workplace code="swift.manager" name="SWIFT">
   <menu name="SWIFT">
-    <menu name="Входящие сообщения (Импорт)" call="/aoa/ObjectListTask">
+    <menu name="Входящие сообщения" call="/aoa/ObjectListTask">
       <p name="object" value="swiftIncome" />
       <p name="list" value="default" />
     </menu>

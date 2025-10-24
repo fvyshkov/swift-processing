@@ -9,6 +9,13 @@ import sys
 import zipfile
 from pathlib import Path
 import subprocess
+import json
+import requests
+from datetime import datetime
+import urllib3
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def create_zip_archive(source_dir, output_zip):
@@ -60,7 +67,7 @@ def create_zip_archive(source_dir, output_zip):
 
 def upload_package(zip_file, url, dop_date=None, session_id="COLVIR"):
     """
-    Upload package using upload_package.py script
+    Upload package directly to the server
     
     Args:
         zip_file: Path to the zip file
@@ -70,27 +77,137 @@ def upload_package(zip_file, url, dop_date=None, session_id="COLVIR"):
     """
     print(f"\nUploading package to {url}...")
     
-    # Build command
-    cmd = [
-        sys.executable,  # Use the same Python interpreter
-        'upload_package.py',
-        zip_file,
-        '--url', url
-    ]
-    
+    # Calculate DOP date
     if dop_date:
-        cmd.extend(['--dop', dop_date])
+        dop = dop_date
+    else:
+        from dateutil.relativedelta import relativedelta
+        future_date = datetime.now() + relativedelta(months=11)
+        dop = future_date.strftime('%Y-%m-%d')
     
-    if session_id != 'COLVIR':
-        cmd.extend(['--session', session_id])
+    headers = {
+        'Accept': 'application/json,text/plain',
+        'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,ru;q=0.7',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Origin': url,
+        'Pragma': 'no-cache',
+        'Referer': f'{url}/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+        'X-ClientVersion': '???',
+        'X-ColvirDOP': dop,
+        'X-ColvirS': session_id,
+        'X-Language': 'EN'
+    }
     
-    # Run upload script
-    result = subprocess.run(cmd, capture_output=False)
+    filename = os.path.basename(zip_file)
     
-    if result.returncode != 0:
-        raise RuntimeError(f"Upload failed with exit code {result.returncode}")
+    # Prepare multipart form data
+    with open(zip_file, 'rb') as f:
+        files = {
+            'file': (filename, f, 'application/zip')
+        }
+        
+        data = {
+            'object': 'package',
+            'method': 'installPackageFile'
+        }
+        
+        api_url = f'{url}/api/aoa/execObjectMethod'
+        
+        print(f"POST {api_url}")
+        response = requests.post(
+            api_url,
+            headers=headers,
+            data=data,
+            files=files,
+            verify=False
+        )
+    
+    response.raise_for_status()
+    print(f"✓ Upload response: {response.status_code}")
     
     return True
+
+
+def extract_and_run_db_script(source_dir, db_host, db_port, db_name, db_user):
+    """
+    Extract SQL script from swiftIncome.json and execute it on the database
+    
+    Args:
+        source_dir: Source directory containing ao/swiftIncome.json
+        db_host: Database host
+        db_port: Database port
+        db_name: Database name
+        db_user: Database user
+    """
+    json_path = Path(source_dir) / 'ao' / 'swiftIncome.json'
+    
+    if not json_path.exists():
+        print(f"Warning: {json_path} not found, skipping DB script execution")
+        return False
+    
+    print(f"\nExtracting SQL script from {json_path}...")
+    
+    try:
+        # Read JSON file
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Navigate to DB_CREATE_FULL method
+        sql_script = data.get('methods', {}).get('DB_CREATE_FULL', {}).get('sql', {}).get('sql', '')
+        
+        if not sql_script:
+            print("Warning: DB_CREATE_FULL SQL script not found in JSON")
+            return False
+        
+        # Replace \n with actual newlines
+        sql_script = sql_script.replace('\\n', '\n')
+        
+        print(f"SQL script extracted ({len(sql_script)} characters)")
+        print("Executing SQL script on database...")
+        
+        # Execute SQL script via psql
+        cmd = [
+            'psql',
+            '-h', db_host,
+            '-p', str(db_port),
+            '-U', db_user,
+            '-d', db_name,
+            '-c', sql_script
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            print(f"✗ SQL execution failed:")
+            print(result.stderr)
+            return False
+        
+        print("✓ SQL script executed successfully!")
+        if result.stdout:
+            # Print only last few lines to avoid spam
+            lines = result.stdout.strip().split('\n')
+            if len(lines) > 10:
+                print("...")
+                print('\n'.join(lines[-10:]))
+            else:
+                print(result.stdout)
+        
+        return True
+        
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON: {e}")
+        return False
+    except Exception as e:
+        print(f"Error executing DB script: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def main():
@@ -148,6 +265,38 @@ Examples:
         help='Only create archive without uploading'
     )
     
+    # Database options
+    parser.add_argument(
+        '--skip-db-script',
+        action='store_true',
+        help='Skip running DB_CREATE_FULL script after upload'
+    )
+    
+    parser.add_argument(
+        '--db-host',
+        default='30.30.1.34',
+        help='Database host (default: 30.30.1.34)'
+    )
+    
+    parser.add_argument(
+        '--db-port',
+        type=int,
+        default=5432,
+        help='Database port (default: 5432)'
+    )
+    
+    parser.add_argument(
+        '--db-name',
+        default='apng_mb',
+        help='Database name (default: apng_mb)'
+    )
+    
+    parser.add_argument(
+        '--db-user',
+        default='apng',
+        help='Database user (default: apng)'
+    )
+    
     args = parser.parse_args()
     
     try:
@@ -163,6 +312,16 @@ Examples:
                 session_id=args.session
             )
             print("\n✓ Package updated successfully!")
+            
+            # Step 3: Run DB script (unless skipped)
+            if not args.skip_db_script:
+                extract_and_run_db_script(
+                    source_dir=args.source,
+                    db_host=args.db_host,
+                    db_port=args.db_port,
+                    db_name=args.db_name,
+                    db_user=args.db_user
+                )
         else:
             print("\n✓ Archive created (upload skipped)")
         
