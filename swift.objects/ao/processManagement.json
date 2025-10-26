@@ -14,6 +14,10 @@
                 "resource_url": {
                     "title": "Resource URL",
                     "flex": 1
+                },
+                "attributes_table": {
+                    "title": "Attributes Table",
+                    "width": 200
                 }
             },
             "id": "code",
@@ -330,6 +334,11 @@
                         "resource_url": {
                             "label": "Resource URL",
                             "control": "TextEdit"
+                        },
+                        "attributes_table": {
+                            "label": "Attributes Table",
+                            "control": "TextEdit",
+                            "placeholder": "e.g. swift_input"
                         }
                     }
                 },
@@ -884,18 +893,18 @@
     "methods": {
         "getTypeList": {
             "script": {
-                "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url\n    FROM process_type\n    ORDER BY code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\n"
+                "py": "from apng_core.db import fetchall\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url, attributes_table\n    FROM process_type\n    ORDER BY code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL)\n    data = fetchall(c)\n"
             },
             "sql": {}
         },
         "getType": {
             "script": {
-                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url\n    FROM process_type\n    WHERE code = %(code)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    SELECT code, name_en, name_ru, name_combined, resource_url, attributes_table\n    FROM process_type\n    WHERE code = %(code)s\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
             }
         },
         "saveType": {
             "script": {
-                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    INSERT INTO process_type (code, name_en, name_ru, name_combined, resource_url)\n    VALUES (%(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, %(resource_url)s)\n    ON CONFLICT (code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        resource_url = EXCLUDED.resource_url\n    RETURNING code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
+                "py": "from apng_core.db import fetchone\n\nSQL = \"\"\"\n    INSERT INTO process_type (code, name_en, name_ru, name_combined, resource_url, attributes_table)\n    VALUES (%(code)s, %(name_en)s, %(name_ru)s, %(name_combined)s, %(resource_url)s, %(attributes_table)s)\n    ON CONFLICT (code) DO UPDATE SET\n        name_en = EXCLUDED.name_en,\n        name_ru = EXCLUDED.name_ru,\n        name_combined = EXCLUDED.name_combined,\n        resource_url = EXCLUDED.resource_url,\n        attributes_table = EXCLUDED.attributes_table\n    RETURNING code\n\"\"\"\n\nwith initDbSession(database='default').cursor() as c:\n    c.execute(SQL, parameters)\n    data = fetchone(c)\n"
             }
         },
         "deleteType": {

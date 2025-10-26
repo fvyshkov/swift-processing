@@ -418,7 +418,7 @@ WHERE code = 'SEND_NOTIFICATION';
                 "icon": "send",
                 "command": {
                     "type": "js",
-                    "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'sendNotification', params: {swift_input_id: $listRow.id}}).then(() => forceRefreshList())"
+                    "js": "backend.post('/aoa/execObjectMethod', {object: 'swiftIncome', method: 'sendNotification', params: {doc_id: $listRow.id}}).then(() => forceRefreshList())"
                 },
                 "visible$": "$listRow.msg_type === 'pacs.008' && $listRow.state === 'new'",
                 "confirm": {

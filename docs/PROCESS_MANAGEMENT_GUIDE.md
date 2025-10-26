@@ -91,7 +91,7 @@ process_operation_states (
 ```sql
 process (
     id UUID PRIMARY KEY,
-    swift_input_id UUID,      -- Ссылка на сообщение
+    doc_id UUID,      -- Ссылка на сообщение
     state_id UUID             -- Текущее состояние
 )
 ```

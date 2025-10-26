@@ -7,7 +7,7 @@
             "sql": {
                 "sqlType": "query",
                 "database": "default",
-                "sql": "SELECT code, name_en, name_ru, name_combined, resource_url FROM process_type ORDER BY code"
+                "sql": "SELECT code, name_en, name_ru, name_combined, resource_url, attributes_table FROM process_type ORDER BY code"
             },
             "script": {}
         }
@@ -44,6 +44,11 @@
                         "title": "Resource URL",
                         "field": "resource_url",
                         "width": 300
+                    },
+                    {
+                        "title": "Attributes Table",
+                        "field": "attributes_table",
+                        "width": 200
                     }
                 ],
                 "keyField": "code",
@@ -76,7 +81,7 @@
                 "sql": {
                     "sqlType": "query",
                     "database": "default",
-                    "sql": "SELECT code, name_en, name_ru, name_combined, resource_url FROM process_type ORDER BY code",
+                    "sql": "SELECT code, name_en, name_ru, name_combined, resource_url, attributes_table FROM process_type ORDER BY code",
                     "params": []
                 },
                 "script": {}
