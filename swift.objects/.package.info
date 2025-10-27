@@ -11,6 +11,11 @@
             "id": "58d15866-38cd-483d-990d-7f99201822d3",
             "name": "Рабочее место",
             "model_name": "workplace.Workplace"
+        },
+        {
+            "id": "d0d0ef2f-5ab4-440e-83e3-ccb6aaef08f8",
+            "name": "Сценарий Workflow",
+            "model_name": "easyflow.Deployment"
         }
     ],
     "content": [
@@ -98,6 +103,14 @@
             "object_name": "SWIFT",
             "object_attrs": null,
             "file_name": "workplace/swift.manager.xml"
+        },
+        {
+            "model_name": "easyflow.Deployment",
+            "model_title": "Сценарий Workflow",
+            "object_id": "39ec7021-6a04-4d4f-8b2f-85ddc6cefed4",
+            "object_name": "Ввод атрибутов операции",
+            "object_attrs": null,
+            "file_name": "workflow/type_008_payment.xml"
         }
     ]
 }

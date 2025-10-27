@@ -1,0 +1,14 @@
+<workflow id="type_008_payment" name="Ввод атрибутов операции">
+    <script id="401e8fd9-7b8a-4a15-92d1-5cd2bd9aa5f4" name="script">
+        <![CDATA[import json
+#raise Exception(str({'id': pv['data']['id']}))
+#raise Exception(str(pv))]]>
+    </script>
+    <task id="7563a901-c69d-4e5f-a3e8-2ae8bbad78f0" name="user&apos;s task" autoStart="true">
+        <clientTask path="/aoa/ObjectTask" taskName="{{task.description}}">
+            <p name="object" expression="&apos;swiftIncome&apos;"/>
+            <p name="form" expression="&apos;oper_008&apos;"/>
+            <p name="record" expression="{&apos;oper&apos;: &apos;CREATE_PAYMENT&apos;, &apos;id&apos;: pv[&apos;row&apos;][&apos;id&apos;], &apos;msg_type&apos;: pv[&apos;msg_type&apos;]}"/>
+        </clientTask>
+    </task>
+</workflow>
