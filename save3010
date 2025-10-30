@@ -1,0 +1,537 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict XNLJq65LrVYXobzYcwEAXhCMAoZLDJGg2b52TEqim0dvm8lVJ5L4Qs7NiI1yvXK
+
+-- Dumped from database version 18.0 (Debian 18.0-1.pgdg12+3)
+-- Dumped by pg_dump version 18.0 (Debian 18.0-1.pgdg12+3)
+
+-- Started on 2025-10-30 04:44:05 MSK
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 278 (class 1259 OID 65094)
+-- Name: process; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.process (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    doc_id uuid NOT NULL,
+    state_id uuid CONSTRAINT process_state_id_not_null1 NOT NULL
+);
+
+
+ALTER TABLE public.process OWNER TO postgres;
+
+--
+-- TOC entry 3624 (class 0 OID 0)
+-- Dependencies: 278
+-- Name: TABLE process; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.process IS 'Process instances for each SWIFT message';
+
+
+--
+-- TOC entry 3625 (class 0 OID 0)
+-- Dependencies: 278
+-- Name: COLUMN process.doc_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.process.doc_id IS 'Document ID - can reference records in different tables based on process type';
+
+
+--
+-- TOC entry 276 (class 1259 OID 65056)
+-- Name: process_operation; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.process_operation (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    type_id uuid NOT NULL,
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    icon text,
+    resource_url text,
+    availability_condition text,
+    cancel boolean DEFAULT false,
+    move_to_state_script text,
+    workflow text,
+    database text
+);
+
+
+ALTER TABLE public.process_operation OWNER TO postgres;
+
+--
+-- TOC entry 3627 (class 0 OID 0)
+-- Dependencies: 276
+-- Name: TABLE process_operation; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.process_operation IS 'Operations available for SWIFT message processing';
+
+
+--
+-- TOC entry 3628 (class 0 OID 0)
+-- Dependencies: 276
+-- Name: COLUMN process_operation.move_to_state_script; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.process_operation.move_to_state_script IS 'Python script that returns the target state ID based on document attributes';
+
+
+--
+-- TOC entry 277 (class 1259 OID 65077)
+-- Name: process_operation_states; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.process_operation_states (
+    operation_id uuid NOT NULL,
+    state_id uuid NOT NULL
+);
+
+
+ALTER TABLE public.process_operation_states OWNER TO postgres;
+
+--
+-- TOC entry 275 (class 1259 OID 65033)
+-- Name: process_state; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.process_state (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    type_id uuid NOT NULL,
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    color_code text,
+    allow_edit boolean DEFAULT false,
+    allow_delete boolean DEFAULT false,
+    start boolean DEFAULT false,
+    operation_list_script text
+);
+
+
+ALTER TABLE public.process_state OWNER TO postgres;
+
+--
+-- TOC entry 3631 (class 0 OID 0)
+-- Dependencies: 275
+-- Name: TABLE process_state; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.process_state IS 'States for SWIFT message processing workflows';
+
+
+--
+-- TOC entry 274 (class 1259 OID 65012)
+-- Name: process_type; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.process_type (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    code text NOT NULL,
+    name_en text NOT NULL,
+    name_ru text NOT NULL,
+    attributes_table text,
+    parent_id uuid
+);
+
+
+ALTER TABLE public.process_type OWNER TO postgres;
+
+--
+-- TOC entry 3633 (class 0 OID 0)
+-- Dependencies: 274
+-- Name: TABLE process_type; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.process_type IS 'Process types for different SWIFT message types with hierarchy support';
+
+
+--
+-- TOC entry 3634 (class 0 OID 0)
+-- Dependencies: 274
+-- Name: COLUMN process_type.id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.process_type.id IS 'Unique identifier for process type';
+
+
+--
+-- TOC entry 3635 (class 0 OID 0)
+-- Dependencies: 274
+-- Name: COLUMN process_type.code; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.process_type.code IS 'Process type code (e.g., pacs.008, camt.053)';
+
+
+--
+-- TOC entry 3636 (class 0 OID 0)
+-- Dependencies: 274
+-- Name: COLUMN process_type.attributes_table; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.process_type.attributes_table IS 'Table name where document attributes for this type are stored';
+
+
+--
+-- TOC entry 3637 (class 0 OID 0)
+-- Dependencies: 274
+-- Name: COLUMN process_type.parent_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.process_type.parent_id IS 'Reference to parent process type for hierarchy';
+
+
+--
+-- TOC entry 3618 (class 0 OID 65094)
+-- Dependencies: 278
+-- Data for Name: process; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.process (id, doc_id, state_id) FROM stdin;
+043c66f1-e33f-412f-a113-a0da2b11603c	292476a6-8143-48ab-ae23-ba5026c12d66	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+2234a87b-c798-4846-b1cf-eacf04717160	eb170b22-2d99-4044-a9db-5ec13d578d2b	b164a0c1-9544-47c4-84a5-d858d29714df
+4d975620-01c4-4479-b1f9-d851dbf42108	31247f5a-e245-40e0-bd51-d120a2ce785a	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+7cd15646-9d42-4b7f-af5d-dd12ea949d59	e879a6af-7def-4da9-8dec-471613dc8880	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+f7128766-b04e-4ee6-b001-3a656ca936ca	86d36e8d-b016-43e4-ab0e-827a407b6e18	f8c40da3-cf4e-42ec-a641-53eeb7208448
+7ed24589-ee99-41d8-89fd-0abbd669a526	451b4046-f501-415f-b5f1-2714893e6ab3	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+e7790c5b-b399-400d-81ad-4d00b211ec84	7721c592-6353-45a3-903d-d2607ad07b41	b164a0c1-9544-47c4-84a5-d858d29714df
+7ad02be5-572c-40dc-abee-8568e0480ebe	72f812a3-9dd9-4b4e-a811-fbcd88338f9c	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+e50b2c77-52f9-443f-83d0-c0a29e5b7bfa	125c0d43-7b1f-4b40-a3f3-1297958b7c6d	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+5d5b8b78-14f4-4b2c-b934-a162727951a5	08089d90-c337-489b-9200-0fe6d82cf7ba	9f676606-51f2-4bbb-b220-88ae23f166c2
+ac41d601-c26c-468a-93f8-6e2f521170a0	c779f7a7-e856-4008-af10-72f8ad0e01af	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+e722182e-1f27-4410-a954-54522603bf04	299bafd8-d4ed-4856-8468-7de27cb8d97e	b164a0c1-9544-47c4-84a5-d858d29714df
+e2aabdb8-c5ca-4992-a1b5-338b9bd41f36	24b66e26-e510-40b4-8e4a-09485a91e0e9	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+9579d41a-c130-4caa-970c-79c403030a06	48031a03-4460-4ba4-8bbe-948eaf354b67	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+95f4f323-8061-4aa0-98f7-100be07fa3a4	d387a77e-8270-419b-b605-62ca2f0e1389	9f676606-51f2-4bbb-b220-88ae23f166c2
+18c436b6-75a9-48fe-90fa-b19f4a90345d	3dfd8bca-1347-4dec-948e-fae26d05a1dd	f8c40da3-cf4e-42ec-a641-53eeb7208448
+c1926ea3-55c0-4164-93dd-d833f33ab29c	02940542-58aa-46d1-9766-cd55ec01294d	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+5eded27a-e866-4c94-8a19-1acecbc21bb4	b5b91512-8f1d-45cb-a723-fa06fb29da5a	b164a0c1-9544-47c4-84a5-d858d29714df
+4b095547-f07e-4947-950c-27475570606e	a2548546-bc55-4d0c-bb55-80bcf14487b9	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+0fe21995-b737-48e6-9117-7037fb1e5356	a71962ca-12c2-45d7-a504-3cae7af4b0f0	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+d7620f9b-a0d4-4c7b-b504-beb1e3df1748	3c4be667-e14b-4ba3-883f-ec33c6c28f95	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+25bb56ec-41af-4772-8ccc-41007e510e09	5a30c38d-f219-48aa-8dbc-2fd52008023b	b164a0c1-9544-47c4-84a5-d858d29714df
+d42a29b0-9a9a-4616-a282-d14fa4f61354	abb2e765-fad1-4903-9e62-98f9e669718d	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+f971dcc3-7b39-4561-bb42-bb9454176d33	822a02b3-6ff4-438f-b3ef-b4f1cb0e4175	00c57ee4-58ea-47b3-9804-497773cdd339
+bdfd2647-ac30-4a4f-8270-b0f4a64fa097	5d66ae24-81be-4b44-a69e-0e1fda758b0b	f8c40da3-cf4e-42ec-a641-53eeb7208448
+fad188c6-41a6-4cb9-b86a-9b971403f3fc	cc3c0609-9770-4d7b-a44c-c6e6580d3ea0	f8c40da3-cf4e-42ec-a641-53eeb7208448
+87cab260-a67c-49fe-8bad-3c5079c309b1	9636050d-d1f5-4b9d-9132-f723850001ad	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+0e2d22ef-e141-404c-9e3a-26eb4121c8c2	2671070e-5445-4299-8678-752bec28cb3a	b164a0c1-9544-47c4-84a5-d858d29714df
+14368350-053a-4ab7-a546-6207a510df42	e9db2d4b-8d97-4e85-a77f-a43c82b27dbc	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+28c5ed1d-fc53-4b00-96fa-5e1375183dc1	22a90104-5474-4810-8d96-7ad05a86d955	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+cda693c2-9924-4c96-8f6c-5e899ec7af55	771e9682-7f1f-4fe7-b936-ace77d7e75bc	b164a0c1-9544-47c4-84a5-d858d29714df
+4a633f8b-8060-4fb3-8e19-718fec484764	c7de5893-de67-48f8-9e15-b76c9a885c91	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+b360efbb-9296-4320-bf3d-af287edfc745	56f9506c-fbd1-4413-a871-36cbfc36c9ed	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+ee57abaf-8631-4b3b-afc6-930d47f2dbc5	6c2f9e94-cb7b-4140-9821-d8fed134c341	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+187f8566-17d4-48ef-a5a9-a4b1a4648c5d	cbe0eb7d-262a-4803-8b7b-cbf7c8f0778b	088d04ed-28d0-4447-b7f6-defb08cbce1a
+\.
+
+
+--
+-- TOC entry 3616 (class 0 OID 65056)
+-- Dependencies: 276
+-- Data for Name: process_operation; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.process_operation (id, type_id, code, name_en, name_ru, icon, resource_url, availability_condition, cancel, move_to_state_script, workflow, database) FROM stdin;
+e235c9a9-a22d-4ddb-ac59-3a54f9ad8d11	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	MARK_AS_PROCESSED	Mark as Processed	Отметить как обработанный	check	\N	{"target_state": "PROCESSED", "available_in_states": ["LOADED"]}	f	to_state="PROCESSED"	\N	\N
+04497cef-080c-41e4-8636-8b571bf9afb3	ae2937b0-dd0b-4c02-996b-a40dfb5c570d	MARK_AS_PROCESSED	Mark as Processed	Отметить как обработанный	check	\N	{"target_state": "PROCESSED", "available_in_states": ["LOADED"]}	f	to_state="PROCESSED"	\N	\N
+16d9608e-db6e-499e-ba57-2a3bffbf6481	8d9c8ddf-cc5b-4631-8482-a9042f197a0e	MARK_AS_PROCESSED	Mark as Processed	Отметить как обработанный	check	\N	{"target_state": "PROCESSED", "available_in_states": ["LOADED"]}	f	to_state="PROCESSED"	\N	\N
+ecaca1ee-dc5b-4c1e-87f9-79b488e09525	f8a3c7f3-ee8a-4fde-911f-990d62c22f2c	MARK_AS_PROCESSED	Mark as Processed	Отметить как обработанный	check	\N	{"target_state": "PROCESSED", "available_in_states": ["LOADED"]}	f	to_state="PROCESSED"	\N	\N
+50e4a5c8-f510-4e45-bac3-f037c81545a6	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	CANCEL_PROCESSING	Cancel Processing	Отменить обработку	undo	\N	{"target_state": "LOADED", "available_in_states": ["PROCESSED"]}	t	to_state="LOADED"	\N	\N
+2405f16a-fcdb-4ef7-968e-7a41d5284e3e	ae2937b0-dd0b-4c02-996b-a40dfb5c570d	CANCEL_PROCESSING	Cancel Processing	Отменить обработку	undo	\N	{"target_state": "LOADED", "available_in_states": ["PROCESSED"]}	t	to_state="LOADED"	\N	\N
+eae080aa-61a6-4bd8-8056-1e53019188b5	8d9c8ddf-cc5b-4631-8482-a9042f197a0e	CANCEL_PROCESSING	Cancel Processing	Отменить обработку	undo	\N	{"target_state": "LOADED", "available_in_states": ["PROCESSED"]}	t	to_state="LOADED"	\N	\N
+ae4c638d-f954-4f3e-ac7a-c2ca7cd9ccb4	f8a3c7f3-ee8a-4fde-911f-990d62c22f2c	CANCEL_PROCESSING	Cancel Processing	Отменить обработку	undo	\N	{"target_state": "LOADED", "available_in_states": ["PROCESSED"]}	t	to_state="LOADED"	\N	\N
+cd28fb8c-d732-4195-8c62-93001648552e	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	CANCEL_PAYMENT	Cancel Payment Creation	Отменить создание платежа	cancel	\N	{"target_state": "LOADED", "available_in_states": ["PAYMENT_CREATED"]}	t	to_state="LOADED"	\N	\N
+2808dd8d-23c6-466d-b50a-d999268255ab	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	CREATE_PAYMENT	Create Payment	Создать платеж	payment	declare  p_dep_id int := 100;  p_id varchar2(250) := :id;  p_test_xml varchar2(4000):= :xml;begin  :out_payment_pk := p_dep_id||','||p_id;end;	{"target_state": "PAYMENT_CREATED", "available_in_states": ["LOADED"]}	f	to_state="PAYMENT_CREATED"	type_008_payment	colvir_cbs
+4742683f-144d-4e7d-9596-0e0f9debf090	3b7b37f1-7fcc-4a36-b636-32df05ed39b6	PROCESS	Process	Обработать транзакцию	\N	1	\N	f	to_state = "PROCESSED"	1	1
+b07e6901-aacf-49bb-85c0-34c0fee379f3	3b7b37f1-7fcc-4a36-b636-32df05ed39b6	UNDO_PROCESS	Undo Process	Отмена обработки транзакции	\N	\N	\N	f	to_state = "LOADED"	\N	\N
+3630a61c-2c21-44f1-9ea7-f7075327b14b	4cd791ff-677f-499f-b17e-cfb69d1cdb7c	MARK_AS_PROCESSED	Mark as Processed	Отметить как обработанный	check	\N	{"target_state": "PROCESSED", "available_in_states": ["LOADED"]}	f	to_state="PROCESSED"	\N	\N
+f159119f-7ea1-46e9-8339-ba6714f89174	4cd791ff-677f-499f-b17e-cfb69d1cdb7c	CANCEL_PROCESSING	Cancel Processing	Отменить обработку	undo		{"target_state": "LOADED", "available_in_states": ["PROCESSED"]}	t	to_state="LOADED"	\N	\N
+\.
+
+
+--
+-- TOC entry 3617 (class 0 OID 65077)
+-- Dependencies: 277
+-- Data for Name: process_operation_states; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.process_operation_states (operation_id, state_id) FROM stdin;
+e235c9a9-a22d-4ddb-ac59-3a54f9ad8d11	f8c40da3-cf4e-42ec-a641-53eeb7208448
+04497cef-080c-41e4-8636-8b571bf9afb3	b164a0c1-9544-47c4-84a5-d858d29714df
+3630a61c-2c21-44f1-9ea7-f7075327b14b	3d62da83-1ec1-4ce8-8213-f3869eb7fcdd
+16d9608e-db6e-499e-ba57-2a3bffbf6481	0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9
+ecaca1ee-dc5b-4c1e-87f9-79b488e09525	895acd9f-b1d8-4844-ade2-713c9b92ebfd
+2405f16a-fcdb-4ef7-968e-7a41d5284e3e	7527efd9-007e-4710-afc7-7fc9426c726a
+f159119f-7ea1-46e9-8339-ba6714f89174	cf11183a-fe76-43e8-8f8f-aa998e83f26a
+eae080aa-61a6-4bd8-8056-1e53019188b5	00c57ee4-58ea-47b3-9804-497773cdd339
+ae4c638d-f954-4f3e-ac7a-c2ca7cd9ccb4	815c1662-3351-488a-8f40-ddee60b0a3a3
+cd28fb8c-d732-4195-8c62-93001648552e	088d04ed-28d0-4447-b7f6-defb08cbce1a
+2808dd8d-23c6-466d-b50a-d999268255ab	f8c40da3-cf4e-42ec-a641-53eeb7208448
+\.
+
+
+--
+-- TOC entry 3615 (class 0 OID 65033)
+-- Dependencies: 275
+-- Data for Name: process_state; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.process_state (id, type_id, code, name_en, name_ru, color_code, allow_edit, allow_delete, start, operation_list_script) FROM stdin;
+f8c40da3-cf4e-42ec-a641-53eeb7208448	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	LOADED	Loaded	Загружен	#ccedd8	t	t	t	oper_list = ["MARK_AS_PROCESSED","CREATE_PAYMENT"]
+09835826-3239-4cde-8fdd-112f8e39c494	3b7b37f1-7fcc-4a36-b636-32df05ed39b6	LOADED	Loaded	Загружена	#ccedd8	\N	\N	f	oper_list = ["MARK_AS_PROCESSED"]
+3d62da83-1ec1-4ce8-8213-f3869eb7fcdd	4cd791ff-677f-499f-b17e-cfb69d1cdb7c	LOADED	Loaded	Загружен	#ededa4	t	t	t	oper_list = ["MARK_AS_PROCESSED"]
+895acd9f-b1d8-4844-ade2-713c9b92ebfd	f8a3c7f3-ee8a-4fde-911f-990d62c22f2c	LOADED	Loaded	Загружен	#d4bade	t	t	t	oper_list = ["MARK_AS_PROCESSED"]
+0b0f00d2-9e1b-4ba7-ab3f-35655dac94a9	8d9c8ddf-cc5b-4631-8482-a9042f197a0e	LOADED	Loaded	Загружен	#e0929e	t	t	t	oper_list = ["MARK_AS_PROCESSED"]
+b164a0c1-9544-47c4-84a5-d858d29714df	ae2937b0-dd0b-4c02-996b-a40dfb5c570d	LOADED	Loaded	Загружен	#62d997	t	t	t	oper_list = ["MARK_AS_PROCESSED"]
+9f676606-51f2-4bbb-b220-88ae23f166c2	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	PROCESSED	Processed	Обработан	#bcd2f5	f	f	f	oper_list = ["CANCEL_PROCESSING"]
+7527efd9-007e-4710-afc7-7fc9426c726a	ae2937b0-dd0b-4c02-996b-a40dfb5c570d	PROCESSED	Processed	Обработан	#bcd2f5	f	f	f	oper_list = ["CANCEL_PROCESSING"]
+00c57ee4-58ea-47b3-9804-497773cdd339	8d9c8ddf-cc5b-4631-8482-a9042f197a0e	PROCESSED	Processed	Обработан	#bcd2f5	f	f	f	oper_list = ["CANCEL_PROCESSING"]
+815c1662-3351-488a-8f40-ddee60b0a3a3	f8a3c7f3-ee8a-4fde-911f-990d62c22f2c	PROCESSED	Processed	Обработан	#bcd2f5	f	f	f	oper_list = ["CANCEL_PROCESSING"]
+27b572c3-8bdf-42b7-bd43-999c3df7ba7d	3b7b37f1-7fcc-4a36-b636-32df05ed39b6	PROCESSED	Processed	Обработана	#bcd2f5	\N	\N	f	oper_list = ["CANCEL_PROCESSING"]
+cf11183a-fe76-43e8-8f8f-aa998e83f26a	4cd791ff-677f-499f-b17e-cfb69d1cdb7c	PROCESSED	Processed	Обработан	#bcd2f5	f	f	f	oper_list = ["CANCEL_PROCESSING"]
+088d04ed-28d0-4447-b7f6-defb08cbce1a	f1f61303-0d4e-4bbf-834d-aeec6e5d948b	PAYMENT_CREATED	Payment Created	Платеж создан	#f0c7dd	f	f	f	oper_list = ["CANCEL_PAYMENT"]
+\.
+
+
+--
+-- TOC entry 3614 (class 0 OID 65012)
+-- Dependencies: 274
+-- Data for Name: process_type; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.process_type (id, code, name_en, name_ru, attributes_table, parent_id) FROM stdin;
+f1f61303-0d4e-4bbf-834d-aeec6e5d948b	pacs.008	Customer Credit Transfer	Клиентский кредитовый перевод	swift_input	\N
+ae2937b0-dd0b-4c02-996b-a40dfb5c570d	pacs.009	Financial Institution Credit Transfer (COV)	Межбанковский кредитовый перевод (покрытие)	swift_input	\N
+8d9c8ddf-cc5b-4631-8482-a9042f197a0e	camt.054	Bank to Customer Debit/Credit Notification	Уведомление о дебете/кредите	swift_input	\N
+f8a3c7f3-ee8a-4fde-911f-990d62c22f2c	camt.056	FI to FI Payment Cancellation Request	Запрос на отмену платежа	swift_input	\N
+3b7b37f1-7fcc-4a36-b636-32df05ed39b6	TRN	Transaction	Транзакция (строка выписки)	swift_stmt_ntry	\N
+4cd791ff-677f-499f-b17e-cfb69d1cdb7c	camt.053	Bank to Customer Statement	Банковская выписка клиенту	swift_input	\N
+\.
+
+
+--
+-- TOC entry 3453 (class 2606 OID 65069)
+-- Name: process_operation process_operation_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_operation
+    ADD CONSTRAINT process_operation_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3457 (class 2606 OID 65083)
+-- Name: process_operation_states process_operation_states_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_operation_states
+    ADD CONSTRAINT process_operation_states_pkey PRIMARY KEY (operation_id, state_id);
+
+
+--
+-- TOC entry 3455 (class 2606 OID 65071)
+-- Name: process_operation process_operation_type_id_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_operation
+    ADD CONSTRAINT process_operation_type_id_code_key UNIQUE (type_id, code);
+
+
+--
+-- TOC entry 3460 (class 2606 OID 65102)
+-- Name: process process_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process
+    ADD CONSTRAINT process_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3449 (class 2606 OID 65048)
+-- Name: process_state process_state_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_state
+    ADD CONSTRAINT process_state_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3451 (class 2606 OID 65050)
+-- Name: process_state process_state_type_id_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_state
+    ADD CONSTRAINT process_state_type_id_code_key UNIQUE (type_id, code);
+
+
+--
+-- TOC entry 3445 (class 2606 OID 65025)
+-- Name: process_type process_type_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_type
+    ADD CONSTRAINT process_type_code_key UNIQUE (code);
+
+
+--
+-- TOC entry 3447 (class 2606 OID 65023)
+-- Name: process_type process_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_type
+    ADD CONSTRAINT process_type_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3458 (class 1259 OID 65108)
+-- Name: idx_process_doc_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_process_doc_id ON public.process USING btree (doc_id);
+
+
+--
+-- TOC entry 3442 (class 1259 OID 65031)
+-- Name: idx_process_type_code; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_process_type_code ON public.process_type USING btree (code);
+
+
+--
+-- TOC entry 3443 (class 1259 OID 65032)
+-- Name: idx_process_type_parent_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_process_type_parent_id ON public.process_type USING btree (parent_id);
+
+
+--
+-- TOC entry 3464 (class 2606 OID 65084)
+-- Name: process_operation_states process_operation_states_operation_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_operation_states
+    ADD CONSTRAINT process_operation_states_operation_fkey FOREIGN KEY (operation_id) REFERENCES public.process_operation(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3465 (class 2606 OID 65089)
+-- Name: process_operation_states process_operation_states_state_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_operation_states
+    ADD CONSTRAINT process_operation_states_state_fkey FOREIGN KEY (state_id) REFERENCES public.process_state(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3463 (class 2606 OID 65072)
+-- Name: process_operation process_operation_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_operation
+    ADD CONSTRAINT process_operation_type_id_fkey FOREIGN KEY (type_id) REFERENCES public.process_type(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3466 (class 2606 OID 65103)
+-- Name: process process_state_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process
+    ADD CONSTRAINT process_state_id_fkey FOREIGN KEY (state_id) REFERENCES public.process_state(id);
+
+
+--
+-- TOC entry 3462 (class 2606 OID 65051)
+-- Name: process_state process_state_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_state
+    ADD CONSTRAINT process_state_type_id_fkey FOREIGN KEY (type_id) REFERENCES public.process_type(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3461 (class 2606 OID 65026)
+-- Name: process_type process_type_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.process_type
+    ADD CONSTRAINT process_type_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.process_type(id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 3626 (class 0 OID 0)
+-- Dependencies: 278
+-- Name: TABLE process; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.process TO apng;
+
+
+--
+-- TOC entry 3629 (class 0 OID 0)
+-- Dependencies: 276
+-- Name: TABLE process_operation; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.process_operation TO apng;
+
+
+--
+-- TOC entry 3630 (class 0 OID 0)
+-- Dependencies: 277
+-- Name: TABLE process_operation_states; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.process_operation_states TO apng;
+
+
+--
+-- TOC entry 3632 (class 0 OID 0)
+-- Dependencies: 275
+-- Name: TABLE process_state; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.process_state TO apng;
+
+
+--
+-- TOC entry 3638 (class 0 OID 0)
+-- Dependencies: 274
+-- Name: TABLE process_type; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.process_type TO apng;
+
+
+-- Completed on 2025-10-30 04:44:05 MSK
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict XNLJq65LrVYXobzYcwEAXhCMAoZLDJGg2b52TEqim0dvm8lVJ5L4Qs7NiI1yvXK
+
