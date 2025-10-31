@@ -19,6 +19,16 @@ export default function AppLayout() {
   const handleSave = async () => {
     const store = useChangesStore.getState();
     
+    // Validate required fields
+    const invalidTypes = [...store.types.created, ...store.types.updated].filter(
+      t => !t.code || !t.name_en || !t.name_ru
+    );
+    
+    if (invalidTypes.length > 0) {
+      alert('Please fill all required fields (Code *, Name EN *, Name RU *) before saving!');
+      return;
+    }
+    
     try {
       // Create new types
       for (const type of store.types.created) {

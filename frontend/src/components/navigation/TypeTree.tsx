@@ -76,21 +76,19 @@ export default function TypeTree() {
   };
   
   const handleAdd = () => {
-    const newTypeNum = (types?.length || 0) + 1;
-    const code = `NEW_TYPE_${newTypeNum}`;
     const id = crypto.randomUUID();
     
     const newType: ProcessType = {
       id,
-      code,
-      name_en: `New Type ${newTypeNum}`,
-      name_ru: `Новый тип ${newTypeNum}`,
+      code: '',
+      name_en: '',
+      name_ru: '',
       attributes_table: '',
       parent_id: undefined
     };
     
     createType(newType);
-    selectType(code);
+    selectType(''); // Select the empty type
   };
   
   const handleAddChild = () => {
@@ -99,15 +97,13 @@ export default function TypeTree() {
     const selectedType = types?.find(t => t.code === selectedTypeCode);
     if (!selectedType) return;
     
-    const childrenCount = childrenMap.get(selectedType.id)?.length || 0;
-    const code = `${selectedTypeCode}_CHILD_${childrenCount + 1}`;
     const id = crypto.randomUUID();
     
     const newType: ProcessType = {
       id,
-      code,
-      name_en: `Child of ${selectedType.name_en}`,
-      name_ru: `Дочерний ${selectedType.name_ru}`,
+      code: '',
+      name_en: '',
+      name_ru: '',
       attributes_table: selectedType.attributes_table || '',
       parent_id: selectedType.id
     };
@@ -119,7 +115,7 @@ export default function TypeTree() {
     newExpanded.add(selectedType.id);
     setExpanded(newExpanded);
     
-    selectType(code);
+    selectType('');
   };
   
   const handleDelete = () => {

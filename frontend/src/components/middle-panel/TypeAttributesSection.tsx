@@ -35,27 +35,36 @@ export default function TypeAttributesSection({ typeCode }: Props) {
   return (
     <Box>
       <TextField
-        label="Code"
+        label="Code *"
         value={localType.code}
         fullWidth
         margin="dense"
         size="small"
+        required
+        error={!localType.code}
+        helperText={!localType.code ? 'Required field' : ''}
         onChange={(e) => handleChange('code', e.target.value)}
       />
       <TextField
-        label="Name (English)"
+        label="Name (English) *"
         value={localType.name_en}
         fullWidth
         margin="dense"
         size="small"
+        required
+        error={!localType.name_en}
+        helperText={!localType.name_en ? 'Required field' : ''}
         onChange={(e) => handleChange('name_en', e.target.value)}
       />
       <TextField
-        label="Name (Russian)"
+        label="Name (Russian) *"
         value={localType.name_ru}
         fullWidth
         margin="dense"
         size="small"
+        required
+        error={!localType.name_ru}
+        helperText={!localType.name_ru ? 'Required field' : ''}
         onChange={(e) => handleChange('name_ru', e.target.value)}
       />
       <TextField
