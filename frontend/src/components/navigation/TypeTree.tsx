@@ -15,13 +15,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { useTypes } from '../../hooks/useTypes';
+import { useTypesWithChanges } from '../../hooks/useTypesWithChanges';
 import { useSelectionStore } from '../../store/selectionStore';
+import { useChangesStore } from '../../store/changesStore';
 import { ProcessType } from '../../types';
 
 export default function TypeTree() {
-  const { data: types, isLoading, error } = useTypes();
+  const { data: types, isLoading, error } = useTypesWithChanges();
   const { selectedTypeCode, selectType } = useSelectionStore();
+  const { createType, updateType, deleteType } = useChangesStore();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   
   // Build tree structure
@@ -58,20 +60,67 @@ export default function TypeTree() {
   };
   
   const handleAdd = () => {
-    console.log('Add new root type');
-    alert('Add new root type - not implemented yet');
+    const newTypeNum = (types?.length || 0) + 1;
+    const code = `NEW_TYPE_${newTypeNum}`;
+    const id = crypto.randomUUID();
+    
+    const newType: ProcessType = {
+      id,
+      code,
+      name_en: `New Type ${newTypeNum}`,
+      name_ru: `Новый тип ${newTypeNum}`,
+      attributes_table: '',
+      parent_id: undefined
+    };
+    
+    createType(newType);
+    selectType(code);
   };
   
   const handleAddChild = () => {
-    console.log('Add child type to', selectedTypeCode);
-    alert(`Add child to ${selectedTypeCode} - not implemented yet`);
+    if (!selectedTypeCode) return;
+    
+    const selectedType = types?.find(t => t.code === selectedTypeCode);
+    if (!selectedType) return;
+    
+    const childrenCount = childrenMap.get(selectedType.id)?.length || 0;
+    const code = `${selectedTypeCode}_CHILD_${childrenCount + 1}`;
+    const id = crypto.randomUUID();
+    
+    const newType: ProcessType = {
+      id,
+      code,
+      name_en: `Child of ${selectedType.name_en}`,
+      name_ru: `Дочерний ${selectedType.name_ru}`,
+      attributes_table: selectedType.attributes_table || '',
+      parent_id: selectedType.id
+    };
+    
+    createType(newType);
+    
+    // Expand parent
+    const newExpanded = new Set(expanded);
+    newExpanded.add(selectedType.id);
+    setExpanded(newExpanded);
+    
+    selectType(code);
   };
   
   const handleDelete = () => {
-    if (selectedTypeCode && window.confirm(`Delete type ${selectedTypeCode}?`)) {
-      console.log('Delete type', selectedTypeCode);
-      alert(`Delete ${selectedTypeCode} - not implemented yet`);
+    if (!selectedTypeCode) return;
+    
+    const selectedType = types?.find(t => t.code === selectedTypeCode);
+    const children = selectedType ? childrenMap.get(selectedType.id) || [] : [];
+    const childrenText = children.length > 0 
+      ? ` and ${children.length} child(ren)` 
+      : '';
+    
+    if (!window.confirm(`Delete ${selectedTypeCode}${childrenText}?`)) {
+      return;
     }
+    
+    deleteType(selectedTypeCode);
+    selectType(null as any);
   };
   
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -116,16 +165,22 @@ export default function TypeTree() {
     };
     
     if (isDescendant(targetType.id, draggedType.id)) {
-      alert('Cannot move parent into its own child!');
+      console.warn('Cannot move parent into its own child!');
       return;
     }
     
-    // Update parent_id
-    console.log(`Moving ${draggedType.code} to be child of ${targetType.code}`);
-    alert(`Moving ${draggedType.code} under ${targetType.code} - API call not implemented yet`);
+    // Update parent_id - move to new parent
+    const updatedType = {
+      ...draggedType,
+      parent_id: targetType.id
+    };
     
-    // TODO: Call API to update parent_id
-    // await updateType(draggedType.id, { parent_id: targetType.id });
+    updateType(updatedType);
+    
+    // Expand target parent
+    const newExpanded = new Set(expanded);
+    newExpanded.add(targetType.id);
+    setExpanded(newExpanded);
   };
   
   const renderType = (type: ProcessType, level: number = 0) => {

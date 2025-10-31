@@ -4,6 +4,11 @@ import { ProcessType, ProcessState, ProcessOperation } from '../types';
 interface ChangesStore {
   hasChanges: boolean;
   type: ProcessType | null;
+  types: {
+    created: ProcessType[];
+    updated: ProcessType[];
+    deleted: string[];
+  };
   states: {
     created: ProcessState[];
     updated: ProcessState[];
@@ -15,7 +20,9 @@ interface ChangesStore {
     deleted: string[];
   };
   
+  createType: (type: ProcessType) => void;
   updateType: (type: ProcessType) => void;
+  deleteType: (code: string) => void;
   createState: (state: ProcessState) => void;
   updateState: (state: ProcessState) => void;
   deleteState: (id: string) => void;
@@ -28,6 +35,11 @@ interface ChangesStore {
 export const useChangesStore = create<ChangesStore>((set) => ({
   hasChanges: false,
   type: null,
+  types: {
+    created: [],
+    updated: [],
+    deleted: [],
+  },
   states: {
     created: [],
     updated: [],
@@ -39,7 +51,32 @@ export const useChangesStore = create<ChangesStore>((set) => ({
     deleted: [],
   },
   
-  updateType: (type) => set({ type, hasChanges: true }),
+  createType: (type) => set((prev) => ({
+    types: {
+      ...prev.types,
+      created: [...prev.types.created, type],
+    },
+    hasChanges: true,
+  })),
+  
+  updateType: (type) => set((prev) => ({
+    types: {
+      ...prev.types,
+      updated: [...prev.types.updated.filter(t => t.code !== type.code), type],
+    },
+    type,
+    hasChanges: true,
+  })),
+  
+  deleteType: (code) => set((prev) => ({
+    types: {
+      ...prev.types,
+      deleted: [...prev.types.deleted, code],
+      created: prev.types.created.filter(t => t.code !== code),
+      updated: prev.types.updated.filter(t => t.code !== code),
+    },
+    hasChanges: true,
+  })),
   
   createState: (state) => set((prev) => ({
     states: {
@@ -96,6 +133,7 @@ export const useChangesStore = create<ChangesStore>((set) => ({
   clear: () => set({
     hasChanges: false,
     type: null,
+    types: { created: [], updated: [], deleted: [] },
     states: { created: [], updated: [], deleted: [] },
     operations: { created: [], updated: [], deleted: [] },
   }),

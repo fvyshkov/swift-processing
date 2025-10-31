@@ -15,13 +15,50 @@ export default function AppLayout() {
   const { mutate: saveAll, isPending } = useSaveAll();
   const { mode, toggleTheme } = useThemeStore();
   
-  const handleSave = () => {
+  const handleSave = async () => {
     const store = useChangesStore.getState();
-    saveAll({
-      type: store.type || undefined,
-      states: store.states,
-      operations: store.operations,
-    });
+    
+    try {
+      // Create new types
+      for (const type of store.types.created) {
+        await fetch('http://localhost:8000/api/v1/types', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(type)
+        });
+      }
+      
+      // Update types
+      for (const type of store.types.updated) {
+        await fetch(`http://localhost:8000/api/v1/types/${type.code}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(type)
+        });
+      }
+      
+      // Delete types
+      for (const code of store.types.deleted) {
+        await fetch(`http://localhost:8000/api/v1/types/${code}`, {
+          method: 'DELETE'
+        });
+      }
+      
+      // Save states and operations through existing save-all endpoint
+      if (store.states || store.operations) {
+        saveAll({
+          type: store.type || undefined,
+          states: store.states,
+          operations: store.operations,
+        });
+      } else {
+        // Just reload if only types changed
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error saving:', err);
+      alert('Error saving changes: ' + (err as Error).message);
+    }
   };
   
   return (

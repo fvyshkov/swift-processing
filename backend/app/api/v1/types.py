@@ -39,3 +39,15 @@ async def update_type(code: str, type_data: ProcessTypeCreate, db: AsyncSession 
         raise HTTPException(status_code=404, detail="Type not found")
     return db_type
 
+
+@router.delete("/types/{code}")
+async def delete_type(code: str, db: AsyncSession = Depends(get_db)):
+    """Delete type"""
+    db_type = await process_type.get_by_code(db, code)
+    if not db_type:
+        raise HTTPException(status_code=404, detail="Type not found")
+    
+    await db.delete(db_type)
+    await db.commit()
+    return {"success": True}
+
