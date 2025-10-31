@@ -41,7 +41,8 @@ export default function AppLayout() {
       
       // Update types
       for (const type of store.types.updated) {
-        await fetch(`http://localhost:8000/api/v1/types/${type.code}`, {
+        const originalType = (await fetch(`http://localhost:8000/api/v1/types/${type.code}`).then(r => r.json()));
+        await fetch(`http://localhost:8000/api/v1/types/${originalType.code}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(type)

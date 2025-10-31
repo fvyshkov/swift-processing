@@ -10,10 +10,12 @@ export const useSaveAll = () => {
   return useMutation({
     mutationFn: (data: SaveAllRequest) => saveAllApi.save(data),
     onSuccess: () => {
+      clear();
       queryClient.invalidateQueries({ queryKey: ['types'] });
       queryClient.invalidateQueries({ queryKey: ['states'] });
       queryClient.invalidateQueries({ queryKey: ['operations'] });
-      clear();
+      // Force reload to get fresh data
+      setTimeout(() => window.location.reload(), 100);
     },
   });
 };

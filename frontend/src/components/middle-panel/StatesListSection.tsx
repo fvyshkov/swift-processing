@@ -19,6 +19,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import BoltIcon from '@mui/icons-material/Bolt';
 import { useStates } from '../../hooks/useStates';
 import { useOperations } from '../../hooks/useOperations';
 import { useSelectionStore } from '../../store/selectionStore';
@@ -219,6 +221,7 @@ export default function StatesListSection({ typeCode }: Props) {
           <TableHead>
             <TableRow>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem', width: 24 }}></TableCell>
+              <TableCell sx={{ py: 0.5, fontSize: '0.75rem', width: 32 }}>Type</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Code</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Name (EN)</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Color</TableCell>
@@ -255,6 +258,9 @@ export default function StatesListSection({ typeCode }: Props) {
                           {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
                         </IconButton>
                       )}
+                    </TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1, textAlign: 'center' }}>
+                      <FiberManualRecordIcon sx={{ fontSize: 18, color: '#1976d2', verticalAlign: 'middle' }} />
                     </TableCell>
                     <TableCell sx={{ py: 0.5, fontSize: '0.75rem', fontWeight: 'bold' }}>{state.code}</TableCell>
                     <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>{state.name_en}</TableCell>
@@ -300,7 +306,10 @@ export default function StatesListSection({ typeCode }: Props) {
                                   }}
                                 >
                                   <TableCell sx={{ py: 0.5, px: 0.5, width: 24 }}></TableCell>
-                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem', pl: 3 }}>
+                                  <TableCell sx={{ py: 0.5, px: 1, textAlign: 'center' }}>
+                                    <BoltIcon sx={{ fontSize: 18, color: operation.cancel ? '#ff9800' : '#4caf50', verticalAlign: 'middle' }} />
+                                  </TableCell>
+                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
                                     {operation.code}
                                   </TableCell>
                                   <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
