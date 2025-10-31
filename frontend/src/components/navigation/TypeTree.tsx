@@ -46,11 +46,25 @@ export default function TypeTree() {
     }
   });
   
-  // Expand all by default and select first terminal node
+  // Expand all by default and restore/select node
   React.useEffect(() => {
     if (types && expanded.size === 0) {
       const allIds = new Set(types.map(t => t.id));
       setExpanded(allIds);
+      
+      // Try to restore previous selection
+      const savedSelection = localStorage.getItem('process-manager-selection');
+      if (savedSelection) {
+        try {
+          const { typeCode } = JSON.parse(savedSelection);
+          if (typeCode && types.some(t => t.code === typeCode)) {
+            selectType(typeCode);
+            return;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
       
       // Auto-select first terminal (leaf) node
       const terminals = types.filter(t => {

@@ -15,6 +15,7 @@ export default function AppLayout() {
   const hasChanges = useChangesStore((state) => state.hasChanges);
   const { mutate: saveAll, isPending } = useSaveAll();
   const { mode, toggleTheme } = useThemeStore();
+  const types = useChangesStore((state) => state.types);
   
   const handleSave = async () => {
     const store = useChangesStore.getState();
@@ -56,17 +57,68 @@ export default function AppLayout() {
         });
       }
       
-      // Save states and operations through existing save-all endpoint
-      if (store.states || store.operations) {
-        saveAll({
-          type: store.type || undefined,
-          states: store.states,
-          operations: store.operations,
-        });
-      } else {
-        // Just reload if only types changed
-        window.location.reload();
+      // Save states
+      for (const state of store.states.created) {
+        const typeCode = types?.find(t => t.id === state.type_id)?.code;
+        if (typeCode) {
+          await fetch(`http://localhost:8000/api/v1/types/${typeCode}/states`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(state)
+          });
+        }
       }
+      
+      for (const state of store.states.updated) {
+        await fetch(`http://localhost:8000/api/v1/states/${state.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state)
+        });
+      }
+      
+      for (const stateId of store.states.deleted) {
+        await fetch(`http://localhost:8000/api/v1/states/${stateId}`, {
+          method: 'DELETE'
+        });
+      }
+      
+      // Save operations
+      for (const op of store.operations.created) {
+        const typeCode = types?.find(t => t.id === op.type_id)?.code;
+        if (typeCode) {
+          await fetch(`http://localhost:8000/api/v1/types/${typeCode}/operations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(op)
+          });
+        }
+      }
+      
+      for (const op of store.operations.updated) {
+        await fetch(`http://localhost:8000/api/v1/operations/${op.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(op)
+        });
+      }
+      
+      for (const opId of store.operations.deleted) {
+        await fetch(`http://localhost:8000/api/v1/operations/${opId}`, {
+          method: 'DELETE'
+        });
+      }
+      
+      // Save current selection before reload
+      const selection = {
+        typeCode: useSelectionStore.getState().selectedTypeCode,
+        stateId: useSelectionStore.getState().selectedStateId,
+        operationId: useSelectionStore.getState().selectedOperationId,
+      };
+      localStorage.setItem('process-manager-selection', JSON.stringify(selection));
+      
+      // Reload to get fresh data
+      window.location.reload();
     } catch (err) {
       console.error('Error saving:', err);
       alert('Error saving changes: ' + (err as Error).message);

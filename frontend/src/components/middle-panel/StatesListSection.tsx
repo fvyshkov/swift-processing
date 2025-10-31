@@ -85,12 +85,31 @@ export default function StatesListSection({ typeCode }: Props) {
     return map;
   }, [operations]);
   
-  // Expand all states by default
+  // Expand all states by default and restore selection
   React.useEffect(() => {
     if (states.length > 0) {
       setExpandedStates(new Set(states.map(s => s.id)));
+      
+      // Try to restore previous selection
+      const savedSelection = localStorage.getItem('process-manager-selection');
+      if (savedSelection) {
+        try {
+          const { stateId, operationId } = JSON.parse(savedSelection);
+          
+          if (stateId && states.some(s => s.id === stateId)) {
+            selectState(stateId);
+          } else if (operationId && operations.some(o => o.id === operationId)) {
+            selectOperation(operationId);
+          }
+          
+          // Clear saved selection after restore
+          localStorage.removeItem('process-manager-selection');
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
     }
-  }, [states]);
+  }, [states, operations]);
   
   const toggleState = (stateId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -288,46 +307,36 @@ export default function StatesListSection({ typeCode }: Props) {
                   </TableRow>
                   
                   {/* Operations rows (nested) */}
-                  {hasOperations && (
-                    <TableRow>
-                      <TableCell colSpan={7} sx={{ p: 0, border: 0 }}>
-                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                          <Table size="small">
-                            <TableBody>
-                              {stateOperations.map((operation) => (
-                                <TableRow
-                                  key={operation.id}
-                                  selected={selectedOperationId === operation.id}
-                                  onClick={() => selectOperation(operation.id)}
-                                  sx={{
-                                    cursor: 'pointer',
-                                    bgcolor: 'action.hover',
-                                    '&:hover': { bgcolor: 'action.selected' },
-                                  }}
-                                >
-                                  <TableCell sx={{ py: 0.5, px: 0.5, width: 24 }}></TableCell>
-                                  <TableCell sx={{ py: 0.5, px: 1, textAlign: 'center' }}>
-                                    <BoltIcon sx={{ fontSize: 18, color: operation.cancel ? '#ff9800' : '#4caf50', verticalAlign: 'middle' }} />
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
-                                    {operation.code}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
-                                    {operation.name_en}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
-                                    {operation.icon || '-'}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.5 }} align="center" colSpan={3}>
-                                    {operation.cancel && <Chip label="Cancel" size="small" color="warning" sx={{ height: 16, fontSize: '0.6rem' }} />}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
+                  {hasOperations && isExpanded && (
+                    stateOperations.map((operation) => (
+                      <TableRow
+                        key={operation.id}
+                        selected={selectedOperationId === operation.id}
+                        onClick={() => selectOperation(operation.id)}
+                        sx={{
+                          cursor: 'pointer',
+                          bgcolor: 'action.hover',
+                          '&:hover': { bgcolor: 'action.selected' },
+                        }}
+                      >
+                        <TableCell sx={{ py: 0.5, px: 0.5, width: 24 }}></TableCell>
+                        <TableCell sx={{ py: 0.5, px: 1, textAlign: 'center', width: 32 }}>
+                          <BoltIcon sx={{ fontSize: 18, color: operation.cancel ? '#ff9800' : '#4caf50', verticalAlign: 'middle' }} />
+                        </TableCell>
+                        <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
+                          {operation.code}
+                        </TableCell>
+                        <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
+                          {operation.name_en}
+                        </TableCell>
+                        <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
+                          {operation.icon || '-'}
+                        </TableCell>
+                        <TableCell sx={{ py: 0.5 }} align="center" colSpan={3}>
+                          {operation.cancel && <Chip label="Cancel" size="small" color="warning" sx={{ height: 16, fontSize: '0.6rem' }} />}
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </React.Fragment>
               );

@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Box, Typography, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useSelectionStore } from '../../store/selectionStore';
+import { useType } from '../../hooks/useTypes';
 import TypeAttributesSection from './TypeAttributesSection';
 import StatesListSection from './StatesListSection';
 
 export default function MiddlePanel() {
   const selectedTypeCode = useSelectionStore((state) => state.selectedTypeCode);
+  const { data: type } = useType(selectedTypeCode);
   const [expanded, setExpanded] = useState<string[]>(['process', 'states']);
   
   const handleChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -40,7 +42,9 @@ export default function MiddlePanel() {
             '& .MuiAccordionSummary-content': { my: 0.5 } 
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Business Process</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+            {type ? `${type.code} - ${type.name_en}` : 'Business Process'}
+          </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 1.5, pt: 0 }}>
           <TypeAttributesSection typeCode={selectedTypeCode} />
