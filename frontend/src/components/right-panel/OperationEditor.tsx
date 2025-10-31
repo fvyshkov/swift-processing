@@ -79,26 +79,28 @@ export default function OperationEditor({ operationId }: Props) {
           size="small"
           onChange={(e) => handleChange({ icon: e.target.value })}
         />
-        <TextField
-          label="Workflow"
-          value={localOperation.workflow || ''}
-          fullWidth
-          margin="dense"
-          size="small"
-          onChange={(e) => handleChange({ workflow: e.target.value })}
-        />
-        <TextField
-          label="Database"
-          value={localOperation.database || ''}
-          fullWidth
-          margin="dense"
-          size="small"
-          onChange={(e) => handleChange({ database: e.target.value })}
-        />
+        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+          <TextField
+            label="Workflow"
+            value={localOperation.workflow || ''}
+            fullWidth
+            margin="dense"
+            size="small"
+            onChange={(e) => handleChange({ workflow: e.target.value })}
+          />
+          <TextField
+            label="Database"
+            value={localOperation.database || ''}
+            fullWidth
+            margin="dense"
+            size="small"
+            onChange={(e) => handleChange({ database: e.target.value })}
+          />
+        </Box>
         <CodeEditor
           value={localOperation.resource_url || ''}
           onChange={(value) => handleChange({ resource_url: value })}
-          label="Resource URL (SQL/Code)"
+          label="SQL"
           language="sql"
           minHeight={80}
         />
