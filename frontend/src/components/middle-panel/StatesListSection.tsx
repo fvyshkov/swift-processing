@@ -18,6 +18,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import { useStates } from '../../hooks/useStates';
 import { useOperations } from '../../hooks/useOperations';
 import { useSelectionStore } from '../../store/selectionStore';
@@ -203,7 +204,7 @@ export default function StatesListSection({ typeCode }: Props) {
         </Tooltip>
         <Tooltip title="Add operation to selected state">
           <IconButton size="small" onClick={handleAddOperation} disabled={!selectedStateId}>
-            <AddIcon fontSize="small" color={selectedStateId ? "primary" : "disabled"} />
+            <AccountTreeIcon fontSize="small" color={selectedStateId ? "primary" : "disabled"} />
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete selected item">
