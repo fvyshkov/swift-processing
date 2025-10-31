@@ -8,6 +8,7 @@ import TypeTree from '../navigation/TypeTree';
 import MiddlePanel from '../middle-panel/MiddlePanel';
 import RightPanel from '../right-panel/RightPanel';
 import { useChangesStore } from '../../store/changesStore';
+import { useSelectionStore } from '../../store/selectionStore';
 import { useSaveAll } from '../../hooks/useSaveAll';
 import { useThemeStore } from '../../store/themeStore';
 
