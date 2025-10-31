@@ -49,6 +49,13 @@ export default function StatesListSection({ typeCode }: Props) {
   const states = React.useMemo(() => {
     if (!serverStates) return [];
     let result = [...serverStates, ...stateChanges.created.filter(s => s.type_id === type?.id)];
+    
+    // Apply updates from changes
+    result = result.map(state => {
+      const updated = stateChanges.updated.find(u => u.id === state.id);
+      return updated || state;
+    });
+    
     result = result.filter(s => !stateChanges.deleted.includes(s.id));
     return result;
   }, [serverStates, stateChanges, type]);
