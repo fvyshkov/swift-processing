@@ -10,9 +10,9 @@ import {
   Tooltip,
   Collapse 
 } from '@mui/material';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useTypesWithChanges } from '../../hooks/useTypesWithChanges';
@@ -263,12 +263,12 @@ export default function TypeTree() {
       <Box sx={{ display: 'flex', gap: 0.5, mb: 1, borderBottom: 1, borderColor: 'divider', pb: 0.5 }}>
         <Tooltip title="Add root type">
           <IconButton size="small" onClick={handleAdd}>
-            <CreateNewFolderIcon fontSize="small" />
+            <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title="Add child to selected">
           <IconButton size="small" onClick={handleAddChild} disabled={!selectedTypeCode}>
-            <SubdirectoryArrowRightIcon fontSize="small" />
+            <AccountTreeIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete selected">
