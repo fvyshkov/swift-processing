@@ -25,6 +25,8 @@ services:
           property: connectionString
       - key: PYTHON_VERSION
         value: 3.9.18
+      - key: FRONTEND_URL
+        value: https://process-manager-frontend.onrender.com
     healthCheckPath: /health
 
   # Frontend (React)
