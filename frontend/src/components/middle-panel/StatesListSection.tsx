@@ -259,12 +259,13 @@ export default function StatesListSection({ typeCode }: Props) {
                 <React.Fragment key={state.id}>
                   {/* State row */}
                   <TableRow
-                    selected={selectedStateId === state.id}
                     onClick={() => selectState(state.id)}
                     sx={{
                       cursor: 'pointer',
                       bgcolor: state.color_code || 'transparent',
                       '&:hover': { opacity: 0.85 },
+                      outline: selectedStateId === state.id ? '2px solid #1976d2' : 'none',
+                      outlineOffset: '-2px',
                     }}
                   >
                     <TableCell sx={{ py: 0.5, px: 0.5 }}>
@@ -300,12 +301,13 @@ export default function StatesListSection({ typeCode }: Props) {
                     stateOperations.map((operation) => (
                       <TableRow
                         key={operation.id}
-                        selected={selectedOperationId === operation.id}
                         onClick={() => selectOperation(operation.id)}
                         sx={{
                           cursor: 'pointer',
                           bgcolor: 'action.hover',
                           '&:hover': { bgcolor: 'action.selected' },
+                          outline: selectedOperationId === operation.id ? '2px solid #1976d2' : 'none',
+                          outlineOffset: '-2px',
                         }}
                       >
                         <TableCell sx={{ py: 0.5, px: 0.5, width: 24 }}></TableCell>

@@ -9,6 +9,25 @@ import {
   Grid
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import CheckIcon from '@mui/icons-material/Check';
+import CancelIcon from '@mui/icons-material/Cancel';
+import PaymentIcon from '@mui/icons-material/Payment';
+import UndoIcon from '@mui/icons-material/Undo';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import SendIcon from '@mui/icons-material/Send';
+import SaveIcon from '@mui/icons-material/Save';
+import ErrorIcon from '@mui/icons-material/Error';
+import WarningIcon from '@mui/icons-material/Warning';
+import InfoIcon from '@mui/icons-material/Info';
+import SettingsIcon from '@mui/icons-material/Settings';
+import FolderIcon from '@mui/icons-material/Folder';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
+import DoneIcon from '@mui/icons-material/Done';
 
 interface Props {
   value: string;
@@ -16,24 +35,30 @@ interface Props {
   label?: string;
 }
 
-// Popular Material Icons for operations
-const ICONS = [
-  'check', 'cancel', 'close', 'done', 'clear',
-  'payment', 'attach_money', 'account_balance', 'credit_card',
-  'undo', 'redo', 'refresh', 'sync', 'update',
-  'edit', 'create', 'mode_edit', 'border_color',
-  'delete', 'delete_outline', 'remove', 'remove_circle',
-  'add', 'add_circle', 'plus_one',
-  'send', 'forward', 'arrow_forward', 'arrow_right',
-  'save', 'save_alt', 'backup',
-  'error', 'warning', 'info', 'help',
-  'verified', 'verified_user', 'security', 'lock',
-  'visibility', 'visibility_off', 'preview',
-  'print', 'email', 'phone', 'message',
-  'settings', 'build', 'construction', 'engineering',
-  'schedule', 'event', 'today', 'calendar_today',
-  'folder', 'folder_open', 'description', 'article',
-];
+// Icon components map
+const ICON_MAP: { [key: string]: React.ComponentType } = {
+  'check': CheckIcon,
+  'cancel': CancelIcon,
+  'payment': PaymentIcon,
+  'undo': UndoIcon,
+  'edit': EditIcon,
+  'delete': DeleteIcon,
+  'add': AddIcon,
+  'send': SendIcon,
+  'save': SaveIcon,
+  'error': ErrorIcon,
+  'warning': WarningIcon,
+  'info': InfoIcon,
+  'settings': SettingsIcon,
+  'folder': FolderIcon,
+  'description': DescriptionIcon,
+  'schedule': ScheduleIcon,
+  'refresh': RefreshIcon,
+  'close': CloseIcon,
+  'done': DoneIcon,
+};
+
+const ICONS = Object.keys(ICON_MAP);
 
 export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -58,6 +83,8 @@ export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
     ? ICONS.filter(icon => icon.includes(filter.toLowerCase()))
     : ICONS;
 
+  const IconComponent = value ? ICON_MAP[value] : null;
+
   return (
     <Box>
       <TextField
@@ -70,11 +97,9 @@ export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
         onClick={handleClick}
         InputProps={{
           readOnly: true,
-          startAdornment: value ? (
+          startAdornment: IconComponent ? (
             <InputAdornment position="start">
-              <Box component="i" className="material-icons" sx={{ fontSize: 20 }}>
-                {value}
-              </Box>
+              <IconComponent sx={{ fontSize: 20 }} />
             </InputAdornment>
           ) : null,
           endAdornment: (
@@ -112,35 +137,36 @@ export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
             }}
           />
           <Grid container spacing={1}>
-            {filteredIcons.map((icon) => (
-              <Grid item xs={3} key={icon}>
-                <Box
-                  onClick={() => handleSelect(icon)}
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    p: 1,
-                    cursor: 'pointer',
-                    borderRadius: 1,
-                    border: value === icon ? '2px solid' : '1px solid',
-                    borderColor: value === icon ? 'primary.main' : 'divider',
-                    bgcolor: value === icon ? 'action.selected' : 'transparent',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    },
-                  }}
-                >
-                  <Box component="i" className="material-icons" sx={{ fontSize: 24, mb: 0.5 }}>
-                    {icon}
+            {filteredIcons.map((icon) => {
+              const IconComp = ICON_MAP[icon];
+              return (
+                <Grid item xs={3} key={icon}>
+                  <Box
+                    onClick={() => handleSelect(icon)}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      p: 1,
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      border: value === icon ? '2px solid' : '1px solid',
+                      borderColor: value === icon ? 'primary.main' : 'divider',
+                      bgcolor: value === icon ? 'action.selected' : 'transparent',
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <IconComp sx={{ fontSize: 32, mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.65rem', textAlign: 'center', wordBreak: 'break-all' }}>
+                      {icon}
+                    </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ fontSize: '0.65rem', textAlign: 'center', wordBreak: 'break-all' }}>
-                    {icon}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
+                </Grid>
+              );
+            })}
           </Grid>
         </Box>
       </Popover>
