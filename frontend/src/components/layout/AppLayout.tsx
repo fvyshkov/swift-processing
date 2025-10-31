@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, IconButton, Tooltip, useTheme } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';

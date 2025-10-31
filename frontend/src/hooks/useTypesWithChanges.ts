@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useTypes } from './useTypes';
 import { useChangesStore } from '../store/changesStore';
-import { ProcessType } from '../types';
 
 export const useTypesWithChanges = () => {
   const { data: serverTypes, isLoading, error } = useTypes();

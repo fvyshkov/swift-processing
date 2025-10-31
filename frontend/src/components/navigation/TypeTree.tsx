@@ -157,7 +157,6 @@ export default function TypeTree() {
     event.preventDefault();
     setDragOver(null);
     
-    const draggedTypeId = event.dataTransfer.getData('text/plain');
     const draggedTypeData = event.dataTransfer.getData('application/json');
     
     if (!draggedTypeData) return;
