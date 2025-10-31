@@ -16,7 +16,6 @@ export default function AppLayout() {
   const hasChanges = useChangesStore((state) => state.hasChanges);
   const { mutate: saveAll, isPending } = useSaveAll();
   const { mode, toggleTheme } = useThemeStore();
-  const types = useChangesStore((state) => state.types);
   
   const handleSave = async () => {
     const store = useChangesStore.getState();
