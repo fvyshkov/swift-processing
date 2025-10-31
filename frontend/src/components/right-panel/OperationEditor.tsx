@@ -112,10 +112,10 @@ export default function OperationEditor({ operationId }: Props) {
           minHeight={80}
         />
         <CodeEditor
-          value={localOperation.availability_condition || ''}
+          value={localOperation.availability_condition || 'available = True'}
           onChange={(value) => handleChange({ availability_condition: value })}
-          label="Availability Condition (JSON)"
-          language="json"
+          label="Availability Condition (Python)"
+          language="python"
           minHeight={60}
         />
         <FormControlLabel

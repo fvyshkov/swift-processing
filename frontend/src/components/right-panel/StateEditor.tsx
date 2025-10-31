@@ -77,13 +77,6 @@ export default function StateEditor({ stateId }: Props) {
           onChange={(color) => handleChange({ color_code: color })}
           label="Color"
         />
-        <CodeEditor
-          value={localState.operation_list_script || ''}
-          onChange={(value) => handleChange({ operation_list_script: value })}
-          label="Operation List Script (Python)"
-          language="python"
-          minHeight={80}
-        />
         <Box sx={{ mt: 1 }}>
           <FormControlLabel
             control={

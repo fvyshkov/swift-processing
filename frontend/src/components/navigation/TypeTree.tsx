@@ -33,7 +33,7 @@ export default function TypeTree() {
   }>({ open: false, typeCode: '', childrenCount: 0 });
   
   // Build tree structure
-  const rootTypes = types?.filter(t => !t.parent_id) || [];
+  const rootTypes = (types?.filter(t => !t.parent_id) || []).sort((a, b) => a.code.localeCompare(b.code));
   const childrenMap = new Map<string, ProcessType[]>();
   
   types?.forEach(type => {
@@ -44,6 +44,11 @@ export default function TypeTree() {
       }
       childrenMap.get(parentId)!.push(type);
     }
+  });
+  
+  // Sort children by code
+  childrenMap.forEach((children, parentId) => {
+    childrenMap.set(parentId, children.sort((a, b) => a.code.localeCompare(b.code)));
   });
   
   // Expand all by default and restore/select node
@@ -254,9 +259,9 @@ export default function TypeTree() {
           )}
           {!hasChildren && <Box sx={{ width: 24, mr: 0.5 }} />}
           <ListItemText
-            primary={type.name_en}
-            secondary={type.code}
-            primaryTypographyProps={{ variant: 'body2' }}
+            primary={type.code}
+            secondary={type.name_en}
+            primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }}
             secondaryTypographyProps={{ variant: 'caption' }}
           />
         </ListItemButton>
