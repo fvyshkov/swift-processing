@@ -11,6 +11,7 @@ import { useOperations } from '../../hooks/useOperations';
 import { useSelectionStore } from '../../store/selectionStore';
 import { useChangesStore } from '../../store/changesStore';
 import { ProcessOperation } from '../../types';
+import CodeEditor from '../common/CodeEditor';
 
 interface Props {
   operationId: string;
@@ -79,24 +80,41 @@ export default function OperationEditor({ operationId }: Props) {
           onChange={(e) => handleChange({ icon: e.target.value })}
         />
         <TextField
-          label="Resource URL"
-          value={localOperation.resource_url || ''}
+          label="Workflow"
+          value={localOperation.workflow || ''}
           fullWidth
           margin="dense"
           size="small"
-          multiline
-          rows={2}
-          onChange={(e) => handleChange({ resource_url: e.target.value })}
+          onChange={(e) => handleChange({ workflow: e.target.value })}
         />
         <TextField
-          label="Move to State Script"
-          value={localOperation.move_to_state_script || ''}
+          label="Database"
+          value={localOperation.database || ''}
           fullWidth
           margin="dense"
           size="small"
-          multiline
-          rows={3}
-          onChange={(e) => handleChange({ move_to_state_script: e.target.value })}
+          onChange={(e) => handleChange({ database: e.target.value })}
+        />
+        <CodeEditor
+          value={localOperation.resource_url || ''}
+          onChange={(value) => handleChange({ resource_url: value })}
+          label="Resource URL (SQL/Code)"
+          language="sql"
+          minHeight={80}
+        />
+        <CodeEditor
+          value={localOperation.move_to_state_script || ''}
+          onChange={(value) => handleChange({ move_to_state_script: value })}
+          label="Move to State Script (Python)"
+          language="python"
+          minHeight={80}
+        />
+        <CodeEditor
+          value={localOperation.availability_condition || ''}
+          onChange={(value) => handleChange({ availability_condition: value })}
+          label="Availability Condition (JSON)"
+          language="json"
+          minHeight={60}
         />
         <FormControlLabel
           control={

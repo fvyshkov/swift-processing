@@ -12,6 +12,7 @@ import { useSelectionStore } from '../../store/selectionStore';
 import { useChangesStore } from '../../store/changesStore';
 import { ProcessState } from '../../types';
 import ColorPicker from '../common/ColorPicker';
+import CodeEditor from '../common/CodeEditor';
 
 interface Props {
   stateId: string;
@@ -75,6 +76,13 @@ export default function StateEditor({ stateId }: Props) {
           color={localState.color_code || '#FFFFFF'}
           onChange={(color) => handleChange({ color_code: color })}
           label="Color"
+        />
+        <CodeEditor
+          value={localState.operation_list_script || ''}
+          onChange={(value) => handleChange({ operation_list_script: value })}
+          label="Operation List Script (Python)"
+          language="python"
+          minHeight={80}
         />
         <Box sx={{ mt: 1 }}>
           <FormControlLabel

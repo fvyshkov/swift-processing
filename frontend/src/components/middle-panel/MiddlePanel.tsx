@@ -4,11 +4,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useSelectionStore } from '../../store/selectionStore';
 import TypeAttributesSection from './TypeAttributesSection';
 import StatesListSection from './StatesListSection';
-import OperationsListSection from './OperationsListSection';
 
 export default function MiddlePanel() {
   const selectedTypeCode = useSelectionStore((state) => state.selectedTypeCode);
-  const [expanded, setExpanded] = useState<string[]>(['process', 'states', 'operations']);
+  const [expanded, setExpanded] = useState<string[]>(['process', 'states']);
   
   const handleChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded 
@@ -32,7 +31,15 @@ export default function MiddlePanel() {
         onChange={handleChange('process')}
         elevation={1}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 40, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon />} 
+          sx={{ 
+            minHeight: 40, 
+            bgcolor: 'rgba(173, 216, 230, 0.15)',
+            '&:hover': { bgcolor: 'rgba(173, 216, 230, 0.25)' },
+            '& .MuiAccordionSummary-content': { my: 0.5 } 
+          }}
+        >
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Business Process</Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 1.5, pt: 0 }}>
@@ -46,25 +53,19 @@ export default function MiddlePanel() {
         elevation={1}
         sx={{ mt: 1 }}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 40, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>States</Typography>
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon />} 
+          sx={{ 
+            minHeight: 40, 
+            bgcolor: 'rgba(173, 216, 230, 0.15)',
+            '&:hover': { bgcolor: 'rgba(173, 216, 230, 0.25)' },
+            '& .MuiAccordionSummary-content': { my: 0.5 } 
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>States & Operations</Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 1.5, pt: 0 }}>
           <StatesListSection typeCode={selectedTypeCode} />
-        </AccordionDetails>
-      </Accordion>
-      
-      <Accordion 
-        expanded={expanded.includes('operations')} 
-        onChange={handleChange('operations')}
-        elevation={1}
-        sx={{ mt: 1 }}
-      >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 40, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Operations</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 1.5, pt: 0 }}>
-          <OperationsListSection typeCode={selectedTypeCode} />
         </AccordionDetails>
       </Accordion>
     </Box>
