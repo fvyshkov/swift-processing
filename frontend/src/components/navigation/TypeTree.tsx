@@ -19,12 +19,18 @@ import { useTypesWithChanges } from '../../hooks/useTypesWithChanges';
 import { useSelectionStore } from '../../store/selectionStore';
 import { useChangesStore } from '../../store/changesStore';
 import { ProcessType } from '../../types';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 export default function TypeTree() {
   const { data: types, isLoading, error } = useTypesWithChanges();
   const { selectedTypeCode, selectType } = useSelectionStore();
   const { createType, updateType, deleteType } = useChangesStore();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    typeCode: string;
+    childrenCount: number;
+  }>({ open: false, typeCode: '', childrenCount: 0 });
   
   // Build tree structure
   const rootTypes = types?.filter(t => !t.parent_id) || [];
@@ -111,16 +117,22 @@ export default function TypeTree() {
     
     const selectedType = types?.find(t => t.code === selectedTypeCode);
     const children = selectedType ? childrenMap.get(selectedType.id) || [] : [];
-    const childrenText = children.length > 0 
-      ? ` and ${children.length} child(ren)` 
-      : '';
     
-    if (!window.confirm(`Delete ${selectedTypeCode}${childrenText}?`)) {
-      return;
-    }
-    
-    deleteType(selectedTypeCode);
+    setDeleteDialog({
+      open: true,
+      typeCode: selectedTypeCode,
+      childrenCount: children.length
+    });
+  };
+  
+  const confirmDelete = () => {
+    deleteType(deleteDialog.typeCode);
     selectType(null as any);
+    setDeleteDialog({ open: false, typeCode: '', childrenCount: 0 });
+  };
+  
+  const cancelDelete = () => {
+    setDeleteDialog({ open: false, typeCode: '', childrenCount: 0 });
   };
   
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -271,6 +283,19 @@ export default function TypeTree() {
       <List dense>
         {rootTypes.map(type => renderType(type))}
       </List>
+      
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        title="Delete Type"
+        message={
+          deleteDialog.childrenCount > 0
+            ? `Delete ${deleteDialog.typeCode} and ${deleteDialog.childrenCount} child type(s)?`
+            : `Delete ${deleteDialog.typeCode}?`
+        }
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </Box>
   );
 }
