@@ -3,6 +3,12 @@
 .AppleDouble
 .LSOverride
 
+# Node
+node_modules/
+.vite/
+dist/
+*.local
+
 # Python
 __pycache__/
 *.py[cod]
