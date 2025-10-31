@@ -59,9 +59,11 @@ export default function AppLayout() {
       
       // Save states
       for (const state of store.states.created) {
-        const typeCode = types?.find(t => t.id === state.type_id)?.code;
-        if (typeCode) {
-          await fetch(`http://localhost:8000/api/v1/types/${typeCode}/states`, {
+        // Get all types to find typeCode
+        const allTypes = await fetch('http://localhost:8000/api/v1/types').then(r => r.json());
+        const type = allTypes.find((t: any) => t.id === state.type_id);
+        if (type) {
+          await fetch(`http://localhost:8000/api/v1/types/${type.code}/states`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(state)
@@ -85,9 +87,11 @@ export default function AppLayout() {
       
       // Save operations
       for (const op of store.operations.created) {
-        const typeCode = types?.find(t => t.id === op.type_id)?.code;
-        if (typeCode) {
-          await fetch(`http://localhost:8000/api/v1/types/${typeCode}/operations`, {
+        // Get all types to find typeCode
+        const allTypes = await fetch('http://localhost:8000/api/v1/types').then(r => r.json());
+        const type = allTypes.find((t: any) => t.id === op.type_id);
+        if (type) {
+          await fetch(`http://localhost:8000/api/v1/types/${type.code}/operations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(op)

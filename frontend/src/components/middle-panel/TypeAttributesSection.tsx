@@ -44,6 +44,7 @@ export default function TypeAttributesSection({ typeCode }: Props) {
         error={!localType.code}
         helperText={!localType.code ? 'Required field' : ''}
         onChange={(e) => handleChange('code', e.target.value)}
+        InputLabelProps={{ shrink: true }}
       />
       <TextField
         label="Name (English) *"
@@ -55,6 +56,7 @@ export default function TypeAttributesSection({ typeCode }: Props) {
         error={!localType.name_en}
         helperText={!localType.name_en ? 'Required field' : ''}
         onChange={(e) => handleChange('name_en', e.target.value)}
+        InputLabelProps={{ shrink: true }}
       />
       <TextField
         label="Name (Russian) *"
@@ -66,6 +68,7 @@ export default function TypeAttributesSection({ typeCode }: Props) {
         error={!localType.name_ru}
         helperText={!localType.name_ru ? 'Required field' : ''}
         onChange={(e) => handleChange('name_ru', e.target.value)}
+        InputLabelProps={{ shrink: true }}
       />
       <TextField
         label="Attributes Table"
@@ -74,6 +77,7 @@ export default function TypeAttributesSection({ typeCode }: Props) {
         margin="dense"
         size="small"
         onChange={(e) => handleChange('attributes_table', e.target.value)}
+        InputLabelProps={{ shrink: true }}
       />
     </Box>
   );

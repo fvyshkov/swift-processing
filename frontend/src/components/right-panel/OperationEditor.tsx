@@ -12,6 +12,7 @@ import { useSelectionStore } from '../../store/selectionStore';
 import { useChangesStore } from '../../store/changesStore';
 import { ProcessOperation } from '../../types';
 import CodeEditor from '../common/CodeEditor';
+import IconPicker from '../common/IconPicker';
 
 interface Props {
   operationId: string;
@@ -54,6 +55,7 @@ export default function OperationEditor({ operationId }: Props) {
           margin="dense"
           size="small"
           disabled
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Name (English)"
@@ -62,6 +64,7 @@ export default function OperationEditor({ operationId }: Props) {
           margin="dense"
           size="small"
           onChange={(e) => handleChange({ name_en: e.target.value })}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Name (Russian)"
@@ -70,33 +73,33 @@ export default function OperationEditor({ operationId }: Props) {
           margin="dense"
           size="small"
           onChange={(e) => handleChange({ name_ru: e.target.value })}
+          InputLabelProps={{ shrink: true }}
+        />
+        <IconPicker
+          value={localOperation.icon || ''}
+          onChange={(icon) => handleChange({ icon })}
+          label="Icon"
         />
         <TextField
-          label="Icon"
-          value={localOperation.icon || ''}
+          label="Workflow"
+          value={localOperation.workflow || ''}
           fullWidth
           margin="dense"
           size="small"
-          onChange={(e) => handleChange({ icon: e.target.value })}
+          placeholder="Workflow name"
+          onChange={(e) => handleChange({ workflow: e.target.value })}
+          InputLabelProps={{ shrink: true }}
         />
-        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-          <TextField
-            label="Workflow"
-            value={localOperation.workflow || ''}
-            fullWidth
-            margin="dense"
-            size="small"
-            onChange={(e) => handleChange({ workflow: e.target.value })}
-          />
-          <TextField
-            label="Database"
-            value={localOperation.database || ''}
-            fullWidth
-            margin="dense"
-            size="small"
-            onChange={(e) => handleChange({ database: e.target.value })}
-          />
-        </Box>
+        <TextField
+          label="Database"
+          value={localOperation.database || ''}
+          fullWidth
+          margin="dense"
+          size="small"
+          placeholder="Database name"
+          onChange={(e) => handleChange({ database: e.target.value })}
+          InputLabelProps={{ shrink: true }}
+        />
         <CodeEditor
           value={localOperation.resource_url || ''}
           onChange={(value) => handleChange({ resource_url: value })}

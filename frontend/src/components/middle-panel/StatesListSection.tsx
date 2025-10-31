@@ -243,7 +243,7 @@ export default function StatesListSection({ typeCode }: Props) {
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem', width: 32 }}>Type</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Code</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Name (EN)</TableCell>
-              <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Color</TableCell>
+              <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>Icon</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }} align="center">E</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }} align="center">D</TableCell>
               <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }} align="center">S</TableCell>
@@ -283,18 +283,7 @@ export default function StatesListSection({ typeCode }: Props) {
                     </TableCell>
                     <TableCell sx={{ py: 0.5, fontSize: '0.75rem', fontWeight: 'bold' }}>{state.code}</TableCell>
                     <TableCell sx={{ py: 0.5, fontSize: '0.75rem' }}>{state.name_en}</TableCell>
-                    <TableCell sx={{ py: 0.5 }}>
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          bgcolor: state.color_code || '#fff',
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 0.5,
-                        }}
-                      />
-                    </TableCell>
+                    <TableCell sx={{ py: 0.5, fontSize: '0.7rem', color: 'text.secondary' }}>-</TableCell>
                     <TableCell sx={{ py: 0.5 }} align="center">
                       <Checkbox checked={state.allow_edit} disabled size="small" sx={{ p: 0 }} />
                     </TableCell>
@@ -326,13 +315,20 @@ export default function StatesListSection({ typeCode }: Props) {
                         <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
                           {operation.code}
                         </TableCell>
-                        <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
-                          {operation.name_en}
-                        </TableCell>
-                        <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
-                          {operation.icon || '-'}
-                        </TableCell>
-                        <TableCell sx={{ py: 0.5 }} align="center" colSpan={3}>
+                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
+                                    {operation.name_en}
+                                  </TableCell>
+                                  <TableCell sx={{ py: 0.5, fontSize: '0.7rem' }}>
+                                    {operation.icon ? (
+                                      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box component="i" className="material-icons" sx={{ fontSize: 16 }}>
+                                          {operation.icon}
+                                        </Box>
+                                        <Typography variant="caption">{operation.icon}</Typography>
+                                      </Box>
+                                    ) : '-'}
+                                  </TableCell>
+                                  <TableCell sx={{ py: 0.5 }} align="center" colSpan={3}>
                           {operation.cancel && <Chip label="Cancel" size="small" color="warning" sx={{ height: 16, fontSize: '0.6rem' }} />}
                         </TableCell>
                       </TableRow>

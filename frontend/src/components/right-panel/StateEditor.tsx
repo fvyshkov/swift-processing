@@ -55,6 +55,7 @@ export default function StateEditor({ stateId }: Props) {
           margin="dense"
           size="small"
           disabled
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Name (English)"
@@ -63,6 +64,7 @@ export default function StateEditor({ stateId }: Props) {
           margin="dense"
           size="small"
           onChange={(e) => handleChange({ name_en: e.target.value })}
+          InputLabelProps={{ shrink: true }}
         />
         <TextField
           label="Name (Russian)"
@@ -71,6 +73,7 @@ export default function StateEditor({ stateId }: Props) {
           margin="dense"
           size="small"
           onChange={(e) => handleChange({ name_ru: e.target.value })}
+          InputLabelProps={{ shrink: true }}
         />
         <ColorPicker
           color={localState.color_code || '#FFFFFF'}
