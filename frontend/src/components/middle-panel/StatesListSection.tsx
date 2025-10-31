@@ -262,7 +262,9 @@ export default function StatesListSection({ typeCode }: Props) {
                     onClick={() => selectState(state.id)}
                     sx={{
                       cursor: 'pointer',
-                      bgcolor: state.color_code || 'transparent',
+                      bgcolor: selectedStateId === state.id 
+                        ? 'rgba(25, 118, 210, 0.15)' 
+                        : (state.color_code || 'transparent'),
                       '&:hover': { opacity: 0.85 },
                       outline: selectedStateId === state.id ? '2px solid #1976d2' : 'none',
                       outlineOffset: '-2px',
@@ -304,7 +306,9 @@ export default function StatesListSection({ typeCode }: Props) {
                         onClick={() => selectOperation(operation.id)}
                         sx={{
                           cursor: 'pointer',
-                          bgcolor: 'action.hover',
+                          bgcolor: selectedOperationId === operation.id 
+                            ? 'rgba(25, 118, 210, 0.15)' 
+                            : 'action.hover',
                           '&:hover': { bgcolor: 'action.selected' },
                           outline: selectedOperationId === operation.id ? '2px solid #1976d2' : 'none',
                           outlineOffset: '-2px',

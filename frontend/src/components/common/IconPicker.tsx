@@ -9,25 +9,7 @@ import {
   Grid
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import CheckIcon from '@mui/icons-material/Check';
-import CancelIcon from '@mui/icons-material/Cancel';
-import PaymentIcon from '@mui/icons-material/Payment';
-import UndoIcon from '@mui/icons-material/Undo';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import SendIcon from '@mui/icons-material/Send';
-import SaveIcon from '@mui/icons-material/Save';
-import ErrorIcon from '@mui/icons-material/Error';
-import WarningIcon from '@mui/icons-material/Warning';
-import InfoIcon from '@mui/icons-material/Info';
-import SettingsIcon from '@mui/icons-material/Settings';
-import FolderIcon from '@mui/icons-material/Folder';
-import DescriptionIcon from '@mui/icons-material/Description';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CloseIcon from '@mui/icons-material/Close';
-import DoneIcon from '@mui/icons-material/Done';
+import * as MuiIcons from '@mui/icons-material';
 
 interface Props {
   value: string;
@@ -35,30 +17,26 @@ interface Props {
   label?: string;
 }
 
-// Icon components map
-const ICON_MAP: { [key: string]: React.ComponentType } = {
-  'check': CheckIcon,
-  'cancel': CancelIcon,
-  'payment': PaymentIcon,
-  'undo': UndoIcon,
-  'edit': EditIcon,
-  'delete': DeleteIcon,
-  'add': AddIcon,
-  'send': SendIcon,
-  'save': SaveIcon,
-  'error': ErrorIcon,
-  'warning': WarningIcon,
-  'info': InfoIcon,
-  'settings': SettingsIcon,
-  'folder': FolderIcon,
-  'description': DescriptionIcon,
-  'schedule': ScheduleIcon,
-  'refresh': RefreshIcon,
-  'close': CloseIcon,
-  'done': DoneIcon,
-};
+// Popular icons list
+const POPULAR_ICONS = [
+  'Check', 'Cancel', 'Close', 'Done', 'Clear',
+  'Payment', 'AttachMoney', 'AccountBalance', 'CreditCard',
+  'Undo', 'Redo', 'Refresh', 'Sync', 'Update',
+  'Edit', 'Create', 'ModeEdit', 'BorderColor',
+  'Delete', 'DeleteOutline', 'Remove', 'RemoveCircle',
+  'Add', 'AddCircle', 'PlusOne',
+  'Send', 'Forward', 'ArrowForward', 'ArrowRight',
+  'Save', 'SaveAlt', 'Backup',
+  'Error', 'Warning', 'Info', 'Help',
+  'Verified', 'VerifiedUser', 'Security', 'Lock',
+  'Visibility', 'VisibilityOff', 'Preview',
+  'Print', 'Email', 'Phone', 'Message',
+  'Settings', 'Build', 'Construction', 'Engineering',
+  'Schedule', 'Event', 'Today', 'CalendarToday',
+  'Folder', 'FolderOpen', 'Description', 'Article',
+];
 
-const ICONS = Object.keys(ICON_MAP);
+const ICONS = POPULAR_ICONS;
 
 export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -83,7 +61,7 @@ export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
     ? ICONS.filter(icon => icon.includes(filter.toLowerCase()))
     : ICONS;
 
-  const IconComponent = value ? ICON_MAP[value] : null;
+  const IconComponent = value ? (MuiIcons as any)[value] : null;
 
   return (
     <Box>
@@ -138,7 +116,9 @@ export default function IconPicker({ value, onChange, label = 'Icon' }: Props) {
           />
           <Grid container spacing={1}>
             {filteredIcons.map((icon) => {
-              const IconComp = ICON_MAP[icon];
+              const IconComp = (MuiIcons as any)[icon];
+              if (!IconComp) return null;
+              
               return (
                 <Grid item xs={3} key={icon}>
                   <Box
