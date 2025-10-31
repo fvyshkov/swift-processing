@@ -10,7 +10,7 @@ import {
   Tooltip,
   Collapse 
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -263,7 +263,7 @@ export default function TypeTree() {
       <Box sx={{ display: 'flex', gap: 0.5, mb: 1, borderBottom: 1, borderColor: 'divider', pb: 0.5 }}>
         <Tooltip title="Add root type">
           <IconButton size="small" onClick={handleAdd}>
-            <AddIcon fontSize="small" />
+            <CreateNewFolderIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title="Add child to selected">
