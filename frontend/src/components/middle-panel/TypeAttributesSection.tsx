@@ -39,8 +39,8 @@ export default function TypeAttributesSection({ typeCode }: Props) {
         value={localType.code}
         fullWidth
         margin="dense"
-        disabled
         size="small"
+        onChange={(e) => handleChange('code', e.target.value)}
       />
       <TextField
         label="Name (English)"

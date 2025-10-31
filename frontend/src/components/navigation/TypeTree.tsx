@@ -77,10 +77,7 @@ export default function TypeTree() {
   
   const handleAdd = () => {
     const newTypeNum = (types?.length || 0) + 1;
-    let code = prompt('Enter type code (e.g., pacs.010):', `NEW_TYPE_${newTypeNum}`);
-    if (!code) return;
-    
-    code = code.trim();
+    const code = `NEW_TYPE_${newTypeNum}`;
     const id = crypto.randomUUID();
     
     const newType: ProcessType = {
@@ -103,11 +100,7 @@ export default function TypeTree() {
     if (!selectedType) return;
     
     const childrenCount = childrenMap.get(selectedType.id)?.length || 0;
-    const defaultCode = `${selectedTypeCode}_CHILD_${childrenCount + 1}`;
-    let code = prompt('Enter child type code:', defaultCode);
-    if (!code) return;
-    
-    code = code.trim();
+    const code = `${selectedTypeCode}_CHILD_${childrenCount + 1}`;
     const id = crypto.randomUUID();
     
     const newType: ProcessType = {
