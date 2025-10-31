@@ -46,13 +46,23 @@ export default function TypeTree() {
     }
   });
   
-  // Expand all by default
+  // Expand all by default and select first terminal node
   React.useEffect(() => {
     if (types && expanded.size === 0) {
       const allIds = new Set(types.map(t => t.id));
       setExpanded(allIds);
+      
+      // Auto-select first terminal (leaf) node
+      const terminals = types.filter(t => {
+        const children = childrenMap.get(t.id) || [];
+        return children.length === 0; // No children = terminal
+      });
+      
+      if (terminals.length > 0 && !selectedTypeCode) {
+        selectType(terminals[0].code);
+      }
     }
-  }, [types]);
+  }, [types, selectedTypeCode]);
   
   const handleToggle = (typeId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -67,7 +77,10 @@ export default function TypeTree() {
   
   const handleAdd = () => {
     const newTypeNum = (types?.length || 0) + 1;
-    const code = `NEW_TYPE_${newTypeNum}`;
+    let code = prompt('Enter type code (e.g., pacs.010):', `NEW_TYPE_${newTypeNum}`);
+    if (!code) return;
+    
+    code = code.trim();
     const id = crypto.randomUUID();
     
     const newType: ProcessType = {
@@ -90,7 +103,11 @@ export default function TypeTree() {
     if (!selectedType) return;
     
     const childrenCount = childrenMap.get(selectedType.id)?.length || 0;
-    const code = `${selectedTypeCode}_CHILD_${childrenCount + 1}`;
+    const defaultCode = `${selectedTypeCode}_CHILD_${childrenCount + 1}`;
+    let code = prompt('Enter child type code:', defaultCode);
+    if (!code) return;
+    
+    code = code.trim();
     const id = crypto.randomUUID();
     
     const newType: ProcessType = {

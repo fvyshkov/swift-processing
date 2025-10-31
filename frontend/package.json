@@ -21,6 +21,7 @@
     "react-color": "^2.19.3",
     "react-complex-tree": "^2.3.4",
     "react-dom": "^18.2.0",
+    "react-resizable-panels": "^3.0.6",
     "react-router-dom": "^6.20.0",
     "zustand": "^5.0.8"
   },

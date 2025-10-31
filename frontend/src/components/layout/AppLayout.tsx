@@ -3,6 +3,7 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import TypeTree from '../navigation/TypeTree';
 import MiddlePanel from '../middle-panel/MiddlePanel';
 import RightPanel from '../right-panel/RightPanel';
@@ -94,22 +95,34 @@ export default function AppLayout() {
         </Tooltip>
       </Box>
       
-      {/* 3-panel layout */}
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left Panel - 20% */}
-        <Box sx={{ width: '20%', borderRight: 1, borderColor: 'divider', overflow: 'auto', p: 1 }}>
-          <TypeTree />
-        </Box>
-        
-        {/* Middle Panel - 50% */}
-        <Box sx={{ width: '50%', borderRight: 1, borderColor: 'divider', overflow: 'auto' }}>
-          <MiddlePanel />
-        </Box>
-        
-        {/* Right Panel - 30% */}
-        <Box sx={{ width: '30%', overflow: 'auto' }}>
-          <RightPanel />
-        </Box>
+      {/* 3-panel layout with resizable panels */}
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+        <PanelGroup direction="horizontal">
+          {/* Left Panel - resizable */}
+          <Panel defaultSize={20} minSize={15} maxSize={35}>
+            <Box sx={{ height: '100%', borderRight: 1, borderColor: 'divider', overflow: 'auto', p: 1 }}>
+              <TypeTree />
+            </Box>
+          </Panel>
+          
+          <PanelResizeHandle style={{ width: '4px', background: 'rgba(0,0,0,0.1)', cursor: 'col-resize' }} />
+          
+          {/* Middle Panel - takes remaining space */}
+          <Panel minSize={30}>
+            <Box sx={{ height: '100%', borderRight: 1, borderColor: 'divider', overflow: 'auto' }}>
+              <MiddlePanel />
+            </Box>
+          </Panel>
+          
+          <PanelResizeHandle style={{ width: '4px', background: 'rgba(0,0,0,0.1)', cursor: 'col-resize' }} />
+          
+          {/* Right Panel - resizable */}
+          <Panel defaultSize={25} minSize={20} maxSize={40}>
+            <Box sx={{ height: '100%', overflow: 'auto' }}>
+              <RightPanel />
+            </Box>
+          </Panel>
+        </PanelGroup>
       </Box>
     </Box>
   );
